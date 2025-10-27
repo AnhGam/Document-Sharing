@@ -438,9 +438,9 @@ namespace study_document_manager
         {
             try
             {
-                //StatisticsForm statisticsForm = new StatisticsForm();
-                //statisticsForm.ShowDialog();
-                //lblStatus.Text = "Đã hiển thị thống kê";
+                Report reportForm = new Report();
+                reportForm.ShowDialog();
+                lblStatus.Text = "Đã hiển thị thống kê";
             }
             catch (Exception ex)
             {
@@ -496,8 +496,7 @@ namespace study_document_manager
         {
             MessageBox.Show("Study Document Manager v1.0\n\n" +
                 "Ứng dụng quản lý tài liệu học tập\n\n" +
-                "Phát triển bởi: [Tên của bạn]\n" +
-                "Năm: 2024\n\n" +
+                "Phát triển bởi: Vũ Đức Dũng - TT601K14\n" +
                 "Công nghệ: C# Windows Forms, SQL Server",
                 "Giới thiệu", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
