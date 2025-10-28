@@ -554,6 +554,26 @@ namespace study_document_manager
         }
 
         /// <summary>
+        /// Menu Quản lý Môn học và Loại
+        /// </summary>
+        private void menuViewCategories_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                CategoryManagementForm categoryForm = new CategoryManagementForm();
+                categoryForm.ShowDialog();
+                
+                // Refresh lại dữ liệu sau khi đóng form quản lý danh mục
+                LoadData();
+                lblStatus.Text = "Đã làm mới dữ liệu";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        /// <summary>
         /// Format cells để hiển thị icon và sao vàng
         /// </summary>
         private void dgvDocuments_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)

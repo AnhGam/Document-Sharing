@@ -32,6 +32,8 @@
             this.menuEditRefresh = new System.Windows.Forms.ToolStripMenuItem();
             this.menuView = new System.Windows.Forms.ToolStripMenuItem();
             this.menuViewStatistics = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuViewSeparator = new System.Windows.Forms.ToolStripSeparator();
+            this.menuViewCategories = new System.Windows.Forms.ToolStripMenuItem();
             this.menuHelp = new System.Windows.Forms.ToolStripMenuItem();
             this.menuHelpAbout = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStrip = new System.Windows.Forms.ToolStrip();
@@ -176,7 +178,9 @@
             // menuView
             // 
             this.menuView.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.menuViewStatistics});
+            this.menuViewStatistics,
+            this.menuViewSeparator,
+            this.menuViewCategories});
             this.menuView.Name = "menuView";
             this.menuView.Size = new System.Drawing.Size(61, 20);
             this.menuView.Text = "Hiển thị";
@@ -185,9 +189,22 @@
             // 
             this.menuViewStatistics.Name = "menuViewStatistics";
             this.menuViewStatistics.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S)));
-            this.menuViewStatistics.Size = new System.Drawing.Size(164, 22);
+            this.menuViewStatistics.Size = new System.Drawing.Size(240, 22);
             this.menuViewStatistics.Text = "Thống kê";
             this.menuViewStatistics.Click += new System.EventHandler(this.btn_thong_ke_Click);
+            // 
+            // menuViewSeparator
+            // 
+            this.menuViewSeparator.Name = "menuViewSeparator";
+            this.menuViewSeparator.Size = new System.Drawing.Size(237, 6);
+            // 
+            // menuViewCategories
+            // 
+            this.menuViewCategories.Name = "menuViewCategories";
+            this.menuViewCategories.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.M)));
+            this.menuViewCategories.Size = new System.Drawing.Size(240, 22);
+            this.menuViewCategories.Text = "Quản lý Môn học và Loại";
+            this.menuViewCategories.Click += new System.EventHandler(this.menuViewCategories_Click);
             // 
             // menuHelp
             // 
@@ -480,6 +497,8 @@
         private System.Windows.Forms.ToolStripMenuItem menuEditRefresh;
         private System.Windows.Forms.ToolStripMenuItem menuView;
         private System.Windows.Forms.ToolStripMenuItem menuViewStatistics;
+        private System.Windows.Forms.ToolStripSeparator menuViewSeparator;
+        private System.Windows.Forms.ToolStripMenuItem menuViewCategories;
         private System.Windows.Forms.ToolStripMenuItem menuHelp;
         private System.Windows.Forms.ToolStripMenuItem menuHelpAbout;
         private System.Windows.Forms.ToolStrip toolStrip;

@@ -8,15 +8,15 @@ using System.Xml.Linq;
 namespace study_document_manager
 {
     /// <summary>
-    /// Class qu?n l� k?t n?i v� thao t�c v?i SQL Server Database
+    /// Class quản lý kết nối và thao tác với SQL Server Database
     /// </summary>
     public class DatabaseHelper
     {
-        // Connection string - ??c t? App.config
+        // Connection string - đọc từ App.config
         private static string connection_string = GetConnectionStringFromConfig();
 
         /// <summary>
-        /// ??c connection string t? App.config
+        /// Đọc connection string từ App.config
         /// </summary>
         private static string GetConnectionStringFromConfig()
         {
@@ -34,13 +34,13 @@ namespace study_document_manager
             }
             catch
             {
-                // Fallback n?u kh�ng ??c ???c
+                // Fallback nếu không đọc được
                 return "Server=DESKTOP-H1DIIG3\\SQL2012;Database=quan_ly_tai_lieu;Integrated Security=True;";
             }
         }
 
         /// <summary>
-        /// L?y connection string hi?n t?i
+        /// Lấy connection string hiện tại
         /// </summary>
         public static string ConnectionString
         {
@@ -49,9 +49,9 @@ namespace study_document_manager
         }
 
         /// <summary>
-        /// Ki?m tra k?t n?i ??n database
+        /// Kiểm tra kết nối đến database
         /// </summary>
-        /// <returns>True n?u k?t n?i th�nh c�ng, False n?u th?t b?i</returns>
+        /// <returns>True nếu kết nối thành công, False nếu thất bại</returns>
         public static bool TestConnection()
         {
             try
@@ -64,18 +64,18 @@ namespace study_document_manager
             }
             catch (Exception ex)
             {
-                MessageBox.Show("L?i k?t n?i database: " + ex.Message + "\n\nConnection string: " + connection_string, 
-                    "L?i", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Lỗi kết nối database: " + ex.Message + "\n\nConnection string: " + connection_string, 
+                    "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return false;
             }
         }
 
         /// <summary>
-        /// Th?c hi?n c�u l?nh SELECT v� tr? v? DataTable
+        /// Thực hiện câu lệnh SELECT và trả về DataTable
         /// </summary>
-        /// <param name="query">C�u truy v?n SELECT</param>
-        /// <param name="parameters">Dictionary ch?a parameters (t�y ch?n)</param>
-        /// <returns>DataTable ch?a k?t qu?</returns>
+        /// <param name="query">Câu truy vấn SELECT</param>
+        /// <param name="parameters">Dictionary chứa parameters (tùy chọn)</param>
+        /// <returns>DataTable chứa kết quả</returns>
         public static DataTable ExecuteQuery(string query, SqlParameter[] parameters = null)
         {
             DataTable dt = new DataTable();
@@ -98,18 +98,18 @@ namespace study_document_manager
             }
             catch (Exception ex)
             {
-                MessageBox.Show("L?i truy v?n: " + ex.Message, 
-                    "L?i", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Lỗi truy vấn: " + ex.Message, 
+                    "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             return dt;
         }
 
         /// <summary>
-        /// Th?c hi?n c�u l?nh INSERT, UPDATE, DELETE
+        /// Thực hiện câu lệnh INSERT, UPDATE, DELETE
         /// </summary>
-        /// <param name="query">C�u truy v?n</param>
-        /// <param name="parameters">M?ng SqlParameter</param>
-        /// <returns>S? d�ng b? ?nh h??ng</returns>
+        /// <param name="query">Câu truy vấn</param>
+        /// <param name="parameters">Mảng SqlParameter</param>
+        /// <returns>Số dòng bị ảnh hưởng</returns>
         public static int ExecuteNonQuery(string query, SqlParameter[] parameters = null)
         {
             int affected_rows = 0;
@@ -130,18 +130,18 @@ namespace study_document_manager
             }
             catch (Exception ex)
             {
-                MessageBox.Show("L?i th?c thi: " + ex.Message, 
-                    "L?i", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Lỗi thực thi: " + ex.Message, 
+                    "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             return affected_rows;
         }
 
         /// <summary>
-        /// Th?c hi?n c�u l?nh tr? v? gi� tr? ??n (COUNT, SUM, v.v.)
+        /// Thực hiện câu lệnh trả về giá trị đơn (COUNT, SUM, v.v.)
         /// </summary>
-        /// <param name="query">C�u truy v?n</param>
-        /// <param name="parameters">M?ng SqlParameter</param>
-        /// <returns>Gi� tr? ??n (object)</returns>
+        /// <param name="query">Câu truy vấn</param>
+        /// <param name="parameters">Mảng SqlParameter</param>
+        /// <returns>Giá trị đơn (object)</returns>
         public static object ExecuteScalar(string query, SqlParameter[] parameters = null)
         {
             object result = null;
@@ -162,14 +162,14 @@ namespace study_document_manager
             }
             catch (Exception ex)
             {
-                MessageBox.Show("L?i th?c thi: " + ex.Message, 
-                    "L?i", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Lỗi thực thi: " + ex.Message, 
+                    "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             return result;
         }
 
         /// <summary>
-        /// L?y t?t c? t�i li?u
+        /// Lấy tất cả tài liệu
         /// </summary>
         public static DataTable GetAllDocuments()
         {
@@ -178,7 +178,7 @@ namespace study_document_manager
         }
 
         /// <summary>
-        /// T�m ki?m t�i li?u theo t? kh�a
+        /// Tìm kiếm tài liệu theo từ khóa
         /// </summary>
         public static DataTable SearchDocuments(string keyword)
         {
@@ -197,18 +197,18 @@ namespace study_document_manager
         }
 
         /// <summary>
-        /// L?c t�i li?u theo m�n h?c v� lo?i
+        /// Lọc tài liệu theo môn học và loại
         /// </summary>
         public static DataTable FilterDocuments(string mon_hoc, string loai)
         {
             string query = "SELECT * FROM tai_lieu WHERE 1=1";
             
-            if (!string.IsNullOrEmpty(mon_hoc) && mon_hoc != "T?t c?")
+            if (!string.IsNullOrEmpty(mon_hoc) && mon_hoc != "Tất cả")
             {
                 query += " AND mon_hoc = @mon_hoc";
             }
             
-            if (!string.IsNullOrEmpty(loai) && loai != "T?t c?")
+            if (!string.IsNullOrEmpty(loai) && loai != "Tất cả")
             {
                 query += " AND loai = @loai";
             }
@@ -225,7 +225,7 @@ namespace study_document_manager
         }
 
         /// <summary>
-        /// Th�m t�i li?u m?i
+        /// Thêm tài liệu mới
         /// </summary>
         public static bool InsertDocument(string ten, string mon_hoc, string loai, 
             string duong_dan, string ghi_chu, double? kich_thuoc, string tac_gia, bool quan_trong)
@@ -252,7 +252,7 @@ namespace study_document_manager
         }
 
         /// <summary>
-        /// C?p nh?t t�i li?u
+        /// Cập nhật tài liệu
         /// </summary>
         public static bool UpdateDocument(int id, string ten, string mon_hoc, string loai, 
             string duong_dan, string ghi_chu, double? kich_thuoc, string tac_gia, bool quan_trong)
@@ -286,7 +286,7 @@ namespace study_document_manager
         }
 
         /// <summary>
-        /// X�a t�i li?u
+        /// Xóa tài liệu
         /// </summary>
         public static bool DeleteDocument(int id)
         {
@@ -302,7 +302,7 @@ namespace study_document_manager
         }
 
         /// <summary>
-        /// L?y th?ng k� s? l??ng t�i li?u theo m�n h?c
+        /// Lấy thống kê số lượng tài liệu theo môn học
         /// </summary>
         public static DataTable GetStatisticsBySubject()
         {
@@ -315,7 +315,7 @@ namespace study_document_manager
         }
 
         /// <summary>
-        /// L?y th?ng k� s? l??ng t�i li?u theo lo?i
+        /// Lấy thống kê số lượng tài liệu theo loại
         /// </summary>
         public static DataTable GetStatisticsByType()
         {
@@ -328,7 +328,7 @@ namespace study_document_manager
         }
 
         /// <summary>
-        /// ??m t?ng s? t�i li?u
+        /// Đếm tổng số tài liệu
         /// </summary>
         public static int GetTotalDocumentCount()
         {
@@ -336,5 +336,101 @@ namespace study_document_manager
             object result = ExecuteScalar(query);
             return result != null ? Convert.ToInt32(result) : 0;
         }
+
+        #region Quản lý Môn học và Loại tài liệu
+
+        /// <summary>
+        /// Lấy danh sách môn học DISTINCT kèm số lượng tài liệu
+        /// </summary>
+        public static DataTable GetDistinctSubjects()
+        {
+            string query = @"SELECT mon_hoc, COUNT(*) as so_luong 
+                           FROM tai_lieu 
+                           WHERE mon_hoc IS NOT NULL AND mon_hoc != '' 
+                           GROUP BY mon_hoc 
+                           ORDER BY mon_hoc";
+            return ExecuteQuery(query);
+        }
+
+        /// <summary>
+        /// Lấy danh sách loại tài liệu DISTINCT kèm số lượng
+        /// </summary>
+        public static DataTable GetDistinctTypes()
+        {
+            string query = @"SELECT loai, COUNT(*) as so_luong 
+                           FROM tai_lieu 
+                           WHERE loai IS NOT NULL AND loai != '' 
+                           GROUP BY loai 
+                           ORDER BY loai";
+            return ExecuteQuery(query);
+        }
+
+        /// <summary>
+        /// Cập nhật tên môn học (tất cả tài liệu)
+        /// </summary>
+        public static bool UpdateSubjectName(string oldName, string newName)
+        {
+            string query = "UPDATE tai_lieu SET mon_hoc = @newName WHERE mon_hoc = @oldName";
+            
+            SqlParameter[] parameters = new SqlParameter[]
+            {
+                new SqlParameter("@oldName", oldName),
+                new SqlParameter("@newName", newName)
+            };
+
+            int result = ExecuteNonQuery(query, parameters);
+            return result > 0;
+        }
+
+        /// <summary>
+        /// Cập nhật tên loại tài liệu (tất cả tài liệu)
+        /// </summary>
+        public static bool UpdateTypeName(string oldName, string newName)
+        {
+            string query = "UPDATE tai_lieu SET loai = @newName WHERE loai = @oldName";
+            
+            SqlParameter[] parameters = new SqlParameter[]
+            {
+                new SqlParameter("@oldName", oldName),
+                new SqlParameter("@newName", newName)
+            };
+
+            int result = ExecuteNonQuery(query, parameters);
+            return result > 0;
+        }
+
+        /// <summary>
+        /// Xóa tất cả tài liệu có môn học này
+        /// </summary>
+        public static bool DeleteDocumentsBySubject(string subjectName)
+        {
+            string query = "DELETE FROM tai_lieu WHERE mon_hoc = @subjectName";
+            
+            SqlParameter[] parameters = new SqlParameter[]
+            {
+                new SqlParameter("@subjectName", subjectName)
+            };
+
+            int result = ExecuteNonQuery(query, parameters);
+            return result > 0;
+        }
+
+        /// <summary>
+        /// Xóa tất cả tài liệu có loại này
+        /// </summary>
+        public static bool DeleteDocumentsByType(string typeName)
+        {
+            string query = "DELETE FROM tai_lieu WHERE loai = @typeName";
+            
+            SqlParameter[] parameters = new SqlParameter[]
+            {
+                new SqlParameter("@typeName", typeName)
+            };
+
+            int result = ExecuteNonQuery(query, parameters);
+            return result > 0;
+        }
+
+        #endregion
     }
 }

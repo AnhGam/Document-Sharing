@@ -5,12 +5,12 @@ using System.Drawing.Drawing2D;
 namespace study_document_manager
 {
     /// <summary>
-    /// Helper class ?? t?o icon ??ng cho c�c lo?i t�i li?u
+    /// Helper class để tạo icon động cho các loại tài liệu
     /// </summary>
     public static class IconHelper
     {
         /// <summary>
-        /// L?y icon theo lo?i t�i li?u
+        /// Lấy icon theo loại tài liệu
         /// </summary>
         public static Bitmap GetDocumentIcon(string loai, int size = 24)
         {
@@ -20,11 +20,11 @@ namespace study_document_manager
             {
                 return CreatePowerPointIcon(size);
             }
-            else if (loai.Contains("b�i t?p") || loai.Contains("word") || loai.Contains("doc"))
+            else if (loai.Contains("bài tập") || loai.Contains("word") || loai.Contains("doc"))
             {
                 return CreateWordIcon(size);
             }
-            else if (loai.Contains("?? thi") || loai.Contains("pdf"))
+            else if (loai.Contains("đề thi") || loai.Contains("pdf"))
             {
                 return CreatePdfIcon(size);
             }
@@ -39,7 +39,7 @@ namespace study_document_manager
         }
 
         /// <summary>
-        /// T?o icon sao v�ng
+        /// Tạo icon sao vàng
         /// </summary>
         public static Bitmap CreateStarIcon(int size = 24)
         {
@@ -49,14 +49,14 @@ namespace study_document_manager
                 g.SmoothingMode = SmoothingMode.AntiAlias;
                 g.Clear(Color.Transparent);
 
-                // V? sao v�ng
+                // Vẽ sao vàng
                 using (Brush brush = new SolidBrush(Color.FromArgb(255, 202, 40)))
                 {
                     PointF[] starPoints = GetStarPoints(size / 2, size / 2, size / 2 - 2, size / 4);
                     g.FillPolygon(brush, starPoints);
                 }
 
-                // Vi?n v�ng ??m
+                // Viền vàng đậm
                 using (Pen pen = new Pen(Color.FromArgb(255, 193, 7), 1.5f))
                 {
                     PointF[] starPoints = GetStarPoints(size / 2, size / 2, size / 2 - 2, size / 4);
@@ -67,13 +67,13 @@ namespace study_document_manager
         }
 
         /// <summary>
-        /// T�nh to�n ?i?m cho h�nh sao 5 c�nh
+        /// Tính toán điểm cho hình sao 5 cánh
         /// </summary>
         private static PointF[] GetStarPoints(float centerX, float centerY, float outerRadius, float innerRadius)
         {
             PointF[] points = new PointF[10];
-            double angle = -Math.PI / 2; // B?t ??u t? tr�n
-            double angleStep = Math.PI / 5; // 36 ??
+            double angle = -Math.PI / 2; // Bắt đầu từ trên
+            double angleStep = Math.PI / 5; // 36 độ
 
             for (int i = 0; i < 10; i++)
             {
@@ -88,7 +88,7 @@ namespace study_document_manager
         }
 
         /// <summary>
-        /// T?o icon PDF (m�u ??)
+        /// Tạo icon PDF (màu đỏ)
         /// </summary>
         private static Bitmap CreatePdfIcon(int size)
         {
@@ -98,19 +98,19 @@ namespace study_document_manager
                 g.SmoothingMode = SmoothingMode.AntiAlias;
                 g.Clear(Color.Transparent);
 
-                // N?n ??
+                // Nền đỏ
                 using (Brush brush = new SolidBrush(Color.FromArgb(244, 67, 54)))
                 {
                     g.FillRectangle(brush, 2, 2, size - 4, size - 4);
                 }
 
-                // Vi?n ?? ??m
+                // Viền đỏ đậm
                 using (Pen pen = new Pen(Color.FromArgb(211, 47, 47), 2))
                 {
                     g.DrawRectangle(pen, 2, 2, size - 4, size - 4);
                 }
 
-                // Ch? PDF
+                // Chữ PDF
                 using (Font font = new Font("Arial", size / 4, FontStyle.Bold))
                 using (Brush textBrush = new SolidBrush(Color.White))
                 {
@@ -124,7 +124,7 @@ namespace study_document_manager
         }
 
         /// <summary>
-        /// T?o icon Word (m�u xanh d??ng)
+        /// Tạo icon Word (màu xanh dương)
         /// </summary>
         private static Bitmap CreateWordIcon(int size)
         {
@@ -134,19 +134,19 @@ namespace study_document_manager
                 g.SmoothingMode = SmoothingMode.AntiAlias;
                 g.Clear(Color.Transparent);
 
-                // N?n xanh d??ng
+                // Nền xanh dương
                 using (Brush brush = new SolidBrush(Color.FromArgb(33, 150, 243)))
                 {
                     g.FillRectangle(brush, 2, 2, size - 4, size - 4);
                 }
 
-                // Vi?n xanh ??m
+                // Viền xanh đậm
                 using (Pen pen = new Pen(Color.FromArgb(25, 118, 210), 2))
                 {
                     g.DrawRectangle(pen, 2, 2, size - 4, size - 4);
                 }
 
-                // Ch? W
+                // Chữ W
                 using (Font font = new Font("Arial", size / 3, FontStyle.Bold))
                 using (Brush textBrush = new SolidBrush(Color.White))
                 {
@@ -160,7 +160,7 @@ namespace study_document_manager
         }
 
         /// <summary>
-        /// T?o icon PowerPoint (m�u cam)
+        /// Tạo icon PowerPoint (màu cam)
         /// </summary>
         private static Bitmap CreatePowerPointIcon(int size)
         {
@@ -170,19 +170,19 @@ namespace study_document_manager
                 g.SmoothingMode = SmoothingMode.AntiAlias;
                 g.Clear(Color.Transparent);
 
-                // N?n cam
+                // Nền cam
                 using (Brush brush = new SolidBrush(Color.FromArgb(255, 152, 0)))
                 {
                     g.FillRectangle(brush, 2, 2, size - 4, size - 4);
                 }
 
-                // Vi?n cam ??m
+                // Viền cam đậm
                 using (Pen pen = new Pen(Color.FromArgb(245, 124, 0), 2))
                 {
                     g.DrawRectangle(pen, 2, 2, size - 4, size - 4);
                 }
 
-                // Ch? P
+                // Chữ P
                 using (Font font = new Font("Arial", size / 3, FontStyle.Bold))
                 using (Brush textBrush = new SolidBrush(Color.White))
                 {
@@ -196,7 +196,7 @@ namespace study_document_manager
         }
 
         /// <summary>
-        /// T?o icon Excel (m�u xanh l�)
+        /// Tạo icon Excel (màu xanh lá)
         /// </summary>
         private static Bitmap CreateExcelIcon(int size)
         {
@@ -206,19 +206,19 @@ namespace study_document_manager
                 g.SmoothingMode = SmoothingMode.AntiAlias;
                 g.Clear(Color.Transparent);
 
-                // N?n xanh l�
+                // Nền xanh lá
                 using (Brush brush = new SolidBrush(Color.FromArgb(76, 175, 80)))
                 {
                     g.FillRectangle(brush, 2, 2, size - 4, size - 4);
                 }
 
-                // Vi?n xanh ??m
+                // Viền xanh đậm
                 using (Pen pen = new Pen(Color.FromArgb(56, 142, 60), 2))
                 {
                     g.DrawRectangle(pen, 2, 2, size - 4, size - 4);
                 }
 
-                // Ch? X
+                // Chữ X
                 using (Font font = new Font("Arial", size / 3, FontStyle.Bold))
                 using (Brush textBrush = new SolidBrush(Color.White))
                 {
@@ -232,7 +232,7 @@ namespace study_document_manager
         }
 
         /// <summary>
-        /// T?o icon m?c ??nh (m�u x�m)
+        /// Tạo icon mặc định (màu xám)
         /// </summary>
         private static Bitmap CreateDefaultIcon(int size)
         {
@@ -242,13 +242,13 @@ namespace study_document_manager
                 g.SmoothingMode = SmoothingMode.AntiAlias;
                 g.Clear(Color.Transparent);
 
-                // N?n x�m
+                // Nền xám
                 using (Brush brush = new SolidBrush(Color.FromArgb(158, 158, 158)))
                 {
                     g.FillRectangle(brush, 2, 2, size - 4, size - 4);
                 }
 
-                // Vi?n x�m ??m
+                // Viền xám đậm
                 using (Pen pen = new Pen(Color.FromArgb(117, 117, 117), 2))
                 {
                     g.DrawRectangle(pen, 2, 2, size - 4, size - 4);
