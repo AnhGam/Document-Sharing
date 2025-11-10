@@ -1,4 +1,4 @@
-﻿namespace study_document_manager
+namespace study_document_manager
 {
     partial class RegisterForm
     {
@@ -128,12 +128,12 @@
             this.btnShowPassword.BackColor = System.Drawing.Color.White;
             this.btnShowPassword.FlatAppearance.BorderSize = 0;
             this.btnShowPassword.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnShowPassword.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.btnShowPassword.Font = new System.Drawing.Font("Segoe MDL2 Assets", 10F);
             this.btnShowPassword.Location = new System.Drawing.Point(355, 110);
             this.btnShowPassword.Name = "btnShowPassword";
             this.btnShowPassword.Size = new System.Drawing.Size(35, 25);
             this.btnShowPassword.TabIndex = 14;
-            this.btnShowPassword.Text = "•••";
+            this.btnShowPassword.Text = "\uE7B3";
             this.btnShowPassword.UseVisualStyleBackColor = false;
             this.btnShowPassword.MouseDown += new System.Windows.Forms.MouseEventHandler(this.btnShowPassword_MouseDown);
             this.btnShowPassword.MouseUp += new System.Windows.Forms.MouseEventHandler(this.btnShowPassword_MouseUp);
@@ -162,12 +162,12 @@
             this.btnShowConfirmPassword.BackColor = System.Drawing.Color.White;
             this.btnShowConfirmPassword.FlatAppearance.BorderSize = 0;
             this.btnShowConfirmPassword.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnShowConfirmPassword.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.btnShowConfirmPassword.Font = new System.Drawing.Font("Segoe MDL2 Assets", 10F);
             this.btnShowConfirmPassword.Location = new System.Drawing.Point(355, 170);
             this.btnShowConfirmPassword.Name = "btnShowConfirmPassword";
             this.btnShowConfirmPassword.Size = new System.Drawing.Size(35, 25);
             this.btnShowConfirmPassword.TabIndex = 15;
-            this.btnShowConfirmPassword.Text = "•••";
+            this.btnShowConfirmPassword.Text = "\uE7B3";
             this.btnShowConfirmPassword.UseVisualStyleBackColor = false;
             this.btnShowConfirmPassword.MouseDown += new System.Windows.Forms.MouseEventHandler(this.btnShowConfirmPassword_MouseDown);
             this.btnShowConfirmPassword.MouseUp += new System.Windows.Forms.MouseEventHandler(this.btnShowConfirmPassword_MouseUp);

@@ -114,7 +114,7 @@
             this.btnEditRole.Name = "btnEditRole";
             this.btnEditRole.Size = new System.Drawing.Size(140, 35);
             this.btnEditRole.TabIndex = 2;
-            this.btnEditRole.Text = "Đổi vai trò";
+            this.btnEditRole.Text = "👔 Quản lý vai trò";
             this.btnEditRole.UseVisualStyleBackColor = false;
             this.btnEditRole.Click += new System.EventHandler(this.btnEditRole_Click);
             // 

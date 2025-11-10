@@ -41,7 +41,7 @@ namespace study_document_manager
 
                 if (menuStrip != null)
                 {
-                    // Tạo menu "Quản lý"
+                    // Tạo menu "Quản lý" (chỉ Admin)
                     ToolStripMenuItem menuManagement = new ToolStripMenuItem("&Quản lý");
                     menuManagement.Name = "menuManagement";
 
@@ -51,26 +51,42 @@ namespace study_document_manager
                     menuManagementUsers.ShortcutKeys = Keys.Control | Keys.U;
                     menuManagementUsers.Click += menuManagementUsers_Click;
 
-                    // Separator
-                    ToolStripSeparator separator = new ToolStripSeparator();
-
-                    // Submenu: Đăng xuất
-                    ToolStripMenuItem menuManagementLogout = new ToolStripMenuItem("Đăng xuất");
-                    menuManagementLogout.Name = "menuManagementLogout";
-                    menuManagementLogout.ShortcutKeys = Keys.Control | Keys.L;
-                    menuManagementLogout.Click += menuManagementLogout_Click;
-
                     // Thêm submenu vào menu Quản lý
                     menuManagement.DropDownItems.Add(menuManagementUsers);
-                    menuManagement.DropDownItems.Add(separator);
-                    menuManagement.DropDownItems.Add(menuManagementLogout);
 
-                    // Thêm menu Quản lý vào MenuStrip (sau menu Hiển thị)
-                    int insertIndex = menuStrip.Items.Count; // Thêm vào cuối
+                    // Thêm menu Quản lý vào MenuStrip
+                    int insertIndex = menuStrip.Items.Count;
                     menuStrip.Items.Insert(insertIndex, menuManagement);
 
                     // Lưu reference để dùng trong ApplyPermissions
                     this.menuManagement = menuManagement;
+
+                    // ===================================
+                    // THÊM "ĐĂNG XUẤT" VÀO MENU HIỂN THỊ
+                    // ===================================
+                    // Tìm menu "Hiển thị" (menuView)
+                    ToolStripMenuItem menuView = null;
+                    foreach (ToolStripItem item in menuStrip.Items)
+                    {
+                        if (item.Name == "menuView" || item.Text.Contains("Hiển thị") || item.Text.Contains("View"))
+                        {
+                            menuView = item as ToolStripMenuItem;
+                            break;
+                        }
+                    }
+
+                    if (menuView != null)
+                    {
+                        // Thêm separator trước Đăng xuất
+                        menuView.DropDownItems.Add(new ToolStripSeparator());
+
+                        // Thêm menu Đăng xuất
+                        ToolStripMenuItem menuLogout = new ToolStripMenuItem("Đăng xuất");
+                        menuLogout.Name = "menuLogout";
+                        menuLogout.ShortcutKeys = Keys.Control | Keys.L;
+                        menuLogout.Click += menuLogout_Click;
+                        menuView.DropDownItems.Add(menuLogout);
+                    }
                 }
             }
             catch (Exception ex)
@@ -734,7 +750,7 @@ namespace study_document_manager
         /// <summary>
         /// Menu Đăng xuất
         /// </summary>
-        private void menuManagementLogout_Click(object sender, EventArgs e)
+        private void menuLogout_Click(object sender, EventArgs e)
         {
             DialogResult result = MessageBox.Show(
                 "Bạn có chắc chắn muốn đăng xuất?",
@@ -758,17 +774,19 @@ namespace study_document_manager
                 // Clear session
                 UserSession.Logout();
 
-                // Close form hiện tại
-                this.Close();
+                // Ẩn form hiện tại
+                this.Hide();
 
                 // Hiển thị LoginForm lại
                 LoginForm loginForm = new LoginForm();
                 if (loginForm.ShowDialog() == DialogResult.OK)
                 {
+                    // Đăng nhập thành công, restart app để load lại với user mới
                     Application.Restart();
                 }
                 else
                 {
+                    // User đóng LoginForm hoặc thoát
                     Application.Exit();
                 }
             }
