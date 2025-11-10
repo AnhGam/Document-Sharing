@@ -1,4 +1,4 @@
-namespace study_document_manager
+﻿namespace study_document_manager
 {
     partial class RegisterForm
     {
@@ -59,7 +59,7 @@ namespace study_document_manager
             this.lblTitle.Name = "lblTitle";
             this.lblTitle.Size = new System.Drawing.Size(161, 32);
             this.lblTitle.TabIndex = 0;
-            this.lblTitle.Text = "??ng k� m?i";
+            this.lblTitle.Text = "Đăng ký mới";
             // 
             // pnlMain
             // 
@@ -94,7 +94,7 @@ namespace study_document_manager
             this.lblUsername.Name = "lblUsername";
             this.lblUsername.Size = new System.Drawing.Size(92, 15);
             this.lblUsername.TabIndex = 0;
-            this.lblUsername.Text = "T�n ??ng nh?p:";
+            this.lblUsername.Text = "Tên đăng nhập:";
             // 
             // txtUsername
             // 
@@ -112,7 +112,7 @@ namespace study_document_manager
             this.lblPassword.Name = "lblPassword";
             this.lblPassword.Size = new System.Drawing.Size(60, 15);
             this.lblPassword.TabIndex = 2;
-            this.lblPassword.Text = "M?t kh?u:";
+            this.lblPassword.Text = "Mật khẩu:";
             // 
             // txtPassword
             // 
@@ -133,7 +133,7 @@ namespace study_document_manager
             this.btnShowPassword.Name = "btnShowPassword";
             this.btnShowPassword.Size = new System.Drawing.Size(35, 25);
             this.btnShowPassword.TabIndex = 14;
-            this.btnShowPassword.Text = "??";
+            this.btnShowPassword.Text = "•••";
             this.btnShowPassword.UseVisualStyleBackColor = false;
             this.btnShowPassword.MouseDown += new System.Windows.Forms.MouseEventHandler(this.btnShowPassword_MouseDown);
             this.btnShowPassword.MouseUp += new System.Windows.Forms.MouseEventHandler(this.btnShowPassword_MouseUp);
@@ -146,7 +146,7 @@ namespace study_document_manager
             this.lblConfirmPassword.Name = "lblConfirmPassword";
             this.lblConfirmPassword.Size = new System.Drawing.Size(110, 15);
             this.lblConfirmPassword.TabIndex = 4;
-            this.lblConfirmPassword.Text = "X�c nh?n m?t kh?u:";
+            this.lblConfirmPassword.Text = "Xác nhận mật khẩu:";
             // 
             // txtConfirmPassword
             // 
@@ -167,7 +167,7 @@ namespace study_document_manager
             this.btnShowConfirmPassword.Name = "btnShowConfirmPassword";
             this.btnShowConfirmPassword.Size = new System.Drawing.Size(35, 25);
             this.btnShowConfirmPassword.TabIndex = 15;
-            this.btnShowConfirmPassword.Text = "??";
+            this.btnShowConfirmPassword.Text = "•••";
             this.btnShowConfirmPassword.UseVisualStyleBackColor = false;
             this.btnShowConfirmPassword.MouseDown += new System.Windows.Forms.MouseEventHandler(this.btnShowConfirmPassword_MouseDown);
             this.btnShowConfirmPassword.MouseUp += new System.Windows.Forms.MouseEventHandler(this.btnShowConfirmPassword_MouseUp);
@@ -180,7 +180,7 @@ namespace study_document_manager
             this.lblFullName.Name = "lblFullName";
             this.lblFullName.Size = new System.Drawing.Size(48, 15);
             this.lblFullName.TabIndex = 6;
-            this.lblFullName.Text = "H? t�n:";
+            this.lblFullName.Text = "Họ tên:";
             // 
             // txtFullName
             // 
@@ -198,7 +198,7 @@ namespace study_document_manager
             this.lblEmail.Name = "lblEmail";
             this.lblEmail.Size = new System.Drawing.Size(92, 15);
             this.lblEmail.TabIndex = 8;
-            this.lblEmail.Text = "Email (t�y ch?n):";
+            this.lblEmail.Text = "Email (tùy chọn):";
             // 
             // txtEmail
             // 
@@ -216,7 +216,7 @@ namespace study_document_manager
             this.lblRole.Name = "lblRole";
             this.lblRole.Size = new System.Drawing.Size(49, 15);
             this.lblRole.TabIndex = 10;
-            this.lblRole.Text = "Vai tr�:";
+            this.lblRole.Text = "Vai trò:";
             // 
             // cboRole
             // 
@@ -239,7 +239,7 @@ namespace study_document_manager
             this.btnRegister.Name = "btnRegister";
             this.btnRegister.Size = new System.Drawing.Size(160, 40);
             this.btnRegister.TabIndex = 12;
-            this.btnRegister.Text = "??ng k�";
+            this.btnRegister.Text = "Đăng ký";
             this.btnRegister.UseVisualStyleBackColor = false;
             this.btnRegister.Click += new System.EventHandler(this.btnRegister_Click);
             // 
@@ -254,7 +254,7 @@ namespace study_document_manager
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Size = new System.Drawing.Size(160, 40);
             this.btnCancel.TabIndex = 13;
-            this.btnCancel.Text = "H?y";
+            this.btnCancel.Text = "Hủy";
             this.btnCancel.UseVisualStyleBackColor = false;
             this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
             // 
@@ -272,7 +272,7 @@ namespace study_document_manager
             this.MinimizeBox = false;
             this.Name = "RegisterForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            this.Text = "??ng k� t�i kho?n";
+            this.Text = "Đăng ký tài khoản";
             this.Load += new System.EventHandler(this.RegisterForm_Load);
             this.pnlHeader.ResumeLayout(false);
             this.pnlHeader.PerformLayout();

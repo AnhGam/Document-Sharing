@@ -1,4 +1,4 @@
-namespace study_document_manager
+﻿namespace study_document_manager
 {
     partial class UserManagementForm
     {
@@ -55,7 +55,7 @@ namespace study_document_manager
             this.lblTitle.Name = "lblTitle";
             this.lblTitle.Size = new System.Drawing.Size(254, 30);
             this.lblTitle.TabIndex = 0;
-            this.lblTitle.Text = "?? Qu?n l� ng??i d�ng";
+            this.lblTitle.Text = "Quản lý người dùng";
             // 
             // pnlToolbar
             // 
@@ -84,7 +84,7 @@ namespace study_document_manager
             this.btnAdd.Name = "btnAdd";
             this.btnAdd.Size = new System.Drawing.Size(120, 35);
             this.btnAdd.TabIndex = 0;
-            this.btnAdd.Text = "? Th�m User";
+            this.btnAdd.Text = "Thêm User";
             this.btnAdd.UseVisualStyleBackColor = false;
             this.btnAdd.Click += new System.EventHandler(this.btnAdd_Click);
             // 
@@ -99,7 +99,7 @@ namespace study_document_manager
             this.btnChangePassword.Name = "btnChangePassword";
             this.btnChangePassword.Size = new System.Drawing.Size(140, 35);
             this.btnChangePassword.TabIndex = 1;
-            this.btnChangePassword.Text = "?? ??i m?t kh?u";
+            this.btnChangePassword.Text = "Đổi mật khẩu";
             this.btnChangePassword.UseVisualStyleBackColor = false;
             this.btnChangePassword.Click += new System.EventHandler(this.btnChangePassword_Click);
             // 
@@ -114,7 +114,7 @@ namespace study_document_manager
             this.btnEditRole.Name = "btnEditRole";
             this.btnEditRole.Size = new System.Drawing.Size(140, 35);
             this.btnEditRole.TabIndex = 2;
-            this.btnEditRole.Text = "?? ??i vai tr�";
+            this.btnEditRole.Text = "Đổi vai trò";
             this.btnEditRole.UseVisualStyleBackColor = false;
             this.btnEditRole.Click += new System.EventHandler(this.btnEditRole_Click);
             // 
@@ -129,7 +129,7 @@ namespace study_document_manager
             this.btnToggleActive.Name = "btnToggleActive";
             this.btnToggleActive.Size = new System.Drawing.Size(140, 35);
             this.btnToggleActive.TabIndex = 3;
-            this.btnToggleActive.Text = "?? Kh�a/M? kh�a";
+            this.btnToggleActive.Text = "Khóa/Mở khóa";
             this.btnToggleActive.UseVisualStyleBackColor = false;
             this.btnToggleActive.Click += new System.EventHandler(this.btnToggleActive_Click);
             // 
@@ -144,7 +144,7 @@ namespace study_document_manager
             this.btnDelete.Name = "btnDelete";
             this.btnDelete.Size = new System.Drawing.Size(120, 35);
             this.btnDelete.TabIndex = 4;
-            this.btnDelete.Text = "? X�a User";
+            this.btnDelete.Text = "Xóa User";
             this.btnDelete.UseVisualStyleBackColor = false;
             this.btnDelete.Click += new System.EventHandler(this.btnDelete_Click);
             // 
@@ -159,7 +159,7 @@ namespace study_document_manager
             this.btnRefresh.Name = "btnRefresh";
             this.btnRefresh.Size = new System.Drawing.Size(100, 35);
             this.btnRefresh.TabIndex = 5;
-            this.btnRefresh.Text = "?? L�m m?i";
+            this.btnRefresh.Text = "Làm mới";
             this.btnRefresh.UseVisualStyleBackColor = false;
             this.btnRefresh.Click += new System.EventHandler(this.btnRefresh_Click);
             // 
@@ -174,7 +174,7 @@ namespace study_document_manager
             this.btnClose.Name = "btnClose";
             this.btnClose.Size = new System.Drawing.Size(90, 35);
             this.btnClose.TabIndex = 6;
-            this.btnClose.Text = "?�ng";
+            this.btnClose.Text = "Đóng";
             this.btnClose.UseVisualStyleBackColor = false;
             this.btnClose.Click += new System.EventHandler(this.btnClose_Click);
             // 
@@ -211,7 +211,7 @@ namespace study_document_manager
             // 
             this.lblCount.Name = "lblCount";
             this.lblCount.Size = new System.Drawing.Size(95, 17);
-            this.lblCount.Text = "T?ng s?: 0 users";
+            this.lblCount.Text = "Tổng số: 0 users";
             // 
             // UserManagementForm
             // 
@@ -226,7 +226,7 @@ namespace study_document_manager
             this.MinimumSize = new System.Drawing.Size(800, 600);
             this.Name = "UserManagementForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "Qu?n l� ng??i d�ng";
+            this.Text = "Quản lý người dùng";
             this.Load += new System.EventHandler(this.UserManagementForm_Load);
             this.pnlHeader.ResumeLayout(false);
             this.pnlHeader.PerformLayout();
