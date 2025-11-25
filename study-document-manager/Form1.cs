@@ -19,6 +19,8 @@ namespace study_document_manager
             dgvDocuments.CellFormatting += dgvDocuments_CellFormatting;
             // Đăng ký event DataError để xử lý lỗi format
             dgvDocuments.DataError += dgvDocuments_DataError;
+            // Cho phép click trực tiếp lên cột quan trọng
+            dgvDocuments.CellClick += dgvDocuments_CellClick;
         }
 
         /// <summary>
@@ -891,6 +893,53 @@ namespace study_document_manager
             }
         }
 
+        private void dgvDocuments_CellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex < 0) return;
+
+            if (dgvDocuments.Columns[e.ColumnIndex].Name == "quan_trong")
+            {
+                dgvDocuments.Rows[e.RowIndex].Selected = true;
+                ToggleImportantForSelectedDocument();
+            }
+        }
+
+        private void ToggleImportantForSelectedDocument()
+        {
+            if (dgvDocuments.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Vui lòng chọn tài liệu!",
+                    "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            try
+            {
+                int id = Convert.ToInt32(dgvDocuments.SelectedRows[0].Cells["id"].Value);
+                var quanTrongCell = dgvDocuments.SelectedRows[0].Cells["quan_trong"].Value;
+                bool currentValue = quanTrongCell != null && quanTrongCell != DBNull.Value && Convert.ToBoolean(quanTrongCell);
+                bool newValue = !currentValue;
+
+                string query = "UPDATE tai_lieu SET quan_trong = @quan_trong WHERE id = @id";
+                var parameters = new System.Data.SqlClient.SqlParameter[]
+                {
+                    new System.Data.SqlClient.SqlParameter("@quan_trong", newValue),
+                    new System.Data.SqlClient.SqlParameter("@id", id)
+                };
+
+                int result = DatabaseHelper.ExecuteNonQuery(query, parameters);
+                if (result > 0)
+                {
+                    LoadData();
+                    lblStatus.Text = newValue ? "Đã đánh dấu quan trọng" : "Đã bỏ đánh dấu quan trọng";
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
         #region Advanced Filter Methods
 
         /// <summary>
@@ -1157,38 +1206,7 @@ namespace study_document_manager
         /// </summary>
         private void ctxMenuToggleImportant_Click(object sender, EventArgs e)
         {
-            if (dgvDocuments.SelectedRows.Count == 0)
-            {
-                MessageBox.Show("Vui lòng chọn tài liệu!", 
-                    "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            try
-            {
-                int id = Convert.ToInt32(dgvDocuments.SelectedRows[0].Cells["id"].Value);
-                var quanTrongCell = dgvDocuments.SelectedRows[0].Cells["quan_trong"].Value;
-                bool currentValue = quanTrongCell != null && quanTrongCell != DBNull.Value && Convert.ToBoolean(quanTrongCell);
-                bool newValue = !currentValue;
-
-                string query = "UPDATE tai_lieu SET quan_trong = @quan_trong WHERE id = @id";
-                var parameters = new System.Data.SqlClient.SqlParameter[]
-                {
-                    new System.Data.SqlClient.SqlParameter("@quan_trong", newValue),
-                    new System.Data.SqlClient.SqlParameter("@id", id)
-                };
-
-                int result = DatabaseHelper.ExecuteNonQuery(query, parameters);
-                if (result > 0)
-                {
-                    LoadData();
-                    lblStatus.Text = newValue ? "Đã đánh dấu quan trọng" : "Đã bỏ đánh dấu quan trọng";
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+            ToggleImportantForSelectedDocument();
         }
 
         #endregion

@@ -2,27 +2,28 @@
 
 > Ứng dụng quản lý tài liệu học tập chuyên nghiệp cho sinh viên và giáo viên
 
-[![.NET Framework](https://img.shields.io/badge/.NET%20Framework-4.8.1-512BD4?logo=.net)](https://dotnet.microsoft.com/)
+[![.NET Framework](https://img.shields.io/badge/.NET%20Framework-4.8-512BD4?logo=.net)](https://dotnet.microsoft.com/)
 [![SQL Server](https://img.shields.io/badge/SQL%20Server-2012+-CC2927?logo=microsoft-sql-server)](https://www.microsoft.com/sql-server)
 [![Windows Forms](https://img.shields.io/badge/Windows%20Forms-C%23-239120?logo=c-sharp)](https://docs.microsoft.com/dotnet/desktop/winforms/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ## Giới thiệu
 
-**Study Document Manager** là một ứng dụng Windows Forms được phát triển bằng C# để giúp sinh viên, giáo viên và nhân viên quản lý tài liệu học tập một cách hiệu quả. Ứng dụng cung cấp đầy đủ các tính năng từ quản lý cơ bản đến nâng cao như tìm kiếm, thống kê, và xuất dữ liệu.
+**Study Document Manager** là một ứng dụng Windows Forms được phát triển bằng C# để giúp sinh viên, giáo viên và nhân viên quản lý tài liệu học tập một cách hiệu quả. Ứng dụng cung cấp đầy đủ các tính năng từ quản lý cơ bản đến nâng cao như tìm kiếm, thống kê, phân quyền và kiểm tra dữ liệu.
 
 ### Tính năng chính
 
-- **Quản lý tài liệu đầy đủ**: Thêm, sửa, xóa tài liệu với đầy đủ thông tin
-- **Tìm kiếm thông minh**: Tìm kiếm nhanh theo tên, môn học, ghi chú
-- **Lọc linh hoạt**: Lọc theo môn học và loại tài liệu
-- **Mở file trực tiếp**: Double-click để mở file tài liệu ngay lập tức
-- **Đánh dấu quan trọng**: Đánh sao vàng cho tài liệu quan trọng
+- **Quản lý tài liệu đầy đủ**: Thêm, sửa, xóa tài liệu với đầy đủ thông tin cho từng người dùng
+- **Đăng nhập & phân quyền**: Hỗ trợ tài khoản Student / Teacher / Admin, phân quyền xem, thêm, sửa, xóa tài liệu
+- **Tìm kiếm & filter nâng cao**: Tìm kiếm theo từ khóa, lọc theo môn học, loại tài liệu, ngày thêm, dung lượng, người tạo, chỉ tài liệu quan trọng
+- **Mở file trực tiếp & Context Menu**: Double-click hoặc chuột phải để mở file, sửa, xóa, copy đường dẫn, mở thư mục chứa file
+- **Đánh dấu quan trọng**: Đánh sao vàng cho tài liệu quan trọng, có thể lọc nhanh
+- **Kiểm tra file bị thiếu**: Quét toàn bộ danh sách, phát hiện file không còn tồn tại và cho phép cập nhật/xóa nhanh
 - **Icon động**: Hiển thị icon theo loại file (PDF, Word, PowerPoint, Excel)
 - **Thống kê trực quan**: Biểu đồ thống kê số lượng tài liệu (Cột, Tròn, Đường...)
 - **Xuất dữ liệu**: Xuất danh sách tài liệu ra file CSV
 - **Drag & Drop**: Kéo thả file để thêm tài liệu nhanh chóng
-- **Quản lý danh mục**: Quản lý môn học và loại tài liệu tập trung
+- **Quản lý danh mục & người dùng**: Quản lý môn học, loại tài liệu và tài khoản người dùng tập trung
 
 ## Giao diện
 
@@ -54,7 +55,7 @@
 
 ## Công nghệ sử dụng
 
-- **Ngôn ngữ**: C# (.NET Framework 4.8.1)
+- **Ngôn ngữ**: C# (.NET Framework 4.8)
 - **Giao diện**: Windows Forms
 - **Database**: SQL Server 2012+
 - **Biểu đồ**: System.Windows.Forms.DataVisualization.Charting
@@ -75,7 +76,31 @@ CREATE TABLE tai_lieu (
     ngay_them DATETIME DEFAULT GETDATE(),  -- Ngày thêm
     kich_thuoc FLOAT,                      -- Kích thước (MB)
     tac_gia NVARCHAR(100),                 -- Tác giả
-    quan_trong BIT DEFAULT 0               -- Đánh dấu quan trọng
+    quan_trong BIT NOT NULL DEFAULT 0,     -- Đánh dấu quan trọng
+    user_id INT NULL                       -- Người tạo (FK đến users.id)
+);
+```
+
+### Bảng `users` (tài khoản đăng nhập)
+
+```sql
+CREATE TABLE users (
+    id INT PRIMARY KEY IDENTITY(1,1),
+    username NVARCHAR(50) NOT NULL UNIQUE,
+    password_hash NVARCHAR(255) NOT NULL,
+    full_name NVARCHAR(100) NOT NULL,
+    role NVARCHAR(20) NOT NULL -- 'Student', 'Teacher', 'Admin'
+);
+```
+
+### Bảng `user_sessions`
+
+```sql
+CREATE TABLE user_sessions (
+    id INT PRIMARY KEY IDENTITY(1,1),
+    user_id INT NOT NULL,
+    login_date DATETIME DEFAULT GETDATE(),
+    remember_me BIT NOT NULL DEFAULT 0
 );
 ```
 
@@ -155,7 +180,7 @@ CREATE TABLE tai_lieu (
 
 ### Xem thống kê
 
-1. Click nút **Thống kê** hoặc Menu > Hiển thị > Thống kê (`Ctrl+S`)
+1. Click nút **Thống kê** hoặc Menu > Công cụ > Thống kê (`Ctrl+S`)
 2. Chọn thống kê theo **Môn học** hoặc **Loại tài liệu**
 3. Chọn kiểu biểu đồ: Cột dọc, Cột ngang, Tròn, Đường, Vùng
 
@@ -165,13 +190,23 @@ CREATE TABLE tai_lieu (
 2. Chọn vị trí lưu file CSV
 3. File sẽ mở tự động trong Windows Explorer
 
+### Kiểm tra file bị thiếu
+
+1. Vào menu **Công cụ > Kiểm tra file bị thiếu**.
+2. Nhấn nút **Quét** để kiểm tra tất cả tài liệu có đường dẫn file.
+3. Với từng dòng báo thiếu file có thể:
+   - **Chọn file mới...**: cập nhật lại đường dẫn file.
+   - **Xóa đường dẫn (giữ metadata)**: làm trống đường dẫn nhưng vẫn giữ thông tin tài liệu.
+   - **Xóa tài liệu**: xóa bản ghi khỏi database.
+4. Có thể dùng nút **Xóa tất cả** để xóa toàn bộ tài liệu đang bị thiếu file.
+
 ### Quản lý danh mục
 
-1. Menu > Hiển thị > Quản lý Môn học và Loại (`Ctrl+M`)
+1. Menu **Công cụ > Quản lý Môn học và Loại** (`Ctrl+M`)
 2. Chọn tab **Môn học** hoặc **Loại tài liệu**
 3. **Thêm**: Tạo danh mục mới
 4. **Sửa**: Đổi tên danh mục (cập nhật tất cả tài liệu liên quan)
-5. **Xóa**: Xóa danh mục (cảnh báo: xóa cả tài liệu!)
+5. **Xóa**: Xóa danh mục (cảnh báo: có thể ảnh hưởng đến tài liệu liên quan)
 
 ## Thiết kế màu sắc
 
@@ -189,30 +224,39 @@ CREATE TABLE tai_lieu (
 
 ## Cấu trúc Project
 
-```
+```text
 study-document-manager/
 │
-├── AddEditForm.cs              # Form thêm/sửa tài liệu
-├── AddEditForm.Designer.cs
-├── CategoryManagementForm.cs   # Form quản lý danh mục
-├── CategoryManagementForm.Designer.cs
-├── Form1.cs                    # Form chính
-├── Form1.Designer.cs
-├── Report.cs                   # Form thống kê
-├── Report.Designer.cs
-├── DatabaseHelper.cs           # Class truy vấn database
-├── IconHelper.cs               # Class tạo icon động
-├── Program.cs                  # Entry point
-├── App.config                  # Cấu hình ứng dụng
-├── README.md                   # File này
+├── study-document-manager/             # Project WinForms chính
+│   ├── Form1.cs                        # Form chính (danh sách, filter, context menu)
+│   ├── Form1.Designer.cs
+│   ├── AddEditForm.cs                  # Thêm / sửa tài liệu
+│   ├── AddEditForm.Designer.cs
+│   ├── FileIntegrityCheckForm.cs       # Kiểm tra & xử lý file bị thiếu
+│   ├── FileIntegrityCheckForm.Designer.cs
+│   ├── CategoryManagementForm.cs       # Quản lý môn học & loại tài liệu
+│   ├── CategoryManagementForm.Designer.cs
+│   ├── Report.cs                       # Thống kê
+│   ├── Report.Designer.cs
+│   ├── LoginForm.cs                    # Đăng nhập
+│   ├── LoginForm.Designer.cs
+│   ├── RegisterForm.cs                 # Đăng ký tài khoản
+│   ├── RegisterForm.Designer.cs
+│   ├── UserManagementForm.cs           # Quản lý người dùng (Admin)
+│   ├── UserManagementForm.Designer.cs
+│   ├── DatabaseHelper.cs               # Truy vấn dữ liệu tài liệu
+│   ├── DatabaseHelper_UserAuth.cs      # Đăng nhập, đăng ký, phân quyền
+│   ├── UserSession.cs                  # Thông tin user đăng nhập hiện tại
+│   ├── IconHelper.cs                   # Icon động cho DataGridView
+│   ├── Program.cs                      # Entry point
+│   └── App.config                      # Cấu hình ứng dụng (connection string,...)
 │
 ├── Database/
-│   └── Database.sql            # Script tạo database
+│   └── Database.sql                    # Script tạo database, bảng, default values
 │
-└── Properties/
-    ├── AssemblyInfo.cs
-    ├── Resources.resx
-    └── Settings.settings
+├── FEATURES.md                         # Danh sách tính năng & roadmap
+├── PROJECT_STRUCTURE.md                # Mô tả chi tiết kiến trúc (tham khảo nội bộ)
+└── README.md                           # Tài liệu giới thiệu & hướng dẫn
 ```
 
 ## Các phím tắt
@@ -271,4 +315,4 @@ Dự án này được phát hành dưới giấy phép MIT. Xem file [LICENSE](
 
 <div align="center">
 Made with ❤️ by Vũ Đức Dũng | © 2025
-</div
+</div>
