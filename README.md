@@ -11,6 +11,8 @@
 
 **Study Document Manager** là một ứng dụng Windows Forms được phát triển bằng C# để giúp sinh viên, giáo viên và nhân viên quản lý tài liệu học tập một cách hiệu quả. Ứng dụng cung cấp đầy đủ các tính năng từ quản lý cơ bản đến nâng cao như tìm kiếm, thống kê, phân quyền và kiểm tra dữ liệu.
 
+> [Cấu trúc dự án](PROJECT_STRUCTURE.md)
+
 ### Tính năng chính
 
 - **Quản lý tài liệu đầy đủ**: Thêm, sửa, xóa tài liệu với đầy đủ thông tin cho từng người dùng
