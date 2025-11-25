@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
@@ -169,12 +170,45 @@ namespace study_document_manager
         }
 
         /// <summary>
-        /// Lấy tất cả tài liệu
+        /// Lấy tất cả tài liệu (deprecated - dùng GetDocumentsForCurrentUser)
         /// </summary>
         public static DataTable GetAllDocuments()
         {
             string query = "SELECT * FROM tai_lieu ORDER BY ngay_them DESC";
             return ExecuteQuery(query);
+        }
+
+        /// <summary>
+        /// Lấy tài liệu theo quyền của user hiện tại
+        /// - Student: chỉ thấy tài liệu của mình
+        /// - Teacher/Admin: thấy tất cả
+        /// Kèm theo thông tin người tạo
+        /// </summary>
+        public static DataTable GetDocumentsForCurrentUser()
+        {
+            string query;
+            SqlParameter[] parameters = null;
+
+            if (UserSession.IsStudent)
+            {
+                // Student chỉ thấy tài liệu của mình
+                query = @"SELECT t.*, u.full_name as creator_name, u.username as creator_username
+                         FROM tai_lieu t
+                         LEFT JOIN users u ON t.user_id = u.id
+                         WHERE t.user_id = @userId
+                         ORDER BY t.ngay_them DESC";
+                parameters = new SqlParameter[] { new SqlParameter("@userId", UserSession.UserId) };
+            }
+            else
+            {
+                // Teacher và Admin thấy tất cả
+                query = @"SELECT t.*, u.full_name as creator_name, u.username as creator_username
+                         FROM tai_lieu t
+                         LEFT JOIN users u ON t.user_id = u.id
+                         ORDER BY t.ngay_them DESC";
+            }
+
+            return ExecuteQuery(query, parameters);
         }
 
         /// <summary>
@@ -222,6 +256,102 @@ namespace study_document_manager
             };
             
             return ExecuteQuery(query, parameters);
+        }
+
+        /// <summary>
+        /// Tìm kiếm và lọc tài liệu nâng cao với phân quyền
+        /// </summary>
+        public static DataTable SearchDocumentsAdvanced(
+            string keyword = null,
+            string mon_hoc = null,
+            string loai = null,
+            DateTime? fromDate = null,
+            DateTime? toDate = null,
+            double? minSize = null,
+            double? maxSize = null,
+            bool? isImportant = null,
+            int? creatorUserId = null)
+        {
+            string baseQuery = @"SELECT t.*, u.full_name as creator_name, u.username as creator_username
+                                FROM tai_lieu t
+                                LEFT JOIN users u ON t.user_id = u.id
+                                WHERE 1=1";
+
+            List<SqlParameter> parameterList = new List<SqlParameter>();
+
+            // Phân quyền: Student chỉ thấy của mình
+            if (UserSession.IsStudent)
+            {
+                baseQuery += " AND t.user_id = @currentUserId";
+                parameterList.Add(new SqlParameter("@currentUserId", UserSession.UserId));
+            }
+
+            // Keyword search
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                baseQuery += " AND (t.ten LIKE @keyword OR t.mon_hoc LIKE @keyword OR t.ghi_chu LIKE @keyword)";
+                parameterList.Add(new SqlParameter("@keyword", "%" + keyword + "%"));
+            }
+
+            // Môn học
+            if (!string.IsNullOrEmpty(mon_hoc) && mon_hoc != "Tất cả")
+            {
+                baseQuery += " AND t.mon_hoc = @mon_hoc";
+                parameterList.Add(new SqlParameter("@mon_hoc", mon_hoc));
+            }
+
+            // Loại
+            if (!string.IsNullOrEmpty(loai) && loai != "Tất cả")
+            {
+                baseQuery += " AND t.loai = @loai";
+                parameterList.Add(new SqlParameter("@loai", loai));
+            }
+
+            // Ngày từ
+            if (fromDate.HasValue)
+            {
+                baseQuery += " AND t.ngay_them >= @fromDate";
+                parameterList.Add(new SqlParameter("@fromDate", fromDate.Value.Date));
+            }
+
+            // Ngày đến
+            if (toDate.HasValue)
+            {
+                baseQuery += " AND t.ngay_them <= @toDate";
+                parameterList.Add(new SqlParameter("@toDate", toDate.Value.Date.AddDays(1).AddSeconds(-1)));
+            }
+
+            // Kích thước min
+            if (minSize.HasValue)
+            {
+                baseQuery += " AND t.kich_thuoc >= @minSize";
+                parameterList.Add(new SqlParameter("@minSize", minSize.Value));
+            }
+
+            // Kích thước max
+            if (maxSize.HasValue)
+            {
+                baseQuery += " AND t.kich_thuoc <= @maxSize";
+                parameterList.Add(new SqlParameter("@maxSize", maxSize.Value));
+            }
+
+            // Quan trọng
+            if (isImportant.HasValue)
+            {
+                baseQuery += " AND t.quan_trong = @isImportant";
+                parameterList.Add(new SqlParameter("@isImportant", isImportant.Value));
+            }
+
+            // Người tạo (chỉ Admin/Teacher)
+            if (creatorUserId.HasValue && (UserSession.IsAdmin || UserSession.IsTeacher))
+            {
+                baseQuery += " AND t.user_id = @creatorUserId";
+                parameterList.Add(new SqlParameter("@creatorUserId", creatorUserId.Value));
+            }
+
+            baseQuery += " ORDER BY t.ngay_them DESC";
+
+            return ExecuteQuery(baseQuery, parameterList.ToArray());
         }
 
         /// <summary>
@@ -479,6 +609,15 @@ namespace study_document_manager
             };
 
             return ExecuteQuery(query, parameters);
+        }
+
+        /// <summary>
+        /// Lấy danh sách users để làm filter (cho Admin/Teacher)
+        /// </summary>
+        public static DataTable GetUsersForFilter()
+        {
+            string query = "SELECT id, username, full_name FROM users WHERE is_active = 1 ORDER BY full_name";
+            return ExecuteQuery(query);
         }
 
         #endregion

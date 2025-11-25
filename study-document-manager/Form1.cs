@@ -239,7 +239,30 @@ namespace study_document_manager
                     dgvDocuments.Columns["quan_trong"].HeaderText = "★";
                     dgvDocuments.Columns["quan_trong"].Width = 30;
                 }
-            }
+                                // Cột Người tạo (mới) - chỉ hiện cho Teacher/Admin
+                if (dgvDocuments.Columns.Contains("creator_name"))
+                {
+                    dgvDocuments.Columns["creator_name"].HeaderText = "Người tạo";
+                    dgvDocuments.Columns["creator_name"].Width = 120;
+                    dgvDocuments.Columns["creator_name"].Visible = !UserSession.IsStudent;
+                }
+                
+                if (dgvDocuments.Columns.Contains("creator_username"))
+                    dgvDocuments.Columns["creator_username"].Visible = false;
+                    
+                if (dgvDocuments.Columns.Contains("user_id"))
+                    dgvDocuments.Columns["user_id"].Visible = false;
+                }
+
+                // Enable sorting
+                dgvDocuments.AllowUserToOrderColumns = true;
+                foreach (DataGridViewColumn column in dgvDocuments.Columns)
+                {
+                    if (column is DataGridViewImageColumn)
+                        column.SortMode = DataGridViewColumnSortMode.NotSortable;
+                    else
+                        column.SortMode = DataGridViewColumnSortMode.Automatic;
+                }
 
             // Style
             dgvDocuments.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(245, 245, 245);
@@ -271,10 +294,12 @@ namespace study_document_manager
                     return;
                 }
 
-                DataTable dt = DatabaseHelper.GetAllDocuments();
+                // Sử dụng phân quyền: Student chỉ thấy tài liệu của mình
+                DataTable dt = DatabaseHelper.GetDocumentsForCurrentUser();
                 dgvDocuments.DataSource = dt;
                 SetupDataGridView();
-                lblCount.Text = $"Tổng số: {dt.Rows.Count} tài liệu";
+                string roleInfo = UserSession.IsStudent ? " (của bạn)" : "";
+                lblCount.Text = $"Tổng số: {dt.Rows.Count} tài liệu{roleInfo}";
                 lblStatus.Text = "Sẵn sàng";
             }
             catch (Exception ex)
