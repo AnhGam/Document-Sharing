@@ -18,6 +18,7 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             this.menuStrip = new System.Windows.Forms.MenuStrip();
             this.menuFile = new System.Windows.Forms.ToolStripMenuItem();
             this.menuFileNew = new System.Windows.Forms.ToolStripMenuItem();
@@ -123,7 +124,7 @@
             this.menuFileSeparator2,
             this.menuFileExit});
             this.menuFile.Name = "menuFile";
-            this.menuFile.Size = new System.Drawing.Size(82, 29);
+            this.menuFile.Size = new System.Drawing.Size(82, 32);
             this.menuFile.Text = "Tệp tin";
             // 
             // menuFileNew
@@ -176,7 +177,7 @@
             this.menuEditSeparator,
             this.menuEditRefresh});
             this.menuEdit.Name = "menuEdit";
-            this.menuEdit.Size = new System.Drawing.Size(106, 29);
+            this.menuEdit.Size = new System.Drawing.Size(106, 32);
             this.menuEdit.Text = "Chỉnh sửa";
             // 
             // menuEditUpdate
@@ -215,7 +216,7 @@
             this.menuViewSeparator,
             this.menuViewCategories});
             this.menuView.Name = "menuView";
-            this.menuView.Size = new System.Drawing.Size(94, 29);
+            this.menuView.Size = new System.Drawing.Size(94, 32);
             this.menuView.Text = "Công cụ";
             this.menuView.Click += new System.EventHandler(this.menuView_Click);
             // 
@@ -245,7 +246,7 @@
             this.menuHelp.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.menuHelpAbout});
             this.menuHelp.Name = "menuHelp";
-            this.menuHelp.Size = new System.Drawing.Size(93, 29);
+            this.menuHelp.Size = new System.Drawing.Size(93, 32);
             this.menuHelp.Text = "Trợ giúp";
             // 
             // menuHelpAbout
@@ -767,6 +768,7 @@
             this.Controls.Add(this.toolStrip);
             this.Controls.Add(this.menuStrip);
             this.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MainMenuStrip = this.menuStrip;
             this.MinimumSize = new System.Drawing.Size(1000, 600);
             this.Name = "Form1";

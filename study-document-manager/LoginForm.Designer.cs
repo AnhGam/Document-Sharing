@@ -17,6 +17,7 @@ namespace study_document_manager
 
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(LoginForm));
             this.pnlHeader = new System.Windows.Forms.Panel();
             this.lblTitle = new System.Windows.Forms.Label();
             this.pnlMain = new System.Windows.Forms.Panel();
@@ -50,7 +51,7 @@ namespace study_document_manager
             this.lblTitle.ForeColor = System.Drawing.Color.White;
             this.lblTitle.Location = new System.Drawing.Point(125, 23);
             this.lblTitle.Name = "lblTitle";
-            this.lblTitle.Size = new System.Drawing.Size(200, 37);
+            this.lblTitle.Size = new System.Drawing.Size(268, 54);
             this.lblTitle.TabIndex = 0;
             this.lblTitle.Text = "ĐĂNG NHẬP";
             // 
@@ -78,7 +79,7 @@ namespace study_document_manager
             this.lblUsername.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.lblUsername.Location = new System.Drawing.Point(60, 30);
             this.lblUsername.Name = "lblUsername";
-            this.lblUsername.Size = new System.Drawing.Size(92, 15);
+            this.lblUsername.Size = new System.Drawing.Size(133, 25);
             this.lblUsername.TabIndex = 0;
             this.lblUsername.Text = "Tên đăng nhập:";
             // 
@@ -87,7 +88,7 @@ namespace study_document_manager
             this.txtUsername.Font = new System.Drawing.Font("Segoe UI", 11F);
             this.txtUsername.Location = new System.Drawing.Point(60, 50);
             this.txtUsername.Name = "txtUsername";
-            this.txtUsername.Size = new System.Drawing.Size(330, 27);
+            this.txtUsername.Size = new System.Drawing.Size(330, 37);
             this.txtUsername.TabIndex = 1;
             // 
             // lblPassword
@@ -96,7 +97,7 @@ namespace study_document_manager
             this.lblPassword.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.lblPassword.Location = new System.Drawing.Point(60, 95);
             this.lblPassword.Name = "lblPassword";
-            this.lblPassword.Size = new System.Drawing.Size(60, 15);
+            this.lblPassword.Size = new System.Drawing.Size(90, 25);
             this.lblPassword.TabIndex = 2;
             this.lblPassword.Text = "Mật khẩu:";
             // 
@@ -106,7 +107,7 @@ namespace study_document_manager
             this.txtPassword.Location = new System.Drawing.Point(60, 115);
             this.txtPassword.Name = "txtPassword";
             this.txtPassword.PasswordChar = '*';
-            this.txtPassword.Size = new System.Drawing.Size(290, 27);
+            this.txtPassword.Size = new System.Drawing.Size(290, 37);
             this.txtPassword.TabIndex = 3;
             this.txtPassword.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.txtPassword_KeyPress);
             // 
@@ -131,7 +132,7 @@ namespace study_document_manager
             this.chkRememberMe.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.chkRememberMe.Location = new System.Drawing.Point(60, 160);
             this.chkRememberMe.Name = "chkRememberMe";
-            this.chkRememberMe.Size = new System.Drawing.Size(121, 19);
+            this.chkRememberMe.Size = new System.Drawing.Size(178, 29);
             this.chkRememberMe.TabIndex = 5;
             this.chkRememberMe.Text = "Ghi nhớ tài khoản";
             this.chkRememberMe.UseVisualStyleBackColor = true;
@@ -172,7 +173,7 @@ namespace study_document_manager
             this.lnkRegister.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.lnkRegister.Location = new System.Drawing.Point(145, 265);
             this.lnkRegister.Name = "lnkRegister";
-            this.lnkRegister.Size = new System.Drawing.Size(160, 15);
+            this.lnkRegister.Size = new System.Drawing.Size(234, 25);
             this.lnkRegister.TabIndex = 8;
             this.lnkRegister.TabStop = true;
             this.lnkRegister.Text = "Chưa có tài khoản? Đăng ký";
@@ -181,13 +182,14 @@ namespace study_document_manager
             // LoginForm
             // 
             this.AcceptButton = this.btnLogin;
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(450, 400);
             this.Controls.Add(this.pnlMain);
             this.Controls.Add(this.pnlHeader);
             this.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "LoginForm";

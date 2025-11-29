@@ -17,6 +17,7 @@ namespace study_document_manager
 
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FileIntegrityCheckForm));
             this.lblTitle = new System.Windows.Forms.Label();
             this.progressBar = new System.Windows.Forms.ProgressBar();
             this.lblProgress = new System.Windows.Forms.Label();
@@ -36,16 +37,17 @@ namespace study_document_manager
             // 
             this.lblTitle.AutoSize = true;
             this.lblTitle.Font = new System.Drawing.Font("Segoe UI", 14F, System.Drawing.FontStyle.Bold);
-            this.lblTitle.ForeColor = System.Drawing.Color.FromArgb(52, 73, 94);
+            this.lblTitle.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(52)))), ((int)(((byte)(73)))), ((int)(((byte)(94)))));
             this.lblTitle.Location = new System.Drawing.Point(20, 15);
             this.lblTitle.Name = "lblTitle";
-            this.lblTitle.Size = new System.Drawing.Size(280, 25);
+            this.lblTitle.Size = new System.Drawing.Size(288, 38);
             this.lblTitle.TabIndex = 0;
             this.lblTitle.Text = "Kiểm tra file bị thiếu";
             // 
             // progressBar
             // 
-            this.progressBar.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) | System.Windows.Forms.AnchorStyles.Right)));
+            this.progressBar.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.progressBar.Location = new System.Drawing.Point(20, 50);
             this.progressBar.Name = "progressBar";
             this.progressBar.Size = new System.Drawing.Size(660, 23);
@@ -56,7 +58,7 @@ namespace study_document_manager
             this.lblProgress.AutoSize = true;
             this.lblProgress.Location = new System.Drawing.Point(20, 80);
             this.lblProgress.Name = "lblProgress";
-            this.lblProgress.Size = new System.Drawing.Size(200, 15);
+            this.lblProgress.Size = new System.Drawing.Size(284, 25);
             this.lblProgress.TabIndex = 2;
             this.lblProgress.Text = "Nhấn \"Quét\" để bắt đầu kiểm tra...";
             // 
@@ -64,7 +66,9 @@ namespace study_document_manager
             // 
             this.dgvMissingFiles.AllowUserToAddRows = false;
             this.dgvMissingFiles.AllowUserToDeleteRows = false;
-            this.dgvMissingFiles.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) | System.Windows.Forms.AnchorStyles.Left) | System.Windows.Forms.AnchorStyles.Right)));
+            this.dgvMissingFiles.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.dgvMissingFiles.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
             this.dgvMissingFiles.BackgroundColor = System.Drawing.Color.White;
             this.dgvMissingFiles.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
@@ -86,39 +90,42 @@ namespace study_document_manager
             // 
             // colId
             // 
+            this.colId.FillWeight = 10F;
             this.colId.HeaderText = "ID";
+            this.colId.MinimumWidth = 8;
             this.colId.Name = "colId";
             this.colId.ReadOnly = true;
-            this.colId.Width = 50;
-            this.colId.FillWeight = 10;
             // 
             // colTen
             // 
+            this.colTen.FillWeight = 30F;
             this.colTen.HeaderText = "Tên tài liệu";
+            this.colTen.MinimumWidth = 8;
             this.colTen.Name = "colTen";
             this.colTen.ReadOnly = true;
-            this.colTen.FillWeight = 30;
             // 
             // colDuongDan
             // 
+            this.colDuongDan.FillWeight = 50F;
             this.colDuongDan.HeaderText = "Đường dẫn file";
+            this.colDuongDan.MinimumWidth = 8;
             this.colDuongDan.Name = "colDuongDan";
             this.colDuongDan.ReadOnly = true;
-            this.colDuongDan.FillWeight = 50;
             // 
             // colAction
             // 
+            this.colAction.FillWeight = 15F;
             this.colAction.HeaderText = "Hành động";
+            this.colAction.MinimumWidth = 8;
             this.colAction.Name = "colAction";
             this.colAction.ReadOnly = true;
             this.colAction.Text = "Xử lý";
             this.colAction.UseColumnTextForButtonValue = true;
-            this.colAction.FillWeight = 15;
             // 
             // btnScan
             // 
             this.btnScan.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnScan.BackColor = System.Drawing.Color.FromArgb(33, 150, 243);
+            this.btnScan.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(33)))), ((int)(((byte)(150)))), ((int)(((byte)(243)))));
             this.btnScan.FlatAppearance.BorderSize = 0;
             this.btnScan.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnScan.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold);
@@ -134,7 +141,7 @@ namespace study_document_manager
             // btnDeleteAll
             // 
             this.btnDeleteAll.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnDeleteAll.BackColor = System.Drawing.Color.FromArgb(244, 67, 54);
+            this.btnDeleteAll.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(244)))), ((int)(((byte)(67)))), ((int)(((byte)(54)))));
             this.btnDeleteAll.Enabled = false;
             this.btnDeleteAll.FlatAppearance.BorderSize = 0;
             this.btnDeleteAll.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
@@ -151,7 +158,7 @@ namespace study_document_manager
             // btnClose
             // 
             this.btnClose.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnClose.BackColor = System.Drawing.Color.FromArgb(158, 158, 158);
+            this.btnClose.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(158)))), ((int)(((byte)(158)))), ((int)(((byte)(158)))));
             this.btnClose.FlatAppearance.BorderSize = 0;
             this.btnClose.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnClose.Font = new System.Drawing.Font("Segoe UI", 10F);
@@ -171,14 +178,14 @@ namespace study_document_manager
             this.lblSummary.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
             this.lblSummary.Location = new System.Drawing.Point(310, 430);
             this.lblSummary.Name = "lblSummary";
-            this.lblSummary.Size = new System.Drawing.Size(0, 15);
+            this.lblSummary.Size = new System.Drawing.Size(0, 25);
             this.lblSummary.TabIndex = 7;
             // 
             // FileIntegrityCheckForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.BackColor = System.Drawing.Color.FromArgb(245, 245, 245);
+            this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(245)))), ((int)(((byte)(245)))));
             this.ClientSize = new System.Drawing.Size(700, 470);
             this.Controls.Add(this.lblSummary);
             this.Controls.Add(this.btnClose);
@@ -189,6 +196,7 @@ namespace study_document_manager
             this.Controls.Add(this.progressBar);
             this.Controls.Add(this.lblTitle);
             this.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MinimumSize = new System.Drawing.Size(600, 400);
             this.Name = "FileIntegrityCheckForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
@@ -196,6 +204,7 @@ namespace study_document_manager
             ((System.ComponentModel.ISupportInitialize)(this.dgvMissingFiles)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
+
         }
 
         #endregion

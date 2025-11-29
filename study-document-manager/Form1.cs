@@ -20,7 +20,150 @@ namespace study_document_manager
             // Đăng ký event DataError để xử lý lỗi format
             dgvDocuments.DataError += dgvDocuments_DataError;
             // Cho phép click trực tiếp lên cột quan trọng
-            dgvDocuments.CellClick += dgvDocuments_CellClick;
+            dgvDocuments.CellContentClick += dgvDocuments_CellContentClick;
+
+            // Phase 2: Thêm menu Ghi chú cá nhân vào context menu
+            AddPersonalNoteContextMenu();
+        }
+
+        /// <summary>
+        /// Thêm menu Ghi chú cá nhân vào context menu (Phase 2)
+        /// </summary>
+        private void AddPersonalNoteContextMenu()
+        {
+            contextMenuDocument.Items.Add(new ToolStripSeparator());
+            
+            ToolStripMenuItem ctxMenuPersonalNote = new ToolStripMenuItem("Ghi chú cá nhân...");
+            ctxMenuPersonalNote.Name = "ctxMenuPersonalNote";
+            ctxMenuPersonalNote.Click += ctxMenuPersonalNote_Click;
+            contextMenuDocument.Items.Add(ctxMenuPersonalNote);
+
+            // Thêm menu "Thêm vào bộ sưu tập"
+            ToolStripMenuItem ctxMenuAddToCollection = new ToolStripMenuItem("Thêm vào bộ sưu tập...");
+            ctxMenuAddToCollection.Name = "ctxMenuAddToCollection";
+            ctxMenuAddToCollection.Click += ctxMenuAddToCollection_Click;
+            contextMenuDocument.Items.Add(ctxMenuAddToCollection);
+        }
+
+        /// <summary>
+        /// Context Menu: Thêm vào bộ sưu tập (Phase 2)
+        /// </summary>
+        private void ctxMenuAddToCollection_Click(object sender, EventArgs e)
+        {
+            if (dgvDocuments.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Vui lòng chọn tài liệu!", 
+                    "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            int docId = Convert.ToInt32(dgvDocuments.SelectedRows[0].Cells["id"].Value);
+            string docName = dgvDocuments.SelectedRows[0].Cells["ten"].Value.ToString();
+
+            // Lấy danh sách collections
+            DataTable collections = DatabaseHelper.GetCollections();
+            
+            if (collections.Rows.Count == 0)
+            {
+                if (MessageBox.Show("Bạn chưa có bộ sưu tập nào.\nTạo bộ sưu tập mới?",
+                    "Thông báo", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                {
+                    string name = Microsoft.VisualBasic.Interaction.InputBox(
+                        "Nhập tên bộ sưu tập:", "Tạo bộ sưu tập mới", "");
+                    
+                    if (!string.IsNullOrWhiteSpace(name))
+                    {
+                        int newId = DatabaseHelper.CreateCollection(name.Trim());
+                        if (newId > 0)
+                        {
+                            DatabaseHelper.AddDocumentToCollection(newId, docId);
+                            lblStatus.Text = $"Đã thêm '{docName}' vào bộ sưu tập '{name}'";
+                        }
+                    }
+                }
+                return;
+            }
+
+            // Hiển thị dialog chọn collection
+            using (Form selectForm = new Form())
+            {
+                selectForm.Text = "Chọn bộ sưu tập";
+                selectForm.Size = new Size(300, 200);
+                selectForm.StartPosition = FormStartPosition.CenterParent;
+                selectForm.FormBorderStyle = FormBorderStyle.FixedDialog;
+                selectForm.MaximizeBox = false;
+                selectForm.MinimizeBox = false;
+
+                ComboBox cboCollections = new ComboBox
+                {
+                    Location = new Point(20, 30),
+                    Size = new Size(240, 25),
+                    DropDownStyle = ComboBoxStyle.DropDownList
+                };
+
+                foreach (DataRow row in collections.Rows)
+                {
+                    cboCollections.Items.Add(new { Id = row["id"], Name = row["name"].ToString() });
+                }
+                cboCollections.DisplayMember = "Name";
+                cboCollections.SelectedIndex = 0;
+
+                Button btnOK = new Button
+                {
+                    Text = "Thêm",
+                    Location = new Point(80, 100),
+                    Size = new Size(80, 30),
+                    DialogResult = DialogResult.OK
+                };
+
+                Button btnCancel = new Button
+                {
+                    Text = "Hủy",
+                    Location = new Point(170, 100),
+                    Size = new Size(80, 30),
+                    DialogResult = DialogResult.Cancel
+                };
+
+                selectForm.Controls.AddRange(new Control[] { cboCollections, btnOK, btnCancel });
+                selectForm.AcceptButton = btnOK;
+                selectForm.CancelButton = btnCancel;
+
+                if (selectForm.ShowDialog() == DialogResult.OK && cboCollections.SelectedItem != null)
+                {
+                    dynamic selected = cboCollections.SelectedItem;
+                    int collectionId = Convert.ToInt32(selected.Id);
+                    string collectionName = selected.Name;
+
+                    if (DatabaseHelper.AddDocumentToCollection(collectionId, docId))
+                    {
+                        lblStatus.Text = $"Đã thêm '{docName}' vào '{collectionName}'";
+                    }
+                    else
+                    {
+                        MessageBox.Show("Tài liệu đã có trong bộ sưu tập này!",
+                            "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Context Menu: Ghi chú cá nhân (Phase 2)
+        /// </summary>
+        private void ctxMenuPersonalNote_Click(object sender, EventArgs e)
+        {
+            if (dgvDocuments.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Vui lòng chọn tài liệu!", 
+                    "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            int docId = Convert.ToInt32(dgvDocuments.SelectedRows[0].Cells["id"].Value);
+            string docName = dgvDocuments.SelectedRows[0].Cells["ten"].Value.ToString();
+
+            PersonalNoteForm form = new PersonalNoteForm(docId, docName);
+            form.ShowDialog();
         }
 
         /// <summary>
@@ -85,6 +228,24 @@ namespace study_document_manager
                         menuCheckFiles.Name = "menuCheckFiles";
                         menuCheckFiles.Click += menuCheckFiles_Click;
                         menuView.DropDownItems.Add(menuCheckFiles);
+
+                        // Phase 2: Menu Sắp đến hạn
+                        ToolStripMenuItem menuUpcomingDeadlines = new ToolStripMenuItem("Sắp đến hạn (7 ngày)");
+                        menuUpcomingDeadlines.Name = "menuUpcomingDeadlines";
+                        menuUpcomingDeadlines.Click += menuUpcomingDeadlines_Click;
+                        menuView.DropDownItems.Add(menuUpcomingDeadlines);
+
+                        // Phase 2: Menu Quá hạn
+                        ToolStripMenuItem menuOverdue = new ToolStripMenuItem("Tài liệu quá hạn");
+                        menuOverdue.Name = "menuOverdue";
+                        menuOverdue.Click += menuOverdue_Click;
+                        menuView.DropDownItems.Add(menuOverdue);
+
+                        // Phase 2: Menu Quản lý bộ sưu tập
+                        ToolStripMenuItem menuCollections = new ToolStripMenuItem("Quản lý bộ sưu tập");
+                        menuCollections.Name = "menuCollections";
+                        menuCollections.Click += menuCollections_Click;
+                        menuView.DropDownItems.Add(menuCollections);
 
                         // Thêm separator trước Đăng xuất
                         menuView.DropDownItems.Add(new ToolStripSeparator());
@@ -254,17 +415,38 @@ namespace study_document_manager
                 }
                 if (dgvDocuments.Columns.Contains("tac_gia"))
                     dgvDocuments.Columns["tac_gia"].HeaderText = "Tác giả";
+                
+                // Cột Tags (Phase 2)
+                if (dgvDocuments.Columns.Contains("tags"))
+                {
+                    dgvDocuments.Columns["tags"].HeaderText = "Tags";
+                    dgvDocuments.Columns["tags"].Width = 150;
+                }
+
+                // Cột Deadline (Phase 2)
+                if (dgvDocuments.Columns.Contains("deadline"))
+                {
+                    dgvDocuments.Columns["deadline"].HeaderText = "Hạn chót";
+                    dgvDocuments.Columns["deadline"].Width = 100;
+                    dgvDocuments.Columns["deadline"].DefaultCellStyle.Format = "dd/MM/yyyy";
+                }
+
+                // Cột quan_trong - cho phép click checkbox (đặt gần cuối)
                 if (dgvDocuments.Columns.Contains("quan_trong"))
                 {
                     dgvDocuments.Columns["quan_trong"].HeaderText = "★";
-                    dgvDocuments.Columns["quan_trong"].Width = 30;
+                    dgvDocuments.Columns["quan_trong"].Width = 40;
+                    dgvDocuments.Columns["quan_trong"].ReadOnly = false;
+                    dgvDocuments.Columns["quan_trong"].DisplayIndex = dgvDocuments.Columns.Count - 2; // Gần cuối, trước Người tạo
                 }
-                                // Cột Người tạo (mới) - chỉ hiện cho Teacher/Admin
+
+                // Cột Người tạo (mới) - chỉ hiện cho Teacher/Admin (cuối cùng)
                 if (dgvDocuments.Columns.Contains("creator_name"))
                 {
                     dgvDocuments.Columns["creator_name"].HeaderText = "Người tạo";
                     dgvDocuments.Columns["creator_name"].Width = 120;
                     dgvDocuments.Columns["creator_name"].Visible = !UserSession.IsStudent;
+                    dgvDocuments.Columns["creator_name"].DisplayIndex = dgvDocuments.Columns.Count - 1; // Cuối cùng
                 }
                 
                 if (dgvDocuments.Columns.Contains("creator_username"))
@@ -272,6 +454,17 @@ namespace study_document_manager
                     
                 if (dgvDocuments.Columns.Contains("user_id"))
                     dgvDocuments.Columns["user_id"].Visible = false;
+                
+                // Set ReadOnly = false cho grid để checkbox hoạt động
+                dgvDocuments.ReadOnly = false;
+                
+                // Set ReadOnly = true cho các cột khác (không cho phép edit)
+                foreach (DataGridViewColumn col in dgvDocuments.Columns)
+                {
+                    if (col.Name != "quan_trong")
+                    {
+                        col.ReadOnly = true;
+                    }
                 }
 
                 // Enable sorting
@@ -283,6 +476,7 @@ namespace study_document_manager
                     else
                         column.SortMode = DataGridViewColumnSortMode.Automatic;
                 }
+            } // End if (dgvDocuments.Columns.Count > 0)
 
             // Style
             dgvDocuments.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(245, 245, 245);
@@ -823,55 +1017,58 @@ namespace study_document_manager
         }
 
         /// <summary>
-        /// Format cells để hiển thị icon và sao vàng
+        /// Format cells để hiển thị icon và deadline
         /// </summary>
         private void dgvDocuments_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {
             try
             {
-                // Kiểm tra cột "Icon" phải là ImageColumn
-                if (dgvDocuments.Columns[e.ColumnIndex].Name == "Icon" && e.RowIndex >= 0)
+                if (e.RowIndex < 0) return;
+
+                string colName = dgvDocuments.Columns[e.ColumnIndex].Name;
+
+                // Format Icon column
+                if (colName == "Icon" && dgvDocuments.Columns[e.ColumnIndex] is DataGridViewImageColumn)
                 {
-                    // Chỉ format nếu là DataGridViewImageColumn
-                    if (dgvDocuments.Columns[e.ColumnIndex] is DataGridViewImageColumn)
+                    var loaiCell = dgvDocuments.Rows[e.RowIndex].Cells["loai"];
+                    if (loaiCell.Value != null && loaiCell.Value != DBNull.Value)
                     {
-                        var loaiCell = dgvDocuments.Rows[e.RowIndex].Cells["loai"];
-                        if (loaiCell.Value != null && loaiCell.Value != DBNull.Value)
-                        {
-                            string loai = loaiCell.Value.ToString();
-                            e.Value = IconHelper.GetDocumentIcon(loai, 24);
-                            e.FormattingApplied = true;
-                        }
+                        string loai = loaiCell.Value.ToString();
+                        e.Value = IconHelper.GetDocumentIcon(loai, 24);
+                        e.FormattingApplied = true;
                     }
                 }
-                else if (dgvDocuments.Columns[e.ColumnIndex].Name == "quan_trong" && e.RowIndex >= 0)
+                // Format deadline column - highlight màu theo ngày còn lại
+                else if (colName == "deadline")
                 {
-                    // Chỉ format nếu là TextBoxColumn hoặc DataGridViewColumn thông thường
-                    if (!(dgvDocuments.Columns[e.ColumnIndex] is DataGridViewImageColumn))
+                    if (e.Value != null && e.Value != DBNull.Value)
                     {
-                        if (e.Value != null && e.Value != DBNull.Value)
+                        DateTime deadline = Convert.ToDateTime(e.Value);
+                        int daysLeft = (deadline.Date - DateTime.Now.Date).Days;
+
+                        if (daysLeft < 0)
                         {
-                            bool isImportant = Convert.ToBoolean(e.Value);
-                            if (isImportant)
-                            {
-                                e.Value = "★";
-                                e.CellStyle.ForeColor = Color.FromArgb(255, 202, 40);
-                                e.CellStyle.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
-                                e.CellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-                            }
-                            else
-                            {
-                                e.Value = "";
-                            }
-                            e.FormattingApplied = true;
+                            e.CellStyle.ForeColor = Color.White;
+                            e.CellStyle.BackColor = Color.FromArgb(244, 67, 54);
+                            e.CellStyle.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+                        }
+                        else if (daysLeft <= 3)
+                        {
+                            e.CellStyle.ForeColor = Color.White;
+                            e.CellStyle.BackColor = Color.FromArgb(255, 152, 0);
+                            e.CellStyle.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+                        }
+                        else if (daysLeft <= 7)
+                        {
+                            e.CellStyle.ForeColor = Color.Black;
+                            e.CellStyle.BackColor = Color.FromArgb(255, 235, 59);
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                // Log lỗi chi tiết để debug
-                System.Diagnostics.Debug.WriteLine($"CellFormatting error at column {dgvDocuments.Columns[e.ColumnIndex].Name}: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"CellFormatting error: {ex.Message}");
             }
         }
 
@@ -893,17 +1090,52 @@ namespace study_document_manager
             }
         }
 
-        private void dgvDocuments_CellClick(object sender, DataGridViewCellEventArgs e)
+        private void dgvDocuments_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex < 0) return;
 
+            // Xử lý checkbox quan_trong
             if (dgvDocuments.Columns[e.ColumnIndex].Name == "quan_trong")
             {
-                dgvDocuments.Rows[e.RowIndex].Selected = true;
-                ToggleImportantForSelectedDocument();
+                // Commit edit để lấy giá trị mới của checkbox
+                dgvDocuments.CommitEdit(DataGridViewDataErrorContexts.Commit);
+                
+                // Lấy giá trị mới (đã được thay đổi bởi click)
+                var cell = dgvDocuments.Rows[e.RowIndex].Cells["quan_trong"];
+                bool newValue = cell.Value != null && cell.Value != DBNull.Value && Convert.ToBoolean(cell.Value);
+                int id = Convert.ToInt32(dgvDocuments.Rows[e.RowIndex].Cells["id"].Value);
+
+                SaveImportantValue(id, newValue);
             }
         }
 
+        private void SaveImportantValue(int documentId, bool isImportant)
+        {
+            try
+            {
+                string query = "UPDATE tai_lieu SET quan_trong = @quan_trong WHERE id = @id";
+                var parameters = new System.Data.SqlClient.SqlParameter[]
+                {
+                    new System.Data.SqlClient.SqlParameter("@quan_trong", isImportant),
+                    new System.Data.SqlClient.SqlParameter("@id", documentId)
+                };
+
+                int result = DatabaseHelper.ExecuteNonQuery(query, parameters);
+                if (result > 0)
+                {
+                    lblStatus.Text = isImportant ? "Đã đánh dấu quan trọng" : "Đã bỏ đánh dấu quan trọng";
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                LoadData(); // Reload để khôi phục giá trị cũ
+            }
+        }
+
+        /// <summary>
+        /// Toggle quan trọng cho tài liệu được chọn (dùng cho Context Menu)
+        /// </summary>
         private void ToggleImportantForSelectedDocument()
         {
             if (dgvDocuments.SelectedRows.Count == 0)
@@ -920,19 +1152,8 @@ namespace study_document_manager
                 bool currentValue = quanTrongCell != null && quanTrongCell != DBNull.Value && Convert.ToBoolean(quanTrongCell);
                 bool newValue = !currentValue;
 
-                string query = "UPDATE tai_lieu SET quan_trong = @quan_trong WHERE id = @id";
-                var parameters = new System.Data.SqlClient.SqlParameter[]
-                {
-                    new System.Data.SqlClient.SqlParameter("@quan_trong", newValue),
-                    new System.Data.SqlClient.SqlParameter("@id", id)
-                };
-
-                int result = DatabaseHelper.ExecuteNonQuery(query, parameters);
-                if (result > 0)
-                {
-                    LoadData();
-                    lblStatus.Text = newValue ? "Đã đánh dấu quan trọng" : "Đã bỏ đánh dấu quan trọng";
-                }
+                SaveImportantValue(id, newValue);
+                LoadData(); // Refresh grid để hiển thị giá trị mới
             }
             catch (Exception ex)
             {
@@ -1215,7 +1436,6 @@ namespace study_document_manager
 
         /// <summary>
         /// Menu: Kiểm tra file bị thiếu
-        /// Menu: Kiem tra file bi thieu
         /// </summary>
         private void menuCheckFiles_Click(object sender, EventArgs e)
         {
@@ -1223,6 +1443,57 @@ namespace study_document_manager
             form.ShowDialog();
             // Refresh data sau khi dong form
             LoadData();
+        }
+
+        /// <summary>
+        /// Menu: Sắp đến hạn (Phase 2)
+        /// </summary>
+        private void menuUpcomingDeadlines_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                DataTable dt = DatabaseHelper.GetUpcomingDeadlines(7);
+                dgvDocuments.DataSource = dt;
+                SetupDataGridView();
+                
+                string roleInfo = UserSession.IsStudent ? " (của bạn)" : "";
+                lblCount.Text = $"Sắp đến hạn: {dt.Rows.Count} tài liệu{roleInfo}";
+                lblStatus.Text = "Đang xem tài liệu sắp đến hạn (7 ngày tới)";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        /// <summary>
+        /// Menu: Tài liệu quá hạn (Phase 2)
+        /// </summary>
+        private void menuOverdue_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                DataTable dt = DatabaseHelper.GetOverdueDocuments();
+                dgvDocuments.DataSource = dt;
+                SetupDataGridView();
+                
+                string roleInfo = UserSession.IsStudent ? " (của bạn)" : "";
+                lblCount.Text = $"Quá hạn: {dt.Rows.Count} tài liệu{roleInfo}";
+                lblStatus.Text = "Đang xem tài liệu đã quá hạn";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        /// <summary>
+        /// Menu: Quản lý bộ sưu tập (Phase 2)
+        /// </summary>
+        private void menuCollections_Click(object sender, EventArgs e)
+        {
+            CollectionManagementForm form = new CollectionManagementForm();
+            form.ShowDialog();
         }
 
         #endregion

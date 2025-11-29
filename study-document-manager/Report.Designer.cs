@@ -31,6 +31,7 @@
             System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea1 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
             System.Windows.Forms.DataVisualization.Charting.Legend legend1 = new System.Windows.Forms.DataVisualization.Charting.Legend();
             System.Windows.Forms.DataVisualization.Charting.Series series1 = new System.Windows.Forms.DataVisualization.Charting.Series();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Report));
             this.pnlTop = new System.Windows.Forms.Panel();
             this.lblTitle = new System.Windows.Forms.Label();
             this.btnClose = new System.Windows.Forms.Button();
@@ -70,7 +71,7 @@
             this.lblTitle.ForeColor = System.Drawing.Color.White;
             this.lblTitle.Location = new System.Drawing.Point(20, 15);
             this.lblTitle.Name = "lblTitle";
-            this.lblTitle.Size = new System.Drawing.Size(354, 32);
+            this.lblTitle.Size = new System.Drawing.Size(437, 48);
             this.lblTitle.TabIndex = 0;
             this.lblTitle.Text = "Thống kê tài liệu học tập";
             // 
@@ -112,7 +113,7 @@
             this.lblChartType.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.lblChartType.Location = new System.Drawing.Point(600, 20);
             this.lblChartType.Name = "lblChartType";
-            this.lblChartType.Size = new System.Drawing.Size(84, 15);
+            this.lblChartType.Size = new System.Drawing.Size(115, 25);
             this.lblChartType.TabIndex = 5;
             this.lblChartType.Text = "Kiểu biểu đồ:";
             // 
@@ -123,7 +124,7 @@
             this.cboChartType.FormattingEnabled = true;
             this.cboChartType.Location = new System.Drawing.Point(600, 40);
             this.cboChartType.Name = "cboChartType";
-            this.cboChartType.Size = new System.Drawing.Size(180, 23);
+            this.cboChartType.Size = new System.Drawing.Size(180, 33);
             this.cboChartType.TabIndex = 4;
             this.cboChartType.SelectedIndexChanged += new System.EventHandler(this.cboChartType_SelectedIndexChanged);
             // 
@@ -133,7 +134,7 @@
             this.lblStatType.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.lblStatType.Location = new System.Drawing.Point(20, 20);
             this.lblStatType.Name = "lblStatType";
-            this.lblStatType.Size = new System.Drawing.Size(78, 15);
+            this.lblStatType.Size = new System.Drawing.Size(131, 25);
             this.lblStatType.TabIndex = 3;
             this.lblStatType.Text = "Thống kê theo:";
             // 
@@ -187,7 +188,7 @@
             this.pnlChart.Location = new System.Drawing.Point(0, 140);
             this.pnlChart.Name = "pnlChart";
             this.pnlChart.Padding = new System.Windows.Forms.Padding(20);
-            this.pnlChart.Size = new System.Drawing.Size(1000, 460);
+            this.pnlChart.Size = new System.Drawing.Size(1000, 450);
             this.pnlChart.TabIndex = 2;
             // 
             // chart
@@ -203,29 +204,30 @@
             series1.Legend = "Legend1";
             series1.Name = "Series1";
             this.chart.Series.Add(series1);
-            this.chart.Size = new System.Drawing.Size(960, 420);
+            this.chart.Size = new System.Drawing.Size(960, 410);
             this.chart.TabIndex = 0;
             this.chart.Text = "chart";
             // 
             // statusStrip
             // 
             this.statusStrip.BackColor = System.Drawing.Color.White;
+            this.statusStrip.ImageScalingSize = new System.Drawing.Size(24, 24);
             this.statusStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.lblStatus});
-            this.statusStrip.Location = new System.Drawing.Point(0, 600);
+            this.statusStrip.Location = new System.Drawing.Point(0, 590);
             this.statusStrip.Name = "statusStrip";
-            this.statusStrip.Size = new System.Drawing.Size(1000, 22);
+            this.statusStrip.Size = new System.Drawing.Size(1000, 32);
             this.statusStrip.TabIndex = 3;
             // 
             // lblStatus
             // 
             this.lblStatus.Name = "lblStatus";
-            this.lblStatus.Size = new System.Drawing.Size(164, 17);
+            this.lblStatus.Size = new System.Drawing.Size(251, 25);
             this.lblStatus.Text = "Đã tải thống kê theo môn học";
             // 
             // Report
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1000, 622);
             this.Controls.Add(this.pnlChart);
@@ -233,6 +235,7 @@
             this.Controls.Add(this.pnlOptions);
             this.Controls.Add(this.pnlTop);
             this.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MinimumSize = new System.Drawing.Size(900, 600);
             this.Name = "Report";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;

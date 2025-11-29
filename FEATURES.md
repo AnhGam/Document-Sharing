@@ -5,7 +5,7 @@
 
 ---
 
-## Phase 1 – Nâng trải nghiệm sử dụng hằng ngày (1–2 tuần)
+## Phase 1 – Nâng trải nghiệm sử dụng hằng ngày (1–2 tuần) (ĐÃ ÁP DỤNG)
 
 ### 1. Context Menu trên danh sách tài liệu
 **Mục tiêu:** Giảm số lần click, thao tác nhanh trên DataGridView.
@@ -43,7 +43,7 @@
 
 ---
 
-### 3. Kiểm tra và xử lý file bị thiếu
+### 3. Kiểm tra và xử lý file bị thiếu (ĐÃ ÁP DỤNG)
 **Mục tiêu:** Tránh tình trạng click vào tài liệu nhưng file thật đã bị xóa hoặc di chuyển.
 
 **Tính năng:**
@@ -88,7 +88,7 @@
 
 ---
 
-## Phase 2 – Hỗ trợ học tập và tổ chức tài liệu (2–3 tuần)
+## Phase 2 – Hỗ trợ học tập và tổ chức tài liệu (2–3 tuần) (ĐÃ THỰC HIỆN)
 
 ### 6. Tags (nhãn) cho tài liệu
 **Mục tiêu:** Phân loại linh hoạt hơn so với chỉ dùng môn học và loại tài liệu.

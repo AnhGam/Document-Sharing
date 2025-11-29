@@ -16,6 +16,18 @@ namespace study_document_manager
             InitializeComponent();
             this.Text = "Thêm tài liệu mới";
             LoadComboBoxData();
+            
+            // Event cho checkbox deadline
+            chkHasDeadline.CheckedChanged += ChkHasDeadline_CheckedChanged;
+        }
+
+        private void ChkHasDeadline_CheckedChanged(object sender, EventArgs e)
+        {
+            dtpDeadline.Enabled = chkHasDeadline.Checked;
+            if (chkHasDeadline.Checked && dtpDeadline.Value < DateTime.Now.Date)
+            {
+                dtpDeadline.Value = DateTime.Now.AddDays(7); // Mặc định 1 tuần
+            }
         }
 
         /// <summary>
@@ -86,6 +98,23 @@ namespace study_document_manager
                     }
                     
                     chk_quan_trong.Checked = Convert.ToBoolean(row["quan_trong"]);
+
+                    // Load Tags (Phase 2)
+                    if (row["tags"] != DBNull.Value)
+                    {
+                        txtTags.Text = row["tags"].ToString();
+                    }
+
+                    // Load Deadline (Phase 2)
+                    if (row["deadline"] != DBNull.Value)
+                    {
+                        chkHasDeadline.Checked = true;
+                        dtpDeadline.Value = Convert.ToDateTime(row["deadline"]);
+                    }
+                    else
+                    {
+                        chkHasDeadline.Checked = false;
+                    }
                 }
             }
             catch (Exception ex)
@@ -174,6 +203,10 @@ namespace study_document_manager
 
                 bool success = false;
 
+                // Lấy giá trị tags và deadline
+                string tags = txtTags.Text.Trim();
+                DateTime? deadline = chkHasDeadline.Checked ? (DateTime?)dtpDeadline.Value.Date : null;
+
                 if (document_id.HasValue)
                 {
                     // Sửa tài liệu
@@ -186,7 +219,9 @@ namespace study_document_manager
                         txt_ghi_chu.Text.Trim(),
                         kich_thuoc,
                         txt_tac_gia.Text.Trim(),
-                        chk_quan_trong.Checked
+                        chk_quan_trong.Checked,
+                        tags,
+                        deadline
                     );
 
                     if (success)
@@ -208,7 +243,9 @@ namespace study_document_manager
                         txt_ghi_chu.Text.Trim(),
                         kich_thuoc,
                         txt_tac_gia.Text.Trim(),
-                        chk_quan_trong.Checked
+                        chk_quan_trong.Checked,
+                        tags,
+                        deadline
                     );
 
                     if (success)

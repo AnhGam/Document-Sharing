@@ -47,6 +47,11 @@
             this.btn_luu = new System.Windows.Forms.Button();
             this.btn_huy = new System.Windows.Forms.Button();
             this.label8 = new System.Windows.Forms.Label();
+            this.lblTags = new System.Windows.Forms.Label();
+            this.txtTags = new System.Windows.Forms.TextBox();
+            this.lblDeadline = new System.Windows.Forms.Label();
+            this.dtpDeadline = new System.Windows.Forms.DateTimePicker();
+            this.chkHasDeadline = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // label1
@@ -170,6 +175,55 @@
             this.label6.TabIndex = 11;
             this.label6.Text = "Tác giả:";
             // 
+            // lblTags
+            // 
+            this.lblTags.AutoSize = true;
+            this.lblTags.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.lblTags.Location = new System.Drawing.Point(20, 410);
+            this.lblTags.Name = "lblTags";
+            this.lblTags.Size = new System.Drawing.Size(34, 15);
+            this.lblTags.TabIndex = 19;
+            this.lblTags.Text = "Tags:";
+            // 
+            // txtTags
+            // 
+            this.txtTags.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.txtTags.Location = new System.Drawing.Point(20, 430);
+            this.txtTags.Name = "txtTags";
+            this.txtTags.Size = new System.Drawing.Size(360, 23);
+            this.txtTags.TabIndex = 20;
+            // 
+            // lblDeadline
+            // 
+            this.lblDeadline.AutoSize = true;
+            this.lblDeadline.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.lblDeadline.Location = new System.Drawing.Point(20, 465);
+            this.lblDeadline.Name = "lblDeadline";
+            this.lblDeadline.Size = new System.Drawing.Size(58, 15);
+            this.lblDeadline.TabIndex = 21;
+            this.lblDeadline.Text = "Hạn chót:";
+            // 
+            // chkHasDeadline
+            // 
+            this.chkHasDeadline.AutoSize = true;
+            this.chkHasDeadline.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.chkHasDeadline.Location = new System.Drawing.Point(90, 464);
+            this.chkHasDeadline.Name = "chkHasDeadline";
+            this.chkHasDeadline.Size = new System.Drawing.Size(76, 19);
+            this.chkHasDeadline.TabIndex = 22;
+            this.chkHasDeadline.Text = "Có hạn";
+            this.chkHasDeadline.UseVisualStyleBackColor = true;
+            // 
+            // dtpDeadline
+            // 
+            this.dtpDeadline.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.dtpDeadline.Format = System.Windows.Forms.DateTimePickerFormat.Short;
+            this.dtpDeadline.Location = new System.Drawing.Point(20, 485);
+            this.dtpDeadline.Name = "dtpDeadline";
+            this.dtpDeadline.Size = new System.Drawing.Size(150, 23);
+            this.dtpDeadline.TabIndex = 23;
+            this.dtpDeadline.Enabled = false;
+            // 
             // txt_tac_gia
             // 
             this.txt_tac_gia.Font = new System.Drawing.Font("Segoe UI", 9F);
@@ -182,7 +236,7 @@
             // 
             this.label7.AutoSize = true;
             this.label7.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.label7.Location = new System.Drawing.Point(20, 410);
+            this.label7.Location = new System.Drawing.Point(200, 465);
             this.label7.Name = "label7";
             this.label7.Size = new System.Drawing.Size(96, 15);
             this.label7.TabIndex = 13;
@@ -191,10 +245,10 @@
             // txt_kich_thuoc
             // 
             this.txt_kich_thuoc.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.txt_kich_thuoc.Location = new System.Drawing.Point(20, 430);
+            this.txt_kich_thuoc.Location = new System.Drawing.Point(200, 485);
             this.txt_kich_thuoc.Name = "txt_kich_thuoc";
             this.txt_kich_thuoc.ReadOnly = true;
-            this.txt_kich_thuoc.Size = new System.Drawing.Size(100, 23);
+            this.txt_kich_thuoc.Size = new System.Drawing.Size(80, 23);
             this.txt_kich_thuoc.TabIndex = 14;
             // 
             // chk_quan_trong
@@ -202,11 +256,11 @@
             this.chk_quan_trong.AutoSize = true;
             this.chk_quan_trong.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
             this.chk_quan_trong.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(202)))), ((int)(((byte)(40)))));
-            this.chk_quan_trong.Location = new System.Drawing.Point(140, 432);
+            this.chk_quan_trong.Location = new System.Drawing.Point(290, 487);
             this.chk_quan_trong.Name = "chk_quan_trong";
-            this.chk_quan_trong.Size = new System.Drawing.Size(136, 19);
+            this.chk_quan_trong.Size = new System.Drawing.Size(93, 19);
             this.chk_quan_trong.TabIndex = 15;
-            this.chk_quan_trong.Text = "★ Tài liệu quan trọng";
+            this.chk_quan_trong.Text = "★ Quan trọng";
             this.chk_quan_trong.UseVisualStyleBackColor = true;
             // 
             // btn_luu
@@ -216,10 +270,10 @@
             this.btn_luu.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btn_luu.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
             this.btn_luu.ForeColor = System.Drawing.Color.White;
-            this.btn_luu.Location = new System.Drawing.Point(180, 480);
+            this.btn_luu.Location = new System.Drawing.Point(180, 530);
             this.btn_luu.Name = "btn_luu";
             this.btn_luu.Size = new System.Drawing.Size(100, 35);
-            this.btn_luu.TabIndex = 16;
+            this.btn_luu.TabIndex = 24;
             this.btn_luu.Text = "Lưu";
             this.btn_luu.UseVisualStyleBackColor = false;
             this.btn_luu.Click += new System.EventHandler(this.btn_luu_Click);
@@ -231,10 +285,10 @@
             this.btn_huy.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btn_huy.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
             this.btn_huy.ForeColor = System.Drawing.Color.White;
-            this.btn_huy.Location = new System.Drawing.Point(290, 480);
+            this.btn_huy.Location = new System.Drawing.Point(290, 530);
             this.btn_huy.Name = "btn_huy";
             this.btn_huy.Size = new System.Drawing.Size(90, 35);
-            this.btn_huy.TabIndex = 17;
+            this.btn_huy.TabIndex = 25;
             this.btn_huy.Text = "Hủy";
             this.btn_huy.UseVisualStyleBackColor = false;
             this.btn_huy.Click += new System.EventHandler(this.btn_huy_Click);
@@ -244,10 +298,10 @@
             this.label8.AutoSize = true;
             this.label8.Font = new System.Drawing.Font("Segoe UI", 7F, System.Drawing.FontStyle.Italic);
             this.label8.ForeColor = System.Drawing.Color.Gray;
-            this.label8.Location = new System.Drawing.Point(20, 525);
+            this.label8.Location = new System.Drawing.Point(20, 575);
             this.label8.Name = "label8";
             this.label8.Size = new System.Drawing.Size(108, 12);
-            this.label8.TabIndex = 18;
+            this.label8.TabIndex = 26;
             this.label8.Text = "* Trường bắt buộc nhập";
             // 
             // AddEditForm
@@ -255,7 +309,12 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.White;
-            this.ClientSize = new System.Drawing.Size(400, 550);
+            this.ClientSize = new System.Drawing.Size(400, 600);
+            this.Controls.Add(this.dtpDeadline);
+            this.Controls.Add(this.chkHasDeadline);
+            this.Controls.Add(this.lblDeadline);
+            this.Controls.Add(this.txtTags);
+            this.Controls.Add(this.lblTags);
             this.Controls.Add(this.label8);
             this.Controls.Add(this.btn_huy);
             this.Controls.Add(this.btn_luu);
@@ -309,5 +368,10 @@
         private System.Windows.Forms.Button btn_luu;
         private System.Windows.Forms.Button btn_huy;
         private System.Windows.Forms.Label label8;
+        private System.Windows.Forms.Label lblTags;
+        internal System.Windows.Forms.TextBox txtTags;
+        private System.Windows.Forms.Label lblDeadline;
+        internal System.Windows.Forms.DateTimePicker dtpDeadline;
+        internal System.Windows.Forms.CheckBox chkHasDeadline;
     }
 }

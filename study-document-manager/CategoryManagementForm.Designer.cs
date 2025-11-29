@@ -17,6 +17,7 @@ namespace study_document_manager
 
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(CategoryManagementForm));
             this.pnlTop = new System.Windows.Forms.Panel();
             this.lblTitle = new System.Windows.Forms.Label();
             this.btnClose = new System.Windows.Forms.Button();
@@ -58,7 +59,7 @@ namespace study_document_manager
             this.lblTitle.ForeColor = System.Drawing.Color.White;
             this.lblTitle.Location = new System.Drawing.Point(20, 15);
             this.lblTitle.Name = "lblTitle";
-            this.lblTitle.Size = new System.Drawing.Size(281, 30);
+            this.lblTitle.Size = new System.Drawing.Size(390, 45);
             this.lblTitle.TabIndex = 0;
             this.lblTitle.Text = "Quản lý Môn học và Loại";
             // 
@@ -186,7 +187,7 @@ namespace study_document_manager
             this.pnlContent.Location = new System.Drawing.Point(0, 180);
             this.pnlContent.Name = "pnlContent";
             this.pnlContent.Padding = new System.Windows.Forms.Padding(20);
-            this.pnlContent.Size = new System.Drawing.Size(800, 348);
+            this.pnlContent.Size = new System.Drawing.Size(800, 338);
             this.pnlContent.TabIndex = 3;
             // 
             // dgvCategories
@@ -204,37 +205,38 @@ namespace study_document_manager
             this.dgvCategories.ReadOnly = true;
             this.dgvCategories.RowHeadersWidth = 25;
             this.dgvCategories.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this.dgvCategories.Size = new System.Drawing.Size(760, 308);
+            this.dgvCategories.Size = new System.Drawing.Size(760, 298);
             this.dgvCategories.TabIndex = 0;
             // 
             // statusStrip
             // 
             this.statusStrip.BackColor = System.Drawing.Color.White;
+            this.statusStrip.ImageScalingSize = new System.Drawing.Size(24, 24);
             this.statusStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.lblStatus,
             this.lblCount});
-            this.statusStrip.Location = new System.Drawing.Point(0, 528);
+            this.statusStrip.Location = new System.Drawing.Point(0, 518);
             this.statusStrip.Name = "statusStrip";
-            this.statusStrip.Size = new System.Drawing.Size(800, 22);
+            this.statusStrip.Size = new System.Drawing.Size(800, 32);
             this.statusStrip.TabIndex = 4;
             // 
             // lblStatus
             // 
             this.lblStatus.Name = "lblStatus";
-            this.lblStatus.Size = new System.Drawing.Size(54, 17);
+            this.lblStatus.Size = new System.Drawing.Size(84, 25);
             this.lblStatus.Text = "Sẵn sàng";
             // 
             // lblCount
             // 
             this.lblCount.Name = "lblCount";
-            this.lblCount.Size = new System.Drawing.Size(731, 17);
+            this.lblCount.Size = new System.Drawing.Size(701, 25);
             this.lblCount.Spring = true;
             this.lblCount.Text = "Tổng số: 0 mục";
             this.lblCount.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
             // CategoryManagementForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 550);
             this.Controls.Add(this.pnlContent);
@@ -243,6 +245,7 @@ namespace study_document_manager
             this.Controls.Add(this.pnlTabs);
             this.Controls.Add(this.pnlTop);
             this.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MinimumSize = new System.Drawing.Size(700, 500);
             this.Name = "CategoryManagementForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;

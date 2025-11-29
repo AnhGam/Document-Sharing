@@ -286,10 +286,10 @@ namespace study_document_manager
                 parameterList.Add(new SqlParameter("@currentUserId", UserSession.UserId));
             }
 
-            // Keyword search
+            // Keyword search (Phase 2: bao gồm cả tags)
             if (!string.IsNullOrWhiteSpace(keyword))
             {
-                baseQuery += " AND (t.ten LIKE @keyword OR t.mon_hoc LIKE @keyword OR t.ghi_chu LIKE @keyword)";
+                baseQuery += " AND (t.ten LIKE @keyword OR t.mon_hoc LIKE @keyword OR t.ghi_chu LIKE @keyword OR t.tags LIKE @keyword)";
                 parameterList.Add(new SqlParameter("@keyword", "%" + keyword + "%"));
             }
 
@@ -336,10 +336,10 @@ namespace study_document_manager
             }
 
             // Quan trọng
-            if (isImportant.HasValue)
+            if (isImportant.HasValue && isImportant.Value == true)
             {
-                baseQuery += " AND t.quan_trong = @isImportant";
-                parameterList.Add(new SqlParameter("@isImportant", isImportant.Value));
+                baseQuery += " AND t.quan_trong = 1";
+                System.Diagnostics.Debug.WriteLine("[FILTER] Filtering important documents only");
             }
 
             // Người tạo (chỉ Admin/Teacher)
@@ -355,15 +355,25 @@ namespace study_document_manager
         }
 
         /// <summary>
-        /// Thêm tài liệu mới
+        /// Thêm tài liệu mới (Phase 2: thêm tags và deadline)
         /// </summary>
         public static bool InsertDocument(string ten, string mon_hoc, string loai, 
-            string duong_dan, string ghi_chu, double? kich_thuoc, string tac_gia, bool quan_trong)
+            string duong_dan, string ghi_chu, double? kich_thuoc, string tac_gia, bool quan_trong,
+            string tags = null, DateTime? deadline = null)
         {
+            // Debug: Kiểm tra UserSession
+            System.Diagnostics.Debug.WriteLine($"[INSERT] UserSession.UserId = {UserSession.UserId}");
+            
+            if (UserSession.UserId <= 0)
+            {
+                MessageBox.Show("Lỗi: Chưa đăng nhập hoặc UserId không hợp lệ!", "Debug", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }
+
             string query = @"INSERT INTO tai_lieu 
-                (ten, mon_hoc, loai, duong_dan, ghi_chu, kich_thuoc, tac_gia, quan_trong, user_id) 
+                (ten, mon_hoc, loai, duong_dan, ghi_chu, kich_thuoc, tac_gia, quan_trong, user_id, tags, deadline) 
                 VALUES 
-                (@ten, @mon_hoc, @loai, @duong_dan, @ghi_chu, @kich_thuoc, @tac_gia, @quan_trong, @user_id)";
+                (@ten, @mon_hoc, @loai, @duong_dan, @ghi_chu, @kich_thuoc, @tac_gia, @quan_trong, @user_id, @tags, @deadline)";
 
             SqlParameter[] parameters = new SqlParameter[]
             {
@@ -375,18 +385,29 @@ namespace study_document_manager
                 new SqlParameter("@kich_thuoc", kich_thuoc.HasValue ? (object)kich_thuoc.Value : DBNull.Value),
                 new SqlParameter("@tac_gia", string.IsNullOrEmpty(tac_gia) ? DBNull.Value : (object)tac_gia),
                 new SqlParameter("@quan_trong", quan_trong),
-                new SqlParameter("@user_id", UserSession.UserId)
+                new SqlParameter("@user_id", UserSession.UserId),
+                new SqlParameter("@tags", string.IsNullOrEmpty(tags) ? DBNull.Value : (object)tags),
+                new SqlParameter("@deadline", deadline.HasValue ? (object)deadline.Value : DBNull.Value)
             };
 
             int result = ExecuteNonQuery(query, parameters);
+            
+            // Debug: Hiển thị kết quả
+            System.Diagnostics.Debug.WriteLine($"[INSERT] Result = {result}");
+            if (result <= 0)
+            {
+                MessageBox.Show($"Insert thất bại! Rows affected: {result}", "Debug", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            
             return result > 0;
         }
 
         /// <summary>
-        /// Cập nhật tài liệu
+        /// Cập nhật tài liệu (Phase 2: thêm tags và deadline)
         /// </summary>
         public static bool UpdateDocument(int id, string ten, string mon_hoc, string loai, 
-            string duong_dan, string ghi_chu, double? kich_thuoc, string tac_gia, bool quan_trong)
+            string duong_dan, string ghi_chu, double? kich_thuoc, string tac_gia, bool quan_trong,
+            string tags = null, DateTime? deadline = null)
         {
             string query = @"UPDATE tai_lieu SET 
                 ten = @ten, 
@@ -396,7 +417,9 @@ namespace study_document_manager
                 ghi_chu = @ghi_chu, 
                 kich_thuoc = @kich_thuoc, 
                 tac_gia = @tac_gia, 
-                quan_trong = @quan_trong 
+                quan_trong = @quan_trong,
+                tags = @tags,
+                deadline = @deadline 
                 WHERE id = @id";
 
             SqlParameter[] parameters = new SqlParameter[]
@@ -409,7 +432,9 @@ namespace study_document_manager
                 new SqlParameter("@ghi_chu", string.IsNullOrEmpty(ghi_chu) ? DBNull.Value : (object)ghi_chu),
                 new SqlParameter("@kich_thuoc", kich_thuoc.HasValue ? (object)kich_thuoc.Value : DBNull.Value),
                 new SqlParameter("@tac_gia", string.IsNullOrEmpty(tac_gia) ? DBNull.Value : (object)tac_gia),
-                new SqlParameter("@quan_trong", quan_trong)
+                new SqlParameter("@quan_trong", quan_trong),
+                new SqlParameter("@tags", string.IsNullOrEmpty(tags) ? DBNull.Value : (object)tags),
+                new SqlParameter("@deadline", deadline.HasValue ? (object)deadline.Value : DBNull.Value)
             };
 
             int result = ExecuteNonQuery(query, parameters);
@@ -431,6 +456,252 @@ namespace study_document_manager
             int result = ExecuteNonQuery(query, parameters);
             return result > 0;
         }
+
+        #region Phase 2 Methods
+
+        /// <summary>
+        /// Lấy tài liệu sắp đến hạn (trong N ngày tới)
+        /// </summary>
+        public static DataTable GetUpcomingDeadlines(int days = 7)
+        {
+            string query = @"SELECT t.*, u.full_name as creator_name
+                            FROM tai_lieu t
+                            LEFT JOIN users u ON t.user_id = u.id
+                            WHERE t.deadline IS NOT NULL 
+                            AND t.deadline >= CAST(GETDATE() AS DATE)
+                            AND t.deadline <= DATEADD(day, @days, CAST(GETDATE() AS DATE))";
+
+            // Phân quyền
+            if (UserSession.IsStudent)
+            {
+                query += " AND t.user_id = @userId";
+            }
+
+            query += " ORDER BY t.deadline ASC";
+
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@days", days)
+            };
+
+            if (UserSession.IsStudent)
+            {
+                parameters.Add(new SqlParameter("@userId", UserSession.UserId));
+            }
+
+            return ExecuteQuery(query, parameters.ToArray());
+        }
+
+        /// <summary>
+        /// Lấy tài liệu đã quá hạn
+        /// </summary>
+        public static DataTable GetOverdueDocuments()
+        {
+            string query = @"SELECT t.*, u.full_name as creator_name
+                            FROM tai_lieu t
+                            LEFT JOIN users u ON t.user_id = u.id
+                            WHERE t.deadline IS NOT NULL 
+                            AND t.deadline < CAST(GETDATE() AS DATE)";
+
+            if (UserSession.IsStudent)
+            {
+                query += " AND t.user_id = @userId";
+            }
+
+            query += " ORDER BY t.deadline ASC";
+
+            SqlParameter[] parameters = UserSession.IsStudent
+                ? new SqlParameter[] { new SqlParameter("@userId", UserSession.UserId) }
+                : null;
+
+            return ExecuteQuery(query, parameters);
+        }
+
+        /// <summary>
+        /// Lấy danh sách tags đã sử dụng (cho autocomplete)
+        /// </summary>
+        public static List<string> GetDistinctTags()
+        {
+            string query = @"SELECT DISTINCT tags FROM tai_lieu 
+                            WHERE tags IS NOT NULL AND tags != ''";
+
+            if (UserSession.IsStudent)
+            {
+                query += " AND user_id = @userId";
+            }
+
+            SqlParameter[] parameters = UserSession.IsStudent
+                ? new SqlParameter[] { new SqlParameter("@userId", UserSession.UserId) }
+                : null;
+
+            DataTable dt = ExecuteQuery(query, parameters);
+            List<string> allTags = new List<string>();
+
+            foreach (DataRow row in dt.Rows)
+            {
+                string tagsString = row["tags"].ToString();
+                // Split by ; and add each tag
+                string[] tags = tagsString.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (string tag in tags)
+                {
+                    string trimmedTag = tag.Trim().ToLower();
+                    if (!string.IsNullOrEmpty(trimmedTag) && !allTags.Contains(trimmedTag))
+                    {
+                        allTags.Add(trimmedTag);
+                    }
+                }
+            }
+
+            allTags.Sort();
+            return allTags;
+        }
+
+        #endregion
+
+        #region Collections Methods (Phase 2)
+
+        /// <summary>
+        /// Lấy danh sách collections của user hiện tại
+        /// </summary>
+        public static DataTable GetCollections()
+        {
+            string query = @"SELECT c.id, c.name, c.description, c.created_at,
+                            (SELECT COUNT(*) FROM collection_items ci WHERE ci.collection_id = c.id) as item_count
+                            FROM collections c
+                            WHERE c.user_id = @userId
+                            ORDER BY c.name";
+
+            SqlParameter[] parameters = new SqlParameter[]
+            {
+                new SqlParameter("@userId", UserSession.UserId)
+            };
+
+            return ExecuteQuery(query, parameters);
+        }
+
+        /// <summary>
+        /// Tạo collection mới
+        /// </summary>
+        public static int CreateCollection(string name, string description = null)
+        {
+            string query = @"INSERT INTO collections (user_id, name, description)
+                            OUTPUT INSERTED.id
+                            VALUES (@userId, @name, @description)";
+
+            SqlParameter[] parameters = new SqlParameter[]
+            {
+                new SqlParameter("@userId", UserSession.UserId),
+                new SqlParameter("@name", name),
+                new SqlParameter("@description", string.IsNullOrEmpty(description) ? DBNull.Value : (object)description)
+            };
+
+            object result = ExecuteScalar(query, parameters);
+            return result != null ? Convert.ToInt32(result) : 0;
+        }
+
+        /// <summary>
+        /// Cập nhật collection
+        /// </summary>
+        public static bool UpdateCollection(int collectionId, string name, string description = null)
+        {
+            string query = @"UPDATE collections SET name = @name, description = @description
+                            WHERE id = @id AND user_id = @userId";
+
+            SqlParameter[] parameters = new SqlParameter[]
+            {
+                new SqlParameter("@id", collectionId),
+                new SqlParameter("@userId", UserSession.UserId),
+                new SqlParameter("@name", name),
+                new SqlParameter("@description", string.IsNullOrEmpty(description) ? DBNull.Value : (object)description)
+            };
+
+            return ExecuteNonQuery(query, parameters) > 0;
+        }
+
+        /// <summary>
+        /// Xóa collection
+        /// </summary>
+        public static bool DeleteCollection(int collectionId)
+        {
+            // Xóa items trước
+            string deleteItems = "DELETE FROM collection_items WHERE collection_id = @id";
+            ExecuteNonQuery(deleteItems, new SqlParameter[] { new SqlParameter("@id", collectionId) });
+
+            // Xóa collection
+            string query = "DELETE FROM collections WHERE id = @id AND user_id = @userId";
+            SqlParameter[] parameters = new SqlParameter[]
+            {
+                new SqlParameter("@id", collectionId),
+                new SqlParameter("@userId", UserSession.UserId)
+            };
+
+            return ExecuteNonQuery(query, parameters) > 0;
+        }
+
+        /// <summary>
+        /// Lấy tài liệu trong collection
+        /// </summary>
+        public static DataTable GetDocumentsInCollection(int collectionId)
+        {
+            string query = @"SELECT t.*, ci.added_at
+                            FROM tai_lieu t
+                            INNER JOIN collection_items ci ON t.id = ci.document_id
+                            WHERE ci.collection_id = @collectionId
+                            ORDER BY ci.added_at DESC";
+
+            SqlParameter[] parameters = new SqlParameter[]
+            {
+                new SqlParameter("@collectionId", collectionId)
+            };
+
+            return ExecuteQuery(query, parameters);
+        }
+
+        /// <summary>
+        /// Thêm tài liệu vào collection
+        /// </summary>
+        public static bool AddDocumentToCollection(int collectionId, int documentId)
+        {
+            // Kiểm tra đã tồn tại chưa
+            string checkQuery = "SELECT COUNT(*) FROM collection_items WHERE collection_id = @colId AND document_id = @docId";
+            SqlParameter[] checkParams = new SqlParameter[]
+            {
+                new SqlParameter("@colId", collectionId),
+                new SqlParameter("@docId", documentId)
+            };
+
+            object exists = ExecuteScalar(checkQuery, checkParams);
+            if (exists != null && Convert.ToInt32(exists) > 0)
+            {
+                return false; // Đã tồn tại
+            }
+
+            string query = "INSERT INTO collection_items (collection_id, document_id) VALUES (@colId, @docId)";
+            SqlParameter[] parameters = new SqlParameter[]
+            {
+                new SqlParameter("@colId", collectionId),
+                new SqlParameter("@docId", documentId)
+            };
+
+            return ExecuteNonQuery(query, parameters) > 0;
+        }
+
+        /// <summary>
+        /// Xóa tài liệu khỏi collection
+        /// </summary>
+        public static bool RemoveDocumentFromCollection(int collectionId, int documentId)
+        {
+            string query = "DELETE FROM collection_items WHERE collection_id = @colId AND document_id = @docId";
+            SqlParameter[] parameters = new SqlParameter[]
+            {
+                new SqlParameter("@colId", collectionId),
+                new SqlParameter("@docId", documentId)
+            };
+
+            return ExecuteNonQuery(query, parameters) > 0;
+        }
+
+        #endregion
 
         /// <summary>
         /// Lấy thống kê số lượng tài liệu theo môn học
