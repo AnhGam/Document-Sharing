@@ -77,11 +77,11 @@
     </Compile>
     <Compile Include="Data\DatabaseHelper.cs" />
     <Compile Include="Data\DatabaseHelper_UserAuth.cs" />
-    <Compile Include="Documents\Form1.cs">
+    <Compile Include="Documents\Dashboard.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Documents\Form1.Designer.cs">
-      <DependentUpon>Form1.cs</DependentUpon>
+    <Compile Include="Documents\Dashboard.Designer.cs">
+      <DependentUpon>Dashboard.cs</DependentUpon>
     </Compile>
     <Compile Include="UI\IconHelper.cs" />
     <Compile Include="Authentication\LoginForm.cs">
@@ -142,8 +142,8 @@
     <EmbeddedResource Include="Management\FileIntegrityCheckForm.resx">
       <DependentUpon>FileIntegrityCheckForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Documents\Form1.resx">
-      <DependentUpon>Form1.cs</DependentUpon>
+    <EmbeddedResource Include="Documents\Dashboard.resx">
+      <DependentUpon>Dashboard.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Authentication\LoginForm.resx">
       <DependentUpon>LoginForm.cs</DependentUpon>

@@ -22,7 +22,7 @@ namespace study_document_manager
             if (loginForm.ShowDialog() == DialogResult.OK)
             {
                 // Nếu đăng nhập thành công, mở Form1
-                Application.Run(new Form1());
+                Application.Run(new Dashboard());
             }
             // Nếu không đăng nhập hoặc thoát, app sẽ đóng
         }
