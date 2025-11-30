@@ -17,8 +17,7 @@ namespace study_document_manager
             // Kiểm tra quyền Admin
             if (!UserSession.IsAdmin)
             {
-                MessageBox.Show("Bạn không có quyền truy cập chức năng này!",
-                    "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Bạn không có quyền truy cập chức năng này!");
                 this.Close();
                 return;
             }
@@ -43,8 +42,7 @@ namespace study_document_manager
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Lỗi load dữ liệu: " + ex.Message,
-                    "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ToastNotification.Error("Lỗi load dữ liệu: " + ex.Message);
             }
         }
 
@@ -146,8 +144,7 @@ namespace study_document_manager
             if (form.ShowDialog() == DialogResult.OK)
             {
                 LoadUsers();
-                MessageBox.Show("Đã thêm user mới thành công!",
-                    "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                ToastNotification.Success("Đã thêm user mới thành công!");
             }
         }
 
@@ -158,8 +155,7 @@ namespace study_document_manager
         {
             if (dgvUsers.SelectedRows.Count == 0)
             {
-                MessageBox.Show("Vui lòng chọn user cần đổi mật khẩu!",
-                    "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Vui lòng chọn user cần đổi mật khẩu!");
                 return;
             }
 
@@ -227,28 +223,24 @@ namespace study_document_manager
 
                     if (string.IsNullOrEmpty(newPassword))
                     {
-                        MessageBox.Show("Mật khẩu không được để trống!",
-                            "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        ToastNotification.Error("Mật khẩu không được để trống!");
                         return;
                     }
 
                     if (newPassword.Length < 6)
                     {
-                        MessageBox.Show("Mật khẩu phải có ít nhất 6 ký tự!",
-                            "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        ToastNotification.Error("Mật khẩu phải có ít nhất 6 ký tự!");
                         return;
                     }
 
                     // Reset password (admin không cần old password)
                     if (DatabaseHelper.AdminResetPassword(userId, newPassword))
                     {
-                        MessageBox.Show("Đã đổi mật khẩu thành công!",
-                            "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        ToastNotification.Success("Đã đổi mật khẩu thành công!");
                     }
                     else
                     {
-                        MessageBox.Show("Đổi mật khẩu thất bại!",
-                            "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        ToastNotification.Error("Đổi mật khẩu thất bại!");
                     }
                 }
             }
@@ -261,8 +253,7 @@ namespace study_document_manager
         {
             if (dgvUsers.SelectedRows.Count == 0)
             {
-                MessageBox.Show("Vui lòng chọn user cần đổi vai trò!",
-                    "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Vui lòng chọn user cần đổi vai trò!");
                 return;
             }
 
@@ -273,8 +264,7 @@ namespace study_document_manager
             // Không cho đổi role của chính mình
             if (userId == UserSession.UserId)
             {
-                MessageBox.Show("Bạn không thể đổi vai trò của chính mình!",
-                    "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Bạn không thể đổi vai trò của chính mình!");
                 return;
             }
 
@@ -352,8 +342,7 @@ namespace study_document_manager
 
                     if (newRole == currentRole)
                     {
-                        MessageBox.Show("Vai trò mới giống vai trò hiện tại!",
-                            "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        ToastNotification.Info("Vai trò mới giống vai trò hiện tại!");
                         return;
                     }
 
@@ -367,13 +356,11 @@ namespace study_document_manager
                         if (DatabaseHelper.UpdateUserRole(userId, newRole))
                         {
                             LoadUsers();
-                            MessageBox.Show("Đã đổi vai trò thành công!",
-                                "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            ToastNotification.Success("Đã đổi vai trò thành công!");
                         }
                         else
                         {
-                            MessageBox.Show("Đổi vai trò thất bại!",
-                                "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            ToastNotification.Error("Đổi vai trò thất bại!");
                         }
                     }
                 }
@@ -387,8 +374,7 @@ namespace study_document_manager
         {
             if (dgvUsers.SelectedRows.Count == 0)
             {
-                MessageBox.Show("Vui lòng chọn user!",
-                    "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Vui lòng chọn user!");
                 return;
             }
 
@@ -399,8 +385,7 @@ namespace study_document_manager
             // Không cho khóa chính mình
             if (userId == UserSession.UserId)
             {
-                MessageBox.Show("Bạn không thể khóa tài khoản của chính mình!",
-                    "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Bạn không thể khóa tài khoản của chính mình!");
                 return;
             }
 
@@ -414,13 +399,11 @@ namespace study_document_manager
                 if (DatabaseHelper.ToggleUserActive(userId, !isActive))
                 {
                     LoadUsers();
-                    MessageBox.Show($"Đã {action} user thành công!",
-                        "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    ToastNotification.Success($"Đã {action} user thành công!");
                 }
                 else
                 {
-                    MessageBox.Show($"Lỗi khi {action} user!",
-                        "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    ToastNotification.Error($"Lỗi khi {action} user!");
                 }
             }
         }
@@ -432,8 +415,7 @@ namespace study_document_manager
         {
             if (dgvUsers.SelectedRows.Count == 0)
             {
-                MessageBox.Show("Vui lòng chọn user cần xóa!",
-                    "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Vui lòng chọn user cần xóa!");
                 return;
             }
 
@@ -443,8 +425,7 @@ namespace study_document_manager
             // Không cho xóa chính mình
             if (userId == UserSession.UserId)
             {
-                MessageBox.Show("Bạn không thể xóa tài khoản của chính mình!",
-                    "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Bạn không thể xóa tài khoản của chính mình!");
                 return;
             }
 
@@ -458,13 +439,11 @@ namespace study_document_manager
                 if (DatabaseHelper.DeleteUser(userId))
                 {
                     LoadUsers();
-                    MessageBox.Show("Đã xóa user thành công!",
-                        "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    ToastNotification.Success("Đã xóa user thành công!");
                 }
                 else
                 {
-                    MessageBox.Show("Lỗi khi xóa user!",
-                        "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    ToastNotification.Error("Lỗi khi xóa user!");
                 }
             }
         }

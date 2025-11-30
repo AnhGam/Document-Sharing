@@ -32,16 +32,14 @@ namespace study_document_manager
 
             if (string.IsNullOrEmpty(fullName))
             {
-                MessageBox.Show("Vui lòng nhập họ tên!", "Lỗi", 
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Vui lòng nhập họ tên!");
                 txtFullName.Focus();
                 return;
             }
 
             if (!string.IsNullOrEmpty(email) && !IsValidEmail(email))
             {
-                MessageBox.Show("Email không hợp lệ!", "Lỗi", 
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Email không hợp lệ!");
                 txtEmail.Focus();
                 return;
             }
@@ -54,19 +52,16 @@ namespace study_document_manager
                     UserSession.FullName = fullName;
                     UserSession.Email = email;
 
-                    MessageBox.Show("Cập nhật thông tin thành công!", "Thành công", 
-                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    ToastNotification.Success("Cập nhật thông tin thành công!");
                 }
                 else
                 {
-                    MessageBox.Show("Không thể cập nhật thông tin!", "Lỗi", 
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    ToastNotification.Error("Không thể cập nhật thông tin!");
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Lỗi: {ex.Message}", "Lỗi", 
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ToastNotification.Error($"Lỗi: {ex.Message}");
             }
         }
 
@@ -78,32 +73,28 @@ namespace study_document_manager
 
             if (string.IsNullOrEmpty(currentPassword))
             {
-                MessageBox.Show("Vui lòng nhập mật khẩu hiện tại!", "Lỗi", 
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Vui lòng nhập mật khẩu hiện tại!");
                 txtCurrentPassword.Focus();
                 return;
             }
 
             if (string.IsNullOrEmpty(newPassword))
             {
-                MessageBox.Show("Vui lòng nhập mật khẩu mới!", "Lỗi", 
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Vui lòng nhập mật khẩu mới!");
                 txtNewPassword.Focus();
                 return;
             }
 
             if (newPassword.Length < 6)
             {
-                MessageBox.Show("Mật khẩu mới phải có ít nhất 6 ký tự!", "Lỗi", 
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Mật khẩu mới phải có ít nhất 6 ký tự!");
                 txtNewPassword.Focus();
                 return;
             }
 
             if (newPassword != confirmPassword)
             {
-                MessageBox.Show("Xác nhận mật khẩu không khớp!", "Lỗi", 
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Xác nhận mật khẩu không khớp!");
                 txtConfirmPassword.Focus();
                 return;
             }
@@ -114,8 +105,7 @@ namespace study_document_manager
                 
                 if (result.Success)
                 {
-                    MessageBox.Show("Đổi mật khẩu thành công!", "Thành công", 
-                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    ToastNotification.Success("Đổi mật khẩu thành công!");
                     
                     txtCurrentPassword.Clear();
                     txtNewPassword.Clear();
@@ -123,14 +113,12 @@ namespace study_document_manager
                 }
                 else
                 {
-                    MessageBox.Show(result.Message, "Lỗi", 
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    ToastNotification.Error(result.Message);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Lỗi: {ex.Message}", "Lỗi", 
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ToastNotification.Error($"Lỗi: {ex.Message}");
             }
         }
 

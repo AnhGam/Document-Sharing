@@ -61,7 +61,7 @@ namespace study_document_manager
             this.lblTitle.Name = "lblTitle";
             this.lblTitle.Size = new System.Drawing.Size(390, 45);
             this.lblTitle.TabIndex = 0;
-            this.lblTitle.Text = "Quản lý Môn học và Loại";
+            this.lblTitle.Text = "Quản lý Danh mục và Loại";
             // 
             // btnClose
             // 

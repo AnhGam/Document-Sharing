@@ -57,7 +57,7 @@ namespace study_document_manager
             this.splitContainer.Panel1.Controls.Add(this.lstCollections);
             this.splitContainer.Panel1.Controls.Add(this.pnlCollectionButtons);
             this.splitContainer.Panel1.Controls.Add(this.lblCollectionTitle);
-            this.splitContainer.Panel1.Padding = new System.Windows.Forms.Padding(10, 10, 10, 10);
+            this.splitContainer.Panel1.Padding = new System.Windows.Forms.Padding(10);
             // 
             // splitContainer.Panel2
             // 
@@ -65,7 +65,7 @@ namespace study_document_manager
             this.splitContainer.Panel2.Controls.Add(this.dgvDocuments);
             this.splitContainer.Panel2.Controls.Add(this.pnlDocButtons);
             this.splitContainer.Panel2.Controls.Add(this.lblDocTitle);
-            this.splitContainer.Panel2.Padding = new System.Windows.Forms.Padding(10, 10, 10, 10);
+            this.splitContainer.Panel2.Padding = new System.Windows.Forms.Padding(10);
             this.splitContainer.Size = new System.Drawing.Size(900, 500);
             this.splitContainer.SplitterDistance = 280;
             this.splitContainer.TabIndex = 0;

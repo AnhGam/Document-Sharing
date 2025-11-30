@@ -17,7 +17,8 @@
 
 - **Quản lý tài liệu đầy đủ**: Thêm, sửa, xóa tài liệu với đầy đủ thông tin cho từng người dùng
 - **Đăng nhập & phân quyền**: Hỗ trợ 2 cấp quyền User / Admin - mỗi User quản lý tài liệu của riêng mình
-- **Tìm kiếm & filter nâng cao**: Tìm kiếm theo từ khóa, lọc theo môn học, loại tài liệu, ngày thêm, dung lượng, chỉ tài liệu quan trọng
+- **Tìm kiếm & filter nâng cao**: Tìm kiếm theo từ khóa, lọc theo danh mục, loại tài liệu, ngày thêm, dung lượng, chỉ tài liệu quan trọng
+- **Toast Notification**: Thông báo kiểu web hiện đại (Success/Error/Warning/Info) với hiệu ứng fade
 - **Mở file trực tiếp & Context Menu**: Double-click hoặc chuột phải để mở file, sửa, xóa, copy đường dẫn, mở thư mục chứa file
 - **Đánh dấu quan trọng**: Đánh sao vàng cho tài liệu quan trọng, có thể lọc nhanh
 - **Tags (nhãn)**: Gắn nhiều nhãn cho tài liệu, lọc theo tag để tìm nhanh theo chủ đề
@@ -70,6 +71,13 @@
 - Tab **Đổi mật khẩu**: Đổi mật khẩu (cần xác thực mật khẩu hiện tại)
 - Hiển thị vai trò và thời gian đăng nhập
 
+### Toast Notification
+- Thông báo dạng Toast hiện đại kiểu web
+- 4 loại: **Success** (xanh lá), **Error** (đỏ), **Warning** (cam), **Info** (xanh dương)
+- Hiệu ứng fade in/out mượt mà
+- Hiển thị ở góc trên bên phải của form
+- Tự động đóng sau vài giây, có nút đóng nhanh
+
 ## Công nghệ sử dụng
 
 - **Ngôn ngữ**: C# (.NET Framework 4.8)
@@ -77,6 +85,7 @@
 - **Database**: SQL Server 2012+
 - **Biểu đồ**: System.Windows.Forms.DataVisualization.Charting
 - **Thư viện**: System.Data.SqlClient, System.Xml.Linq
+- **UI Components**: ToastNotification (custom), IconHelper (custom icons)
 
 ## Cấu trúc Database
 
@@ -153,7 +162,7 @@ Database **quan_ly_tai_lieu** gồm 7 bảng chính:
 
 ### Lọc tài liệu
 
-1. Chọn môn học từ ComboBox "Môn học"
+1. Chọn danh mục từ ComboBox "Danh mục"
 2. Chọn loại từ ComboBox "Loại"
 3. Danh sách tự động cập nhật
 
@@ -192,8 +201,8 @@ Database **quan_ly_tai_lieu** gồm 7 bảng chính:
 
 ### Quản lý danh mục
 
-1. Menu **Công cụ > Quản lý Môn học và Loại** (`Ctrl+M`)
-2. Chọn tab **Môn học** hoặc **Loại tài liệu**
+1. Menu **Công cụ > Quản lý Danh mục và Loại** (`Ctrl+M`)
+2. Chọn tab **Danh mục** hoặc **Loại tài liệu**
 3. **Thêm**: Tạo danh mục mới
 4. **Sửa**: Đổi tên danh mục (cập nhật tất cả tài liệu liên quan)
 5. **Xóa**: Xóa danh mục (cảnh báo: có thể ảnh hưởng đến tài liệu liên quan)
@@ -211,16 +220,24 @@ Database **quan_ly_tai_lieu** gồm 7 bảng chính:
 
 ## Thiết kế màu sắc
 ```
-Primary:    #2196F3 (Blue)      - Button chính, selection
-Success:    #4CAF50 (Green)     - Thành công, button Lưu
-Danger:     #F44336 (Red)       - Lỗi, xóa, quá hạn
-Warning:    #FF9800 (Orange)    - Cảnh báo, PowerPoint icon
+=== Màu chính (Material Design) ===
+Primary:    #2196F3 (Blue)      - Button chính, selection, Info Toast
+Success:    #4CAF50 (Green)     - Thành công, button Lưu, Success Toast
+Danger:     #F44336 (Red)       - Lỗi, xóa, quá hạn, Error Toast
+Warning:    #FF9800 (Orange)    - Cảnh báo, PowerPoint icon, Warning Toast
 Star:       #FFCA28 (Yellow)    - Đánh dấu quan trọng
 
+=== Background & Layout ===
 Background: #E3F2FD (Light Blue) - Form chính
 Panel:      #FFFFFF (White)
 Alternating: #F5F5F5 (Light Gray) - DataGridView rows
 Header:     #34495E (Dark)       - DataGridView header
+
+=== Toast Notification ===
+Toast Success: #4CAF50 - Xanh lá, icon ✓
+Toast Error:   #F44336 - Đỏ, icon ✕
+Toast Warning: #FF9800 - Cam, icon !
+Toast Info:    #2196F3 - Xanh dương, icon i
 ```
 ## Các phím tắt
 
@@ -232,7 +249,7 @@ Header:     #34495E (Dark)       - DataGridView header
 | `Delete` | Xóa tài liệu đã chọn |
 | `Ctrl+E` | Xuất dữ liệu |
 | `Ctrl+S` | Xem thống kê |
-| `Ctrl+M` | Quản lý môn học và loại |
+| `Ctrl+M` | Quản lý danh mục và loại |
 | `Ctrl+L` | Đăng xuất |
 | `F5` | Làm mới danh sách |
 | `Alt+F4` | Thoát ứng dụng |

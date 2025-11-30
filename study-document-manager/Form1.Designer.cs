@@ -587,15 +587,11 @@
             this.btnClearAdvancedFilter.FlatAppearance.BorderSize = 0;
             this.btnClearAdvancedFilter.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnClearAdvancedFilter.ForeColor = System.Drawing.Color.White;
-            this.btnClearAdvancedFilter.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnClearAdvancedFilter.Location = new System.Drawing.Point(580, 70);
             this.btnClearAdvancedFilter.Name = "btnClearAdvancedFilter";
-            this.btnClearAdvancedFilter.Padding = new System.Windows.Forms.Padding(8, 0, 0, 0);
             this.btnClearAdvancedFilter.Size = new System.Drawing.Size(180, 35);
             this.btnClearAdvancedFilter.TabIndex = 15;
-            this.btnClearAdvancedFilter.Text = "Xóa Filter";
-            this.btnClearAdvancedFilter.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            this.btnClearAdvancedFilter.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            this.btnClearAdvancedFilter.Text = "    ✕  Xóa Filter";
             this.btnClearAdvancedFilter.UseVisualStyleBackColor = false;
             this.btnClearAdvancedFilter.Click += new System.EventHandler(this.btnClearAdvancedFilter_Click);
             // 

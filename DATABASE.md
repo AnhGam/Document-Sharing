@@ -123,7 +123,7 @@ Lưu thông tin tài liệu học tập của từng người dùng.
 |-----|--------------|-------|
 | `id` | INT (PK, Identity) | ID tự động tăng |
 | `ten` | NVARCHAR(200) | Tên tài liệu |
-| `mon_hoc` | NVARCHAR(100) | Môn học |
+| `mon_hoc` | NVARCHAR(100) | Danh mục |
 | `loai` | NVARCHAR(100) | Loại tài liệu |
 | `duong_dan` | NVARCHAR(500) | Đường dẫn file |
 | `ghi_chu` | NVARCHAR(1000) | Ghi chú |
@@ -139,7 +139,7 @@ Lưu thông tin tài liệu học tập của từng người dùng.
 CREATE TABLE tai_lieu (
     id INT PRIMARY KEY IDENTITY(1,1),
     ten NVARCHAR(200) NOT NULL,
-    mon_hoc NVARCHAR(100),
+    mon_hoc NVARCHAR(100),            -- Danh mục
     loai NVARCHAR(100),
     duong_dan NVARCHAR(500) NOT NULL,
     ghi_chu NVARCHAR(1000),

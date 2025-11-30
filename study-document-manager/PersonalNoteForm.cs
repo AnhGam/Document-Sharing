@@ -63,8 +63,7 @@ namespace study_document_manager
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Lỗi khi load ghi chú: " + ex.Message,
-                    "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ToastNotification.Error("Lỗi khi load ghi chú: " + ex.Message);
             }
         }
 
@@ -108,15 +107,13 @@ namespace study_document_manager
                     DatabaseHelper.ExecuteNonQuery(query, parameters);
                 }
 
-                MessageBox.Show("Đã lưu ghi chú!", "Thành công", 
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                ToastNotification.Success("Đã lưu ghi chú!");
                 this.DialogResult = DialogResult.OK;
                 this.Close();
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Lỗi khi lưu ghi chú: " + ex.Message,
-                    "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ToastNotification.Error("Lỗi khi lưu ghi chú: " + ex.Message);
             }
         }
 
@@ -130,8 +127,7 @@ namespace study_document_manager
         {
             if (!noteId.HasValue)
             {
-                MessageBox.Show("Chưa có ghi chú để xóa!", "Thông báo", 
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                ToastNotification.Info("Chưa có ghi chú để xóa!");
                 return;
             }
 
@@ -148,15 +144,13 @@ namespace study_document_manager
 
                     DatabaseHelper.ExecuteNonQuery(query, parameters);
                     
-                    MessageBox.Show("Đã xóa ghi chú!", "Thành công", 
-                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    ToastNotification.Success("Đã xóa ghi chú!");
                     this.DialogResult = DialogResult.OK;
                     this.Close();
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Lỗi khi xóa ghi chú: " + ex.Message,
-                        "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    ToastNotification.Error("Lỗi khi xóa ghi chú: " + ex.Message);
                 }
             }
         }

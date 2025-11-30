@@ -23,7 +23,7 @@ namespace study_document_manager
         }
 
         /// <summary>
-        /// Load danh sách môn học
+        /// Load danh sách danh mục
         /// </summary>
         private void LoadSubjects()
         {
@@ -32,13 +32,13 @@ namespace study_document_manager
             {
                 DataTable dt = DatabaseHelper.GetDistinctSubjects();
                 dgvCategories.DataSource = dt;
-                SetupDataGridView("Môn học");
-                lblCount.Text = "Tổng số: " + dt.Rows.Count + " môn học";
-                lblStatus.Text = "Đã tải danh sách môn học";
+                SetupDataGridView("Danh mục");
+                lblCount.Text = "Tổng số: " + dt.Rows.Count + " danh mục";
+                lblStatus.Text = "Đã tải danh sách danh mục";
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ToastNotification.Error("L\u1ed7i: " + ex.Message);
             }
         }
 
@@ -58,7 +58,7 @@ namespace study_document_manager
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ToastNotification.Error("L\u1ed7i: " + ex.Message);
             }
         }
 
@@ -87,7 +87,7 @@ namespace study_document_manager
         }
 
         /// <summary>
-        /// Tab môn học
+        /// Tab danh mục
         /// </summary>
         private void btnSubjects_Click(object sender, EventArgs e)
         {
@@ -107,8 +107,8 @@ namespace study_document_manager
         /// </summary>
         private void btnAdd_Click(object sender, EventArgs e)
         {
-            string title = currentTab == "subject" ? "Thêm môn học mới" : "Thêm loại tài liệu mới";
-            string label = currentTab == "subject" ? "Tên môn học:" : "Tên loại tài liệu:";
+            string title = currentTab == "subject" ? "Thêm danh mục mới" : "Thêm loại tài liệu mới";
+            string label = currentTab == "subject" ? "Tên danh mục:" : "Tên loại tài liệu:";
             
             string newValue = ShowInputDialog(title, label, "");
             
@@ -118,15 +118,14 @@ namespace study_document_manager
             // Kiểm tra trùng lặp
             if (CheckDuplicate(newValue))
             {
-                MessageBox.Show("'" + newValue + "' đã tồn tại!", 
-                    "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("'" + newValue + "' đã tồn tại!");
                 return;
             }
 
             // Thông báo: Cần tạo ít nhất 1 tài liệu để thêm danh mục
             DialogResult result = MessageBox.Show(
                 "Để thêm '" + newValue + "' vào danh sách, bạn có muốn tạo một tài liệu mẫu không?\n\n" +
-                "Nếu chọn 'Không', bạn sẽ cần tự tạo tài liệu có môn học/loại này sau.",
+                "Nếu chọn 'Không', bạn sẽ cần tự tạo tài liệu có danh mục/loại này sau.",
                 "Xác nhận", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
 
             if (result == DialogResult.Yes)
@@ -135,15 +134,13 @@ namespace study_document_manager
                 bool success = CreateSampleDocument(newValue);
                 if (success)
                 {
-                    MessageBox.Show("Đã thêm '" + newValue + "' thành công!\nMột tài liệu mẫu đã được tạo.", 
-                        "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    ToastNotification.Success("Đã thêm '" + newValue + "' thành công!");
                     RefreshData();
                 }
             }
             else if (result == DialogResult.No)
             {
-                MessageBox.Show("Vui lòng tạo tài liệu có " + label.ToLower() + " '" + newValue + "' để xuất hiện trong danh sách.", 
-                    "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                ToastNotification.Info("Vui lòng tạo tài liệu có " + label.ToLower() + " '" + newValue + "' để xuất hiện trong danh sách.");
             }
         }
 
@@ -154,16 +151,15 @@ namespace study_document_manager
         {
             if (dgvCategories.SelectedRows.Count == 0)
             {
-                MessageBox.Show("Vui lòng chọn mục cần sửa!", 
-                    "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Vui lòng chọn mục cần sửa!");
                 return;
             }
 
             string oldValue = dgvCategories.SelectedRows[0].Cells[0].Value.ToString();
             int count = Convert.ToInt32(dgvCategories.SelectedRows[0].Cells[1].Value);
 
-            string title = currentTab == "subject" ? "Sửa môn học" : "Sửa loại tài liệu";
-            string label = currentTab == "subject" ? "Tên môn học mới:" : "Tên loại tài liệu mới:";
+            string title = currentTab == "subject" ? "Sửa danh mục" : "Sửa loại tài liệu";
+            string label = currentTab == "subject" ? "Tên danh mục mới:" : "Tên loại tài liệu mới:";
 
             string newValue = ShowInputDialog(title, label, oldValue);
 
@@ -173,8 +169,7 @@ namespace study_document_manager
             // Kiểm tra trùng lặp
             if (CheckDuplicate(newValue))
             {
-                MessageBox.Show("'" + newValue + "' đã tồn tại!", 
-                    "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("'" + newValue + "' đã tồn tại!");
                 return;
             }
 
@@ -188,8 +183,7 @@ namespace study_document_manager
                 bool success = UpdateCategoryValue(oldValue, newValue);
                 if (success)
                 {
-                    MessageBox.Show("Đã cập nhật thành công!\n" + count + " tài liệu đã được thay đổi.", 
-                        "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    ToastNotification.Success("Đã cập nhật thành công!");
                     RefreshData();
                 }
             }
@@ -202,8 +196,7 @@ namespace study_document_manager
         {
             if (dgvCategories.SelectedRows.Count == 0)
             {
-                MessageBox.Show("Vui lòng chọn mục cần xóa!", 
-                    "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Vui lòng chọn mục cần xóa!");
                 return;
             }
 
@@ -211,8 +204,8 @@ namespace study_document_manager
             int count = Convert.ToInt32(dgvCategories.SelectedRows[0].Cells[1].Value);
 
             string message = currentTab == "subject" 
-                ? "Xóa môn học '" + value + "'?\n\nThao tác này sẽ:\n" +
-                  "- Xóa toàn bộ " + count + " tài liệu có môn học này\n" +
+                ? "Xóa danh mục '" + value + "'?\n\nThao tác này sẽ:\n" +
+                  "- Xóa toàn bộ " + count + " tài liệu có danh mục này\n" +
                   "- KHÔNG THỂ HOÀN TÁC!\n\n" +
                   "Bạn có chắc chắn muốn tiếp tục?"
                 : "Xóa loại '" + value + "'?\n\nThao tác này sẽ:\n" +
@@ -227,7 +220,7 @@ namespace study_document_manager
             {
                 // Xác nhận lần 2
                 DialogResult confirm = MessageBox.Show(
-                    "XÁC NHẬN LẦN CUỐI:\n\nXóa " + count + " tài liệu có " + (currentTab == "subject" ? "môn học" : "loại") + " '" + value + "'?", 
+                    "XÁC NHẬN LẦN CUỐI:\n\nXóa " + count + " tài liệu có " + (currentTab == "subject" ? "danh mục" : "loại") + " '" + value + "'?", 
                     "Xác nhận xóa", MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation);
 
                 if (confirm == DialogResult.Yes)
@@ -235,8 +228,7 @@ namespace study_document_manager
                     bool success = DeleteCategoryDocuments(value);
                     if (success)
                     {
-                        MessageBox.Show("Đã xóa thành công!\n" + count + " tài liệu đã bị xóa.", 
-                            "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        ToastNotification.Success("\u0110\u00e3 x\u00f3a th\u00e0nh c\u00f4ng! " + count + " t\u00e0i li\u1ec7u \u0111\u00e3 b\u1ecb x\u00f3a.");
                         RefreshData();
                     }
                 }

@@ -32,16 +32,14 @@ namespace study_document_manager
             // Validation
             if (string.IsNullOrEmpty(username))
             {
-                MessageBox.Show("Vui lòng nhập tên đăng nhập!", 
-                    "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Vui lòng nhập tên đăng nhập!");
                 txtUsername.Focus();
                 return;
             }
 
             if (string.IsNullOrEmpty(password))
             {
-                MessageBox.Show("Vui lòng nhập mật khẩu!", 
-                    "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Vui lòng nhập mật khẩu!");
                 txtPassword.Focus();
                 return;
             }
@@ -54,8 +52,7 @@ namespace study_document_manager
                 // Kiểm tra tài khoản có active không
                 if (!Convert.ToBoolean(user["is_active"]))
                 {
-                    MessageBox.Show("Tài khoản đã bị khóa!", 
-                        "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    ToastNotification.Error("Tài khoản đã bị khóa!");
                     return;
                 }
 
@@ -87,8 +84,7 @@ namespace study_document_manager
             }
             else
             {
-                MessageBox.Show("Tên đăng nhập hoặc mật khẩu không đúng!", 
-                    "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ToastNotification.Error("Tên đăng nhập hoặc mật khẩu không đúng!");
                 txtPassword.Clear();
                 txtPassword.Focus();
             }

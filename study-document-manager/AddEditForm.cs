@@ -122,8 +122,7 @@ namespace study_document_manager
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Lỗi khi load dữ liệu: " + ex.Message, 
-                    "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ToastNotification.Error("Lỗi khi load dữ liệu: " + ex.Message);
             }
         }
 
@@ -174,16 +173,14 @@ namespace study_document_manager
             // Validate dữ liệu
             if (string.IsNullOrWhiteSpace(txt_ten.Text))
             {
-                MessageBox.Show("Vui lòng nhập tên tài liệu!", 
-                    "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Vui lòng nhập tên tài liệu!");
                 txt_ten.Focus();
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(txt_duong_dan.Text))
             {
-                MessageBox.Show("Vui lòng chọn file tài liệu!", 
-                    "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Vui lòng chọn file tài liệu!");
                 btn_chon_file.Focus();
                 return;
             }
@@ -191,8 +188,7 @@ namespace study_document_manager
             // Kiểm tra file có tồn tại không
             if (!File.Exists(txt_duong_dan.Text))
             {
-                MessageBox.Show("File không tồn tại! Vui lòng chọn file khác.", 
-                    "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ToastNotification.Error("File không tồn tại! Vui lòng chọn file khác.");
                 return;
             }
 
@@ -229,8 +225,7 @@ namespace study_document_manager
 
                     if (success)
                     {
-                        MessageBox.Show("Cập nhật tài liệu thành công!", 
-                            "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        ToastNotification.Success("Cập nhật tài liệu thành công!");
                         this.DialogResult = DialogResult.OK;
                         this.Close();
                     }
@@ -253,8 +248,7 @@ namespace study_document_manager
 
                     if (success)
                     {
-                        MessageBox.Show("Thêm tài liệu thành công!", 
-                            "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        ToastNotification.Success("Thêm tài liệu thành công!");
                         this.DialogResult = DialogResult.OK;
                         this.Close();
                     }
@@ -262,8 +256,7 @@ namespace study_document_manager
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Lỗi khi lưu: " + ex.Message, 
-                    "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ToastNotification.Error("Lỗi khi lưu: " + ex.Message);
             }
         }
 

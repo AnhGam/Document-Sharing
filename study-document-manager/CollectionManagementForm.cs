@@ -45,8 +45,7 @@ namespace study_document_manager
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Lỗi khi load bộ sưu tập: " + ex.Message,
-                    "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ToastNotification.Error("Lỗi khi load bộ sưu tập: " + ex.Message);
             }
         }
 
@@ -74,7 +73,7 @@ namespace study_document_manager
             {
                 Name = "mon_hoc",
                 DataPropertyName = "mon_hoc",
-                HeaderText = "Môn học",
+                HeaderText = "Danh mục",
                 Width = 100
             });
 
@@ -104,7 +103,7 @@ namespace study_document_manager
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ToastNotification.Error("Lỗi: " + ex.Message);
             }
         }
 
@@ -145,7 +144,7 @@ namespace study_document_manager
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    ToastNotification.Error("Lỗi: " + ex.Message);
                 }
             }
         }
@@ -172,7 +171,7 @@ namespace study_document_manager
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    ToastNotification.Error("Lỗi: " + ex.Message);
                 }
             }
         }
@@ -198,7 +197,7 @@ namespace study_document_manager
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    ToastNotification.Error("Lỗi: " + ex.Message);
                 }
             }
         }
@@ -226,7 +225,7 @@ namespace study_document_manager
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ToastNotification.Error("Lỗi: " + ex.Message);
             }
         }
 
@@ -241,7 +240,7 @@ namespace study_document_manager
             }
             else
             {
-                MessageBox.Show("File không tồn tại!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ToastNotification.Error("File không tồn tại!");
             }
         }
 

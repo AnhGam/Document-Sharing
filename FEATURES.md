@@ -102,7 +102,7 @@
 ## Phase 2 – Hỗ trợ học tập và tổ chức tài liệu (2–3 tuần) (ĐÃ HOÀN THÀNH)
 
 ### 6. Tags (nhãn) cho tài liệu (ĐÃ ÁP DỤNG)
-**Mục tiêu:** Phân loại linh hoạt hơn so với chỉ dùng môn học và loại tài liệu.
+**Mục tiêu:** Phân loại linh hoạt hơn so với chỉ dùng danh mục và loại tài liệu.
 
 **Tính năng:**
 - Thêm trường `tags` cho mỗi tài liệu, nhập dạng chuỗi phân cách bằng dấu chấm phẩy.
@@ -162,7 +162,7 @@
 **Mục tiêu:** Cung cấp cái nhìn tổng quan về tài liệu của người dùng.
 
 **Tính năng:**
-- Thống kê số lượng tài liệu theo môn học, loại.
+- Thống kê số lượng tài liệu theo danh mục, loại.
 - Biểu đồ tài liệu tạo mới theo thời gian (7 ngày, 30 ngày, theo tháng).
 - Thống kê tài liệu quan trọng, tài liệu chưa có file, tài liệu gần deadline.
 
@@ -227,6 +227,9 @@ Các ý tưởng dưới đây mang tính định hướng, chỉ triển khai k
 - Deadline và xem tài liệu sắp đến hạn/quá hạn
 - Cài đặt tài khoản (đổi thông tin, đổi mật khẩu)
 - Tái cấu trúc menu (Công cụ, Theo dõi, Tài khoản, Quản lý)
+- Toast Notification hiện đại (Success/Error/Warning/Info) với hiệu ứng fade
+- IconHelper mở rộng với nhiều icon UI (Add, Edit, Delete, Settings, Chart...)
+- Cá nhân hóa giao diện (đổi "Môn học" thành "Danh mục")
 
 ### CHƯA TRIỂN KHAI 
 - Phím tắt nâng cao (F2, Enter mở file, Ctrl+F, Esc)

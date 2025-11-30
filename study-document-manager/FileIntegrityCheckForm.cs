@@ -91,7 +91,7 @@ namespace study_document_manager
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Lỗi khi quét: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ToastNotification.Error("Lỗi khi quét: " + ex.Message);
                 btnScan.Enabled = true;
             }
         }
@@ -167,12 +167,12 @@ namespace study_document_manager
                             dgvMissingFiles.Rows.RemoveAt(rowIndex);
                             missingCount--;
                             lblSummary.Text = $"File thiếu: {missingCount}";
-                            MessageBox.Show("Đã cập nhật đường dẫn file!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            ToastNotification.Success("Đã cập nhật đường dẫn file!");
                         }
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        ToastNotification.Error("Lỗi: " + ex.Message);
                     }
                 }
             }
@@ -205,12 +205,12 @@ namespace study_document_manager
                         dgvMissingFiles.Rows.RemoveAt(rowIndex);
                         missingCount--;
                         lblSummary.Text = $"File thiếu: {missingCount}";
-                        MessageBox.Show("Đã xóa đường dẫn file!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        ToastNotification.Success("Đã xóa đường dẫn file!");
                     }
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    ToastNotification.Error("Lỗi: " + ex.Message);
                 }
             }
         }
@@ -235,13 +235,13 @@ namespace study_document_manager
                     {
                         dgvMissingFiles.Rows.RemoveAt(rowIndex);
                         missingCount--;
-                        lblSummary.Text = $"File thieu: {missingCount}";
-                        MessageBox.Show("Da xoa tai lieu!", "Thong bao", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        lblSummary.Text = $"File thiếu: {missingCount}";
+                        ToastNotification.Success("Đã xóa tài liệu!");
                     }
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Loi: " + ex.Message, "Loi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    ToastNotification.Error("Lỗi: " + ex.Message);
                 }
             }
         }
@@ -253,7 +253,7 @@ namespace study_document_manager
         {
             if (dgvMissingFiles.Rows.Count == 0)
             {
-                MessageBox.Show("Không có tài liệu nào để xóa!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                ToastNotification.Info("Không có tài liệu nào để xóa!");
                 return;
             }
 
@@ -281,11 +281,11 @@ namespace study_document_manager
                     missingCount = 0;
                     lblSummary.Text = $"File thiếu: 0";
                     btnDeleteAll.Enabled = false;
-                    MessageBox.Show($"Đã xóa {deletedCount} tài liệu!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    ToastNotification.Success($"Đã xóa {deletedCount} tài liệu!");
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    ToastNotification.Error("Lỗi: " + ex.Message);
                 }
             }
         }

@@ -38,7 +38,8 @@ Tài liệu này mô tả kiến trúc, luồng dữ liệu và cấu trúc thư
    - `DatabaseHelper` (và partial `DatabaseHelper_UserAuth`)
    - `UserSession`
    - `IconHelper`
-   - Chứa logic nghiệp vụ: phân quyền, lựa chọn câu truy vấn, xử lý filter nâng cao, xác định tài liệu nào được phép sửa/xóa, chọn icon theo loại file.
+   - `ToastNotification`
+   - Chứa logic nghiệp vụ: phân quyền, lựa chọn câu truy vấn, xử lý filter nâng cao, xác định tài liệu nào được phép sửa/xóa, chọn icon theo loại file, hiển thị thông báo Toast.
 
 3. **Data Layer (SQL Server)**
    - Database `quan_ly_tai_lieu` với các bảng chính: `tai_lieu`, `users`, `user_sessions`, `collections`, `collection_items`, `personal_notes`, `activity_logs`.
@@ -48,13 +49,13 @@ Tài liệu này mô tả kiến trúc, luồng dữ liệu và cấu trúc thư
 ### 1.2. Các khối chức năng chính
 
 **Phase 1 (Core):**
-- **Quản lý tài liệu**: CRUD tài liệu, kèm metadata (môn học, loại, ghi chú, dung lượng, tác giả, quan trọng).
+- **Quản lý tài liệu**: CRUD tài liệu, kèm metadata (danh mục, loại, ghi chú, dung lượng, tác giả, quan trọng).
 - **Đăng nhập & phân quyền**: Chế độ cá nhân với 2 cấp quyền (Admin/User) - mỗi User chỉ quản lý tài liệu của riêng mình.
-- **Filter & tìm kiếm nâng cao**: theo từ khóa, môn học, loại, ngày, dung lượng, cờ quan trọng.
+- **Filter & tìm kiếm nâng cao**: theo từ khóa, danh mục, loại, ngày, dung lượng, cờ quan trọng.
 - **Context Menu trên danh sách**: thao tác nhanh trên DataGridView.
 - **Kiểm tra file bị thiếu**: quét và sửa các record có đường dẫn không tồn tại.
 - **Thống kê**: biểu đồ thống kê tài liệu.
-- **Quản lý danh mục**: môn học, loại tài liệu.
+- **Quản lý danh mục**: danh mục, loại tài liệu.
 - **Quản lý người dùng**: chỉ dành cho Admin.
 - **Phím tắt cơ bản**: một số phím tắt qua menu (xem mục 6.3).
 
@@ -91,7 +92,7 @@ study-document-manager/
 │   ├── LoginForm.cs / .Designer.cs / .resx       # Đăng nhập
 │   ├── RegisterForm.cs / .Designer.cs / .resx    # Đăng ký tài khoản
 │   ├── UserManagementForm.cs / .Designer.cs / .resx    # Quản lý người dùng (Admin)
-│   ├── CategoryManagementForm.cs / .Designer.cs / .resx # Quản lý môn học & loại
+│   ├── CategoryManagementForm.cs / .Designer.cs / .resx # Quản lý danh mục & loại
 │   ├── Report.cs / .Designer.cs / .resx          # Thống kê biểu đồ
 │   ├── FileIntegrityCheckForm.cs / .Designer.cs / .resx # Kiểm tra file bị thiếu
 │   ├── PersonalNoteForm.cs / .Designer.cs / .resx       # Ghi chú cá nhân (Phase 2)
@@ -192,15 +193,16 @@ UserSession.CanManageCategories  // true (tất cả user đều có quyền)
 **Chức năng:**
 
 - Hiển thị danh sách tài liệu trong `DataGridView`.
-- Panel tìm kiếm nhanh (từ khóa, môn học, loại).
+- Panel tìm kiếm nhanh (từ khóa, danh mục, loại).
 - **Filter nâng cao**: khoảng ngày, khoảng dung lượng, chỉ tài liệu quan trọng.
 - Toolbar & menu:
   - Thêm, Sửa, Xóa, Mở file, Xuất dữ liệu.
-  - Menu **Công cụ**: Thống kê, Quản lý Môn học và Loại, Kiểm tra file bị thiếu.
+  - Menu **Công cụ**: Thống kê, Quản lý Danh mục và Loại, Kiểm tra file bị thiếu.
   - Menu **Theo dõi**: Sắp đến hạn (7 ngày), Tài liệu quá hạn, Quản lý bộ sưu tập.
   - Menu **Tài khoản**: Cài đặt tài khoản, Đăng xuất.
   - Menu **Quản lý** (Admin only): Quản lý người dùng.
   - Nút **Đăng xuất** ở góc phải menu bar.
+- **Toast Notification**: Hiển thị thông báo thành công/lỗi/cảnh báo kiểu web hiện đại.
 - **Context menu** trên mỗi dòng:
   - Mở file
   - Sửa / Xóa
@@ -223,7 +225,7 @@ UserSession.CanManageCategories  // true (tất cả user đều có quyền)
 ### 4.2. AddEditForm – Thêm / sửa tài liệu
 
 - Form nhập thông tin tài liệu:
-  - Tên, môn học, loại, đường dẫn file, ghi chú, kích thước, tác giả.
+  - Tên, danh mục, loại, đường dẫn file, ghi chú, kích thước, tác giả.
   - Checkbox **Tài liệu quan trọng (★)**.
   - **Tags** (Phase 2): nhãn phân cách bởi dấu `;`.
   - **Deadline** (Phase 2): checkbox kích hoạt + DateTimePicker.
@@ -247,7 +249,7 @@ UserSession.CanManageCategories  // true (tất cả user đều có quyền)
 
 ### 4.4. CategoryManagementForm – Quản lý danh mục
 
-- Quản lý Môn học và Loại tài liệu (lấy distinct từ bảng `tai_lieu` của user hiện tại).
+- Quản lý Danh mục và Loại tài liệu (lấy distinct từ bảng `tai_lieu` của user hiện tại).
 - Thêm / sửa / xóa danh mục, với cảnh báo khi thao tác có thể ảnh hưởng đến dữ liệu tài liệu.
 - Tất cả users đều có quyền quản lý danh mục của riêng mình.
 - Sau khi đóng form, `Form1` reload lại dữ liệu để áp dụng thay đổi.
@@ -255,7 +257,7 @@ UserSession.CanManageCategories  // true (tất cả user đều có quyền)
 ### 4.5. Report – Thống kê
 
 - Sử dụng `System.Windows.Forms.DataVisualization.Charting` để:
-  - Thống kê số lượng tài liệu theo môn học, loại.
+  - Thống kê số lượng tài liệu theo danh mục, loại.
   - Chọn kiểu biểu đồ: Cột dọc, Cột ngang, Tròn, Đường, Vùng.
 - Màu sắc Material Design cho từng data point.
 - Lấy dữ liệu tổng hợp từ `DatabaseHelper.GetStatisticsBySubject()`, `GetStatisticsByType()`.
@@ -344,6 +346,27 @@ UserSession.CanManageCategories  // true (tất cả user đều có quyền)
   - `GetDocumentIcon(loai, size)` - trả về Bitmap icon theo loại tài liệu.
   - Hỗ trợ: PDF (đỏ), Word (xanh dương), PowerPoint (cam), Excel (xanh lá), Default (xám).
   - `CreateStarIcon(size)` - tạo icon sao vàng cho đánh dấu quan trọng.
+  - **UI Action Icons**:
+    - `CreateEyeIcon(size, isOpen)` - icon con mắt (show/hide password)
+    - `CreateCloseIcon(size, color)` - icon X (đóng)
+    - `CreateChevronDownIcon(size, color)` - mũi tên xuống
+    - `CreateAddIcon(size, color)` - dấu cộng (thêm)
+    - `CreateEditIcon(size, color)` - bút chì (sửa)
+    - `CreateDeleteIcon(size, color)` - thùng rác (xóa)
+    - `CreateOpenIcon(size, color)` - folder mở
+    - `CreateExportIcon(size, color)` - xuất dữ liệu
+    - `CreateRefreshIcon(size, color)` - làm mới
+    - `CreateRoleIcon(size, color)` - quản lý vai trò
+    - `CreateChartIcon(size, color)` - biểu đồ thống kê
+    - `CreateSettingsIcon(size, color)` - cài đặt
+
+- **ToastNotification** (Form class)
+  - Thông báo Toast hiện đại kiểu web.
+  - 4 loại: `Success` (xanh lá), `Error` (đỏ), `Warning` (cam), `Info` (xanh dương).
+  - Hiệu ứng fade in/out mượt mà.
+  - Hiển thị ở góc trên bên phải của form cha.
+  - Static methods: `Show()`, `Success()`, `Error()`, `Warning()`, `Info()`, `CloseAll()`.
+  - Tự động đóng sau vài giây, có nút X để đóng nhanh.
 
 ---
 
@@ -405,7 +428,7 @@ Form1.OpenSelectedFile()
 Form1.ApplyAdvancedFilter()
     └── Collect filter values từ UI controls
     └── DatabaseHelper.SearchDocumentsAdvanced(
-            keyword, mon_hoc, loai, 
+            keyword, danh_muc, loai, 
             fromDate, toDate, 
             minSize, maxSize, 
             isImportant

@@ -83,8 +83,7 @@ namespace study_document_manager
 
                 if (dt.Rows.Count == 0)
                 {
-                    MessageBox.Show("Không có dữ liệu để hiển thị thống kê!", 
-                        "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    ToastNotification.Info("Không có dữ liệu để hiển thị thống kê!");
                     return;
                 }
 
@@ -103,7 +102,7 @@ namespace study_document_manager
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ToastNotification.Error("Lỗi: " + ex.Message);
             }
         }
 
@@ -121,8 +120,7 @@ namespace study_document_manager
 
                 if (dt.Rows.Count == 0)
                 {
-                    MessageBox.Show("Không có dữ liệu để hiển thị thống kê!", 
-                        "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    ToastNotification.Info("Không có dữ liệu để hiển thị thống kê!");
                     return;
                 }
 
@@ -141,7 +139,7 @@ namespace study_document_manager
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ToastNotification.Error("Lỗi: " + ex.Message);
             }
         }
 

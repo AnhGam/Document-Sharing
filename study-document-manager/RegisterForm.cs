@@ -21,14 +21,6 @@ namespace study_document_manager
             btnShowPassword.Text = "";
             btnShowConfirmPassword.Image = IconHelper.CreateEyeIcon(16, true);
             btnShowConfirmPassword.Text = "";
-            
-            // Chế độ cá nhân: Mặc định là User, ẩn dropdown và label chọn role
-            cboRole.Items.Clear();
-            cboRole.Items.Add("User");
-            cboRole.SelectedIndex = 0;
-            cboRole.Enabled = false;
-            cboRole.Visible = false;
-            lblRole.Visible = false;
 
             txtUsername.Focus();
         }
@@ -46,13 +38,12 @@ namespace study_document_manager
             string password = txtPassword.Text;
             string fullName = txtFullName.Text.Trim();
             string email = txtEmail.Text.Trim();
-            string role = cboRole.SelectedItem.ToString();
+            string role = "User";
 
             // Kiểm tra username đã tồn tại
             if (DatabaseHelper.CheckUsernameExists(username))
             {
-                MessageBox.Show("Tên đăng nhập đã tồn tại!", 
-                    "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ToastNotification.Error("Tên đăng nhập đã tồn tại!");
                 txtUsername.Focus();
                 return;
             }
@@ -60,8 +51,7 @@ namespace study_document_manager
             // Kiểm tra email đã tồn tại
             if (!string.IsNullOrEmpty(email) && DatabaseHelper.CheckEmailExists(email))
             {
-                MessageBox.Show("Email đã được sử dụng!", 
-                    "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ToastNotification.Error("Email đã được sử dụng!");
                 txtEmail.Focus();
                 return;
             }
@@ -71,8 +61,7 @@ namespace study_document_manager
 
             if (success)
             {
-                MessageBox.Show("Đăng ký thành công!\n\nBạn có thể đăng nhập ngay bây giờ.", 
-                    "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                ToastNotification.Success("Đăng ký thành công! Bạn có thể đăng nhập ngay.");
                 
                 RegisteredUsername = username;
                 this.DialogResult = DialogResult.OK;
@@ -80,8 +69,7 @@ namespace study_document_manager
             }
             else
             {
-                MessageBox.Show("Đăng ký thất bại! Vui lòng thử lại.", 
-                    "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ToastNotification.Error("Đăng ký thất bại! Vui lòng thử lại.");
             }
         }
 
@@ -93,16 +81,14 @@ namespace study_document_manager
             // Username
             if (string.IsNullOrWhiteSpace(txtUsername.Text))
             {
-                MessageBox.Show("Vui lòng nhập tên đăng nhập!", 
-                    "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Vui lòng nhập tên đăng nhập!");
                 txtUsername.Focus();
                 return false;
             }
 
             if (txtUsername.Text.Length < 3)
             {
-                MessageBox.Show("Tên đăng nhập phải có ít nhất 3 ký tự!", 
-                    "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Tên đăng nhập phải có ít nhất 3 ký tự!");
                 txtUsername.Focus();
                 return false;
             }
@@ -110,16 +96,14 @@ namespace study_document_manager
             // Password
             if (string.IsNullOrEmpty(txtPassword.Text))
             {
-                MessageBox.Show("Vui lòng nhập mật khẩu!", 
-                    "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Vui lòng nhập mật khẩu!");
                 txtPassword.Focus();
                 return false;
             }
 
             if (txtPassword.Text.Length < 6)
             {
-                MessageBox.Show("Mật khẩu phải có ít nhất 6 ký tự!", 
-                    "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Mật khẩu phải có ít nhất 6 ký tự!");
                 txtPassword.Focus();
                 return false;
             }
@@ -127,8 +111,7 @@ namespace study_document_manager
             // Confirm Password
             if (txtPassword.Text != txtConfirmPassword.Text)
             {
-                MessageBox.Show("Mật khẩu xác nhận không khớp!", 
-                    "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Mật khẩu xác nhận không khớp!");
                 txtConfirmPassword.Focus();
                 return false;
             }
@@ -136,8 +119,7 @@ namespace study_document_manager
             // Full Name
             if (string.IsNullOrWhiteSpace(txtFullName.Text))
             {
-                MessageBox.Show("Vui lòng nhập họ tên!", 
-                    "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Vui lòng nhập họ tên!");
                 txtFullName.Focus();
                 return false;
             }
@@ -147,8 +129,7 @@ namespace study_document_manager
             {
                 if (!IsValidEmail(txtEmail.Text))
                 {
-                    MessageBox.Show("Email không hợp lệ!", 
-                        "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    ToastNotification.Warning("Email không hợp lệ!");
                     txtEmail.Focus();
                     return false;
                 }

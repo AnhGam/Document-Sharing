@@ -52,8 +52,7 @@ namespace study_document_manager
         {
             if (dgvDocuments.SelectedRows.Count == 0)
             {
-                MessageBox.Show("Vui lòng chọn tài liệu!", 
-                    "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Vui lòng chọn tài liệu!");
                 return;
             }
 
@@ -136,12 +135,11 @@ namespace study_document_manager
 
                     if (DatabaseHelper.AddDocumentToCollection(collectionId, docId))
                     {
-                        lblStatus.Text = $"Đã thêm '{docName}' vào '{collectionName}'";
+                        ToastNotification.Success($"Đã thêm '{docName}' vào '{collectionName}'");
                     }
                     else
                     {
-                        MessageBox.Show("Tài liệu đã có trong bộ sưu tập này!",
-                            "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        ToastNotification.Info("Tài liệu đã có trong bộ sưu tập này!");
                     }
                 }
             }
@@ -154,8 +152,7 @@ namespace study_document_manager
         {
             if (dgvDocuments.SelectedRows.Count == 0)
             {
-                MessageBox.Show("Vui lòng chọn tài liệu!", 
-                    "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Vui lòng chọn tài liệu!");
                 return;
             }
 
@@ -368,6 +365,9 @@ namespace study_document_manager
             dtpToDate.Enabled = false;
             nudMinSize.Enabled = false;
             nudMaxSize.Enabled = false;
+            
+            // Hiển thị Toast chào mừng
+            ToastNotification.Success($"Xin chào, {UserSession.FullName}!");
         }
 
         /// <summary>
@@ -588,7 +588,7 @@ namespace study_document_manager
             catch (Exception ex)
             {
                 lblStatus.Text = "Lỗi load dữ liệu";
-                MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ToastNotification.Error("Lỗi: " + ex.Message);
             }
         }
 
@@ -612,8 +612,7 @@ namespace study_document_manager
         {
             if (dgvDocuments.SelectedRows.Count == 0)
             {
-                MessageBox.Show("Vui lòng chọn tài liệu cần sửa!", 
-                    "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Vui lòng chọn tài liệu cần sửa!");
                 return;
             }
 
@@ -622,8 +621,7 @@ namespace study_document_manager
             // Kiểm tra quyền sửa tài liệu
             if (!DatabaseHelper.CanUserEditDocument(id, UserSession.UserId, UserSession.Role))
             {
-                MessageBox.Show("Bạn không có quyền sửa tài liệu này!\nBạn chỉ có thể sửa tài liệu do bạn tạo.", 
-                    "Không có quyền", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Bạn không có quyền sửa tài liệu này!");
                 return;
             }
 
@@ -642,8 +640,7 @@ namespace study_document_manager
         {
             if (dgvDocuments.SelectedRows.Count == 0)
             {
-                MessageBox.Show("Vui lòng chọn tài liệu cần xóa!", 
-                    "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Vui lòng chọn tài liệu cần xóa!");
                 return;
             }
 
@@ -652,8 +649,7 @@ namespace study_document_manager
             // Kiểm tra quyền xóa tài liệu
             if (!DatabaseHelper.CanUserEditDocument(id, UserSession.UserId, UserSession.Role))
             {
-                MessageBox.Show("Bạn không có quyền xóa tài liệu này!\nBạn chỉ có thể xóa tài liệu do bạn tạo.", 
-                    "Không có quyền", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Bạn không có quyền xóa tài liệu này!");
                 return;
             }
 
@@ -684,8 +680,7 @@ namespace study_document_manager
         {
             if (dgvDocuments.SelectedRows.Count == 0)
             {
-                MessageBox.Show("Vui lòng chọn tài liệu!", 
-                    "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Vui lòng chọn tài liệu!");
                 return;
             }
 
@@ -693,8 +688,7 @@ namespace study_document_manager
             
             if (!File.Exists(duong_dan))
             {
-                MessageBox.Show("File không tồn tại!\n" + duong_dan, 
-                    "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ToastNotification.Error("File không tồn tại!");
                 return;
             }
 
@@ -705,8 +699,7 @@ namespace study_document_manager
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Không thể mở file: " + ex.Message, 
-                    "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ToastNotification.Error("Không thể mở file: " + ex.Message);
             }
         }
 
@@ -764,12 +757,12 @@ namespace study_document_manager
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ToastNotification.Error("Lỗi: " + ex.Message);
             }
         }
 
         /// <summary>
-        /// Lọc theo môn học
+        /// Lọc theo danh mục
         /// </summary>
         private void cbo_mon_hoc_SelectedIndexChanged(object sender, EventArgs e)
         {
@@ -811,7 +804,7 @@ namespace study_document_manager
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ToastNotification.Error("Lỗi: " + ex.Message);
             }
         }
 
@@ -861,14 +854,13 @@ namespace study_document_manager
                     }
 
                     lblStatus.Text = "Đã xuất file thành công";
-                    MessageBox.Show($"Xuất thành công!\n\nFile: {save.FileName}", 
-                        "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    ToastNotification.Success($"Xuất thành công: {System.IO.Path.GetFileName(save.FileName)}");
                     
                     System.Diagnostics.Process.Start("explorer.exe", "/select, \"" + save.FileName + "\"");
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    ToastNotification.Error("Lỗi: " + ex.Message);
                 }
             }
         }
@@ -886,7 +878,7 @@ namespace study_document_manager
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ToastNotification.Error("Lỗi: " + ex.Message);
             }
         }
 
@@ -953,16 +945,14 @@ namespace study_document_manager
                     }
                     else
                     {
-                        MessageBox.Show($"File không hỗ trợ: {Path.GetFileName(file)}\n\n" +
-                            "Chỉ hỗ trợ: PDF, Word, PowerPoint, Excel, Text",
-                            "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        ToastNotification.Warning($"File không hỗ trợ: {Path.GetFileName(file)}");
                     }
                 }
                 
                 if (successCount > 0)
                 {
                     LoadData();
-                    lblStatus.Text = $"Đã thêm {successCount} tài liệu";
+                    ToastNotification.Success($"Đã thêm {successCount} tài liệu");
                 }
             };
         }
@@ -988,7 +978,7 @@ namespace study_document_manager
         }
 
         /// <summary>
-        /// Menu Quản lý Môn học và Loại
+        /// Menu Quản lý Danh mục và Loại
         /// </summary>
         private void menuViewCategories_Click(object sender, EventArgs e)
         {
@@ -1004,7 +994,7 @@ namespace study_document_manager
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ToastNotification.Error("Lỗi: " + ex.Message);
             }
         }
 
@@ -1015,8 +1005,7 @@ namespace study_document_manager
         {
             if (!UserSession.IsAdmin)
             {
-                MessageBox.Show("Bạn không có quyền truy cập chức năng này!",
-                    "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Bạn không có quyền truy cập chức năng này!");
                 return;
             }
 
@@ -1028,8 +1017,7 @@ namespace study_document_manager
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Lỗi: " + ex.Message,
-                    "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ToastNotification.Error("Lỗi: " + ex.Message);
             }
         }
 
@@ -1192,8 +1180,8 @@ namespace study_document_manager
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                LoadData(); // Reload để khôi phục giá trị cũ
+                ToastNotification.Error("Lỗi: " + ex.Message);
+                LoadData();
             }
         }
 
@@ -1204,8 +1192,7 @@ namespace study_document_manager
         {
             if (dgvDocuments.SelectedRows.Count == 0)
             {
-                MessageBox.Show("Vui lòng chọn tài liệu!",
-                    "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Vui lòng chọn tài liệu!");
                 return;
             }
 
@@ -1217,11 +1204,11 @@ namespace study_document_manager
                 bool newValue = !currentValue;
 
                 SaveImportantValue(id, newValue);
-                LoadData(); // Refresh grid để hiển thị giá trị mới
+                LoadData();
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ToastNotification.Error("Lỗi: " + ex.Message);
             }
         }
 
@@ -1267,8 +1254,7 @@ namespace study_document_manager
                     maxSize = (double)nudMaxSize.Value;
                     if (minSize > maxSize)
                     {
-                        MessageBox.Show("Dung lượng tối thiểu không được lớn hơn dung lượng tối đa!",
-                            "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        ToastNotification.Warning("Dung lượng tối thiểu không được lớn hơn dung lượng tối đa!");
                         return;
                     }
                 }
@@ -1295,7 +1281,7 @@ namespace study_document_manager
             catch (Exception ex)
             {
                 lblStatus.Text = "Lỗi khi lọc";
-                MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ToastNotification.Error("Lỗi: " + ex.Message);
             }
         }
 
@@ -1395,8 +1381,7 @@ namespace study_document_manager
         {
             if (dgvDocuments.SelectedRows.Count == 0)
             {
-                MessageBox.Show("Vui lòng chọn tài liệu!", 
-                    "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Vui lòng chọn tài liệu!");
                 return;
             }
 
@@ -1404,12 +1389,11 @@ namespace study_document_manager
             if (duongDan != null && duongDan != DBNull.Value)
             {
                 Clipboard.SetText(duongDan.ToString());
-                lblStatus.Text = "Đã copy đường dẫn vào clipboard";
+                ToastNotification.Success("Đã copy đường dẫn vào clipboard");
             }
             else
             {
-                MessageBox.Show("Tài liệu không có đường dẫn file!", 
-                    "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Tài liệu không có đường dẫn file!");
             }
         }
 
@@ -1420,8 +1404,7 @@ namespace study_document_manager
         {
             if (dgvDocuments.SelectedRows.Count == 0)
             {
-                MessageBox.Show("Vui lòng chọn tài liệu!", 
-                    "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Vui lòng chọn tài liệu!");
                 return;
             }
 
@@ -1437,14 +1420,12 @@ namespace study_document_manager
                 }
                 else
                 {
-                    MessageBox.Show("File không tồn tại!\n" + filePath, 
-                        "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    ToastNotification.Error("File không tồn tại!");
                 }
             }
             else
             {
-                MessageBox.Show("Tài liệu không có đường dẫn file!", 
-                    "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ToastNotification.Warning("Tài liệu không có đường dẫn file!");
             }
         }
 
@@ -1487,7 +1468,7 @@ namespace study_document_manager
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ToastNotification.Error("Lỗi: " + ex.Message);
             }
         }
 
@@ -1507,7 +1488,7 @@ namespace study_document_manager
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ToastNotification.Error("Lỗi: " + ex.Message);
             }
         }
 
