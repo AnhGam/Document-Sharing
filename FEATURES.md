@@ -5,9 +5,9 @@
 
 ---
 
-## Phase 1 – Nâng trải nghiệm sử dụng hằng ngày (1–2 tuần) (ĐÃ ÁP DỤNG)
+## Phase 1 – Nâng trải nghiệm sử dụng hằng ngày (1–2 tuần) 
 
-### 1. Context Menu trên danh sách tài liệu
+### 1. Context Menu trên danh sách tài liệu (ĐÃ ÁP DỤNG)
 **Mục tiêu:** Giảm số lần click, thao tác nhanh trên DataGridView.
 
 **Tính năng:**
