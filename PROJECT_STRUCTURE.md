@@ -15,31 +15,33 @@ Tài liệu này mô tả kiến trúc, luồng dữ liệu và cấu trúc thư
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  PRESENTATION LAYER (UI - Windows Forms)                    │
-│  Form1, AddEditForm, LoginForm, RegisterForm                │
-│  UserManagementForm, CategoryManagementForm, Report         │
-│  PersonalNoteForm, CollectionManagementForm                 │
-│  FileIntegrityCheckForm, AccountSettingsForm                │
+│  ├── Authentication/: LoginForm, RegisterForm,              │
+│  │                    AccountSettingsForm                   │
+│  ├── Documents/: Form1, AddEditForm, PersonalNoteForm       │
+│  ├── Management/: CategoryManagementForm, UserManagementForm│
+│  │               CollectionManagementForm, FileIntegrityForm│
+│  ├── Reports/: Report                                       │
+│  └── UI/: ToastNotification, IconHelper                     │
 ├─────────────────────────────────────────────────────────────┤
 │  BUSINESS LAYER (Logic)                                     │
-│  DatabaseHelper.cs, DatabaseHelper_UserAuth.cs              │
-│  UserSession.cs, IconHelper.cs                              │
+│  ├── Data/: DatabaseHelper, DatabaseHelper_UserAuth         │
+│  └── Core/: UserSession, BCryptTemp                         │
 ├─────────────────────────────────────────────────────────────┤
 │  DATA LAYER (SQL Server)                                    │
 │  Database: quan_ly_tai_lieu                                 │
 │  Tables: users, tai_lieu, collections, personal_notes...   │
-└─────────────────────────────────────────────────────────────┘
-```
-
 1. **Presentation Layer (UI)**
-   - Các Form WinForms: `Form1`, `AddEditForm`, `LoginForm`, `RegisterForm`, `UserManagementForm`, `CategoryManagementForm`, `Report`, `FileIntegrityCheckForm`, `PersonalNoteForm`, `CollectionManagementForm`, `AccountSettingsForm`.
+   - **Authentication/**: `LoginForm`, `RegisterForm`, `AccountSettingsForm` - Forms xác thực và cài đặt tài khoản.
+   - **Documents/**: `Form1`, `AddEditForm`, `PersonalNoteForm` - Forms quản lý tài liệu chính.
+   - **Management/**: `CategoryManagementForm`, `CollectionManagementForm`, `UserManagementForm`, `FileIntegrityCheckForm` - Forms quản lý hệ thống.
+   - **Reports/**: `Report` - Thống kê và báo cáo.
+   - **UI/**: `ToastNotification`, `IconHelper` - UI Components dùng chung.
    - Chịu trách nhiệm giao diện, binding dữ liệu vào `DataGridView`, điều khiển filter, hiển thị dialog.
 
 2. **Application / Business Layer**
-   - `DatabaseHelper` (và partial `DatabaseHelper_UserAuth`)
-   - `UserSession`
-   - `IconHelper`
-   - `ToastNotification`
-   - Chứa logic nghiệp vụ: phân quyền, lựa chọn câu truy vấn, xử lý filter nâng cao, xác định tài liệu nào được phép sửa/xóa, chọn icon theo loại file, hiển thị thông báo Toast.
+   - **Data/**: `DatabaseHelper`, `DatabaseHelper_UserAuth` - Data Access Layer.
+   - **Core/**: `UserSession`, `BCryptTemp` - Core utilities và session management.
+   - Chứa logic nghiệp vụ: phân quyền, lựa chọn câu truy vấn, xử lý filter nâng cao, xác định tài liệu nào được phép sửa/xóa.
 
 3. **Data Layer (SQL Server)**
    - Database `quan_ly_tai_lieu` với các bảng chính: `tai_lieu`, `users`, `user_sessions`, `collections`, `collection_items`, `personal_notes`, `activity_logs`.
@@ -86,38 +88,48 @@ study-document-manager/
 │   ├── Program.cs                      # Entry point
 │   ├── App.config                      # Cấu hình (connection string,...)
 │   │
-│   ├── ─── FORMS ───
-│   ├── Form1.cs / .Designer.cs / .resx           # Form chính: danh sách, filter, context menu
-│   ├── AddEditForm.cs / .Designer.cs / .resx     # Thêm / sửa tài liệu
-│   ├── LoginForm.cs / .Designer.cs / .resx       # Đăng nhập
-│   ├── RegisterForm.cs / .Designer.cs / .resx    # Đăng ký tài khoản
-│   ├── UserManagementForm.cs / .Designer.cs / .resx    # Quản lý người dùng (Admin)
-│   ├── CategoryManagementForm.cs / .Designer.cs / .resx # Quản lý danh mục & loại
-│   ├── Report.cs / .Designer.cs / .resx          # Thống kê biểu đồ
-│   ├── FileIntegrityCheckForm.cs / .Designer.cs / .resx # Kiểm tra file bị thiếu
-│   ├── PersonalNoteForm.cs / .Designer.cs / .resx       # Ghi chú cá nhân (Phase 2)
-│   ├── CollectionManagementForm.cs / .Designer.cs / .resx # Bộ sưu tập (Phase 2)
-│   ├── AccountSettingsForm.cs / .Designer.cs / .resx   # Cài đặt tài khoản
+│   ├── Authentication/                 # Forms xác thực
+│   │   ├── LoginForm.cs / .Designer.cs / .resx       # Đăng nhập
+│   │   ├── RegisterForm.cs / .Designer.cs / .resx    # Đăng ký tài khoản
+│   │   └── AccountSettingsForm.cs / .Designer.cs / .resx # Cài đặt tài khoản
 │   │
-│   ├── ─── HELPERS ───
-│   ├── DatabaseHelper.cs               # Truy vấn tài liệu, filter, CRUD, collections
-│   ├── DatabaseHelper_UserAuth.cs      # Partial class - Auth & User management
-│   ├── UserSession.cs                  # Thông tin user đăng nhập (static class)
-│   ├── IconHelper.cs                   # Sinh icon động theo loại tài liệu
-│   ├── BCryptTemp.cs                   # BCrypt wrapper (nếu có)
+│   ├── Documents/                      # Forms quản lý tài liệu
+│   │   ├── Form1.cs / .Designer.cs / .resx           # Form chính: danh sách, filter
+│   │   ├── AddEditForm.cs / .Designer.cs / .resx     # Thêm / sửa tài liệu
+│   │   └── PersonalNoteForm.cs / .Designer.cs / .resx # Ghi chú cá nhân
 │   │
-│   ├── ─── RESOURCES ───
-│   ├── Properties/
+│   ├── Management/                     # Forms quản lý hệ thống
+│   │   ├── CategoryManagementForm.cs / .Designer.cs / .resx  # Quản lý danh mục
+│   │   ├── CollectionManagementForm.cs / .Designer.cs / .resx # Bộ sưu tập
+│   │   ├── UserManagementForm.cs / .Designer.cs / .resx      # Quản lý người dùng
+│   │   └── FileIntegrityCheckForm.cs / .Designer.cs / .resx  # Kiểm tra file thiếu
+│   │
+│   ├── Reports/                        # Báo cáo & thống kê
+│   │   └── Report.cs / .Designer.cs / .resx          # Thống kê biểu đồ
+│   │
+│   ├── Data/                           # Data Access Layer
+│   │   ├── DatabaseHelper.cs           # Truy vấn tài liệu, CRUD, collections
+│   │   └── DatabaseHelper_UserAuth.cs  # Partial class - Auth & User management
+│   │
+│   ├── UI/                             # UI Components
+│   │   ├── ToastNotification.cs / .resx # Thông báo Toast
+│   │   └── IconHelper.cs               # Sinh icon động theo loại tài liệu
+│   │
+│   ├── Core/                           # Core/Shared
+│   │   ├── UserSession.cs              # Thông tin user đăng nhập (static)
+│   │   └── BCryptTemp.cs               # BCrypt wrapper
+│   │
+│   ├── Properties/                     # Resources
 │   │   ├── AssemblyInfo.cs
 │   │   ├── Resources.Designer.cs / Resources.resx
 │   │   └── Settings.Designer.cs / Settings.settings
-│   ├── assets/
+│   │
+│   ├── assets/                         # Static assets
 │   │   └── logo/                       # Logo và hình ảnh
 │   │
-│   ├── ─── DATABASE SCRIPTS ───
-│   ├── Database/
-│   │   ├── Database.sql                # Schema chính (users, tai_lieu, activity_logs...)
-│   │   └── Phase2_Schema.sql           # Schema mở rộng (tags, deadline, collections, notes)
+│   ├── Database/                       # Database Scripts
+│   │   ├── database.sql                # Schema chính
+│   │   └── Phase2_Schema.sql           # Schema mở rộng
 │   │
 │   ├── packages.config                 # NuGet packages (BCrypt.Net-Next)
 │   └── study-document-manager.csproj   # Project file
@@ -129,6 +141,8 @@ study-document-manager/
 ├── DATABASE.md                         # Cấu trúc database chi tiết
 ├── FEATURES.md                         # Roadmap tính năng
 ├── PROJECT_STRUCTURE.md                # (file hiện tại) mô tả kiến trúc
+├── CONTRIBUTING.md                     # Hướng dẫn đóng góp
+├── LICENSE                             # Giấy phép MIT
 └── study-document-manager.sln          # Solution file
 ```
 
@@ -188,7 +202,7 @@ UserSession.CanManageCategories  // true (tất cả user đều có quyền)
 
 ## 4. Vai trò từng Form và lớp chính
 
-### 4.1. Form1 – Màn hình chính
+### 4.1. Documents/Form1 – Màn hình chính
 
 **Chức năng:**
 
@@ -222,7 +236,7 @@ UserSession.CanManageCategories  // true (tất cả user đều có quyền)
 - Sử dụng `DatabaseHelper.DeleteDocument`, `CanUserEditDocument` để xóa / kiểm tra quyền.
 - Sử dụng `UserSession` để biết `UserId`, `Role`, `IsAdmin / IsUser`.
 
-### 4.2. AddEditForm – Thêm / sửa tài liệu
+### 4.2. Documents/AddEditForm – Thêm / sửa tài liệu
 
 - Form nhập thông tin tài liệu:
   - Tên, danh mục, loại, đường dẫn file, ghi chú, kích thước, tác giả.
@@ -237,7 +251,7 @@ UserSession.CanManageCategories  // true (tất cả user đều có quyền)
   - Cập nhật: `DatabaseHelper.UpdateDocument(...)`.
 - Validate: yêu cầu tên & đường dẫn, kiểm tra file tồn tại.
 
-### 4.3. FileIntegrityCheckForm – Kiểm tra file bị thiếu
+### 4.3. Management/FileIntegrityCheckForm – Kiểm tra file bị thiếu
 
 - Quét toàn bộ bảng `tai_lieu` để tìm các record có `duong_dan` không còn tồn tại trên ổ đĩa.
 - Hiển thị danh sách file bị thiếu trong `DataGridView` với các cột: ID, Tên tài liệu, Đường dẫn, Hành động.
@@ -247,14 +261,14 @@ UserSession.CanManageCategories  // true (tất cả user đều có quyền)
   - **Xóa tài liệu** → xóa bản ghi khỏi `tai_lieu`.
 - Có progress bar & label tiến trình, nút **Quét** và **Xóa tất cả**.
 
-### 4.4. CategoryManagementForm – Quản lý danh mục
+### 4.4. Management/CategoryManagementForm – Quản lý danh mục
 
 - Quản lý Danh mục và Loại tài liệu (lấy distinct từ bảng `tai_lieu` của user hiện tại).
 - Thêm / sửa / xóa danh mục, với cảnh báo khi thao tác có thể ảnh hưởng đến dữ liệu tài liệu.
 - Tất cả users đều có quyền quản lý danh mục của riêng mình.
 - Sau khi đóng form, `Form1` reload lại dữ liệu để áp dụng thay đổi.
 
-### 4.5. Report – Thống kê
+### 4.5. Reports/Report – Thống kê
 
 - Sử dụng `System.Windows.Forms.DataVisualization.Charting` để:
   - Thống kê số lượng tài liệu theo danh mục, loại.
@@ -262,7 +276,7 @@ UserSession.CanManageCategories  // true (tất cả user đều có quyền)
 - Màu sắc Material Design cho từng data point.
 - Lấy dữ liệu tổng hợp từ `DatabaseHelper.GetStatisticsBySubject()`, `GetStatisticsByType()`.
 
-### 4.6. LoginForm, RegisterForm, UserManagementForm
+### 4.6. Authentication/ – LoginForm, RegisterForm, UserManagementForm
 
 - **LoginForm**
   - Người dùng nhập `username` và `password`.
@@ -283,14 +297,14 @@ UserSession.CanManageCategories  // true (tất cả user đều có quyền)
   - Khóa/Mở khóa tài khoản.
   - Xóa user (không được xóa chính mình).
 
-### 4.7. PersonalNoteForm – Ghi chú cá nhân (Phase 2)
+### 4.7. Documents/PersonalNoteForm – Ghi chú cá nhân (Phase 2)
 
 - Mỗi user có ghi chú riêng cho từng tài liệu.
 - Nội dung ghi chú (textarea).
 - Trạng thái học tập: "Chưa đọc" | "Đang học" | "Đã ôn xong".
 - Lưu vào bảng `personal_notes` với `user_id` + `document_id`.
 
-### 4.8. CollectionManagementForm – Bộ sưu tập (Phase 2)
+### 4.8. Management/CollectionManagementForm – Bộ sưu tập (Phase 2)
 
 - ListView hiển thị danh sách bộ sưu tập của user.
 - DataGridView hiển thị tài liệu trong bộ sưu tập được chọn.
@@ -299,16 +313,16 @@ UserSession.CanManageCategories  // true (tất cả user đều có quyền)
 - Mở tất cả tài liệu trong bộ sưu tập cùng lúc.
 - Double-click để mở từng tài liệu.
 
-### 4.9. AccountSettingsForm – Cài đặt tài khoản
+### 4.9. Authentication/AccountSettingsForm – Cài đặt tài khoản
 
 - **Tab Thông tin cá nhân**: Xem/sửa họ tên, email.
 - **Tab Đổi mật khẩu**: Đổi mật khẩu (cần nhập mật khẩu hiện tại).
 - Hiển thị vai trò và thời gian đăng nhập.
 - Lưu vào bảng `users` thông qua `DatabaseHelper.UpdateUserProfile()` và `ChangePasswordSelf()`.
 
-### 4.10. Lớp trợ giúp (Helpers)
+### 4.10. Lớp trợ giúp (Data/, Core/, UI/)
 
-- **DatabaseHelper / DatabaseHelper_UserAuth**
+- **Data/DatabaseHelper & DatabaseHelper_UserAuth**
   - Quản lý connection string (đọc từ `App.config`).
   - **Core methods:**
     - `ExecuteQuery`, `ExecuteNonQuery`, `ExecuteScalar` - thực thi SQL với SqlParameter.
@@ -336,13 +350,13 @@ UserSession.CanManageCategories  // true (tất cả user đều có quyền)
     - `GetAllUsers()`, `ToggleUserActive()`, `DeleteUser()`, `UpdateUserRole()`.
     - `UpdateUserProfile()`, `ChangePasswordSelf()` - cho AccountSettingsForm.
 
-- **UserSession** (static class)
+- **Core/UserSession** (static class)
   - Lưu thông tin user hiện tại trong suốt vòng đời ứng dụng.
   - Properties: `UserId`, `Username`, `FullName`, `Email`, `Role`, `LoginTime`.
   - Helper properties: `IsLoggedIn`, `IsAdmin`, `IsUser`, `CanManageCategories`.
   - Method: `CanEditDocument(documentUserId)`, `Logout()`.
 
-- **IconHelper** (static class)
+- **UI/IconHelper** (static class)
   - `GetDocumentIcon(loai, size)` - trả về Bitmap icon theo loại tài liệu.
   - Hỗ trợ: PDF (đỏ), Word (xanh dương), PowerPoint (cam), Excel (xanh lá), Default (xám).
   - `CreateStarIcon(size)` - tạo icon sao vàng cho đánh dấu quan trọng.
@@ -360,7 +374,7 @@ UserSession.CanManageCategories  // true (tất cả user đều có quyền)
     - `CreateChartIcon(size, color)` - biểu đồ thống kê
     - `CreateSettingsIcon(size, color)` - cài đặt
 
-- **ToastNotification** (Form class)
+- **UI/ToastNotification** (Form class)
   - Thông báo Toast hiện đại kiểu web.
   - 4 loại: `Success` (xanh lá), `Error` (đỏ), `Warning` (cam), `Info` (xanh dương).
   - Hiệu ứng fade in/out mượt mà.

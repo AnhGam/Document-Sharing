@@ -50,105 +50,105 @@
     <Reference Include="Microsoft.VisualBasic" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AccountSettingsForm.cs">
+    <Compile Include="Authentication\AccountSettingsForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="AccountSettingsForm.Designer.cs">
+    <Compile Include="Authentication\AccountSettingsForm.Designer.cs">
       <DependentUpon>AccountSettingsForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="AddEditForm.cs">
+    <Compile Include="Documents\AddEditForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="AddEditForm.Designer.cs">
+    <Compile Include="Documents\AddEditForm.Designer.cs">
       <DependentUpon>AddEditForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="BCryptTemp.cs" />
-    <Compile Include="CategoryManagementForm.cs">
+    <Compile Include="Core\BCryptTemp.cs" />
+    <Compile Include="Management\CategoryManagementForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="CategoryManagementForm.Designer.cs">
+    <Compile Include="Management\CategoryManagementForm.Designer.cs">
       <DependentUpon>CategoryManagementForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="CollectionManagementForm.cs">
+    <Compile Include="Management\CollectionManagementForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="CollectionManagementForm.Designer.cs">
+    <Compile Include="Management\CollectionManagementForm.Designer.cs">
       <DependentUpon>CollectionManagementForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="DatabaseHelper.cs" />
-    <Compile Include="DatabaseHelper_UserAuth.cs" />
-    <Compile Include="Form1.cs">
+    <Compile Include="Data\DatabaseHelper.cs" />
+    <Compile Include="Data\DatabaseHelper_UserAuth.cs" />
+    <Compile Include="Documents\Form1.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Form1.Designer.cs">
+    <Compile Include="Documents\Form1.Designer.cs">
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
-    <Compile Include="IconHelper.cs" />
-    <Compile Include="LoginForm.cs">
+    <Compile Include="UI\IconHelper.cs" />
+    <Compile Include="Authentication\LoginForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="LoginForm.Designer.cs">
+    <Compile Include="Authentication\LoginForm.Designer.cs">
       <DependentUpon>LoginForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="PersonalNoteForm.cs">
+    <Compile Include="Documents\PersonalNoteForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="PersonalNoteForm.Designer.cs">
+    <Compile Include="Documents\PersonalNoteForm.Designer.cs">
       <DependentUpon>PersonalNoteForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RegisterForm.cs">
+    <Compile Include="Authentication\RegisterForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="RegisterForm.Designer.cs">
+    <Compile Include="Authentication\RegisterForm.Designer.cs">
       <DependentUpon>RegisterForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Report.cs">
+    <Compile Include="Reports\Report.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Report.Designer.cs">
+    <Compile Include="Reports\Report.Designer.cs">
       <DependentUpon>Report.cs</DependentUpon>
     </Compile>
-    <Compile Include="ToastNotification.cs">
+    <Compile Include="UI\ToastNotification.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="UserManagementForm.cs">
+    <Compile Include="Management\UserManagementForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="UserManagementForm.Designer.cs">
+    <Compile Include="Management\UserManagementForm.Designer.cs">
       <DependentUpon>UserManagementForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="UserSession.cs" />
-    <Compile Include="FileIntegrityCheckForm.cs">
+    <Compile Include="Core\UserSession.cs" />
+    <Compile Include="Management\FileIntegrityCheckForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="FileIntegrityCheckForm.Designer.cs">
+    <Compile Include="Management\FileIntegrityCheckForm.Designer.cs">
       <DependentUpon>FileIntegrityCheckForm.cs</DependentUpon>
     </Compile>
-    <EmbeddedResource Include="AccountSettingsForm.resx">
+    <EmbeddedResource Include="Authentication\AccountSettingsForm.resx">
       <DependentUpon>AccountSettingsForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="AddEditForm.resx">
+    <EmbeddedResource Include="Documents\AddEditForm.resx">
       <DependentUpon>AddEditForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="CategoryManagementForm.resx">
+    <EmbeddedResource Include="Management\CategoryManagementForm.resx">
       <DependentUpon>CategoryManagementForm.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
-    <EmbeddedResource Include="CollectionManagementForm.resx">
+    <EmbeddedResource Include="Management\CollectionManagementForm.resx">
       <DependentUpon>CollectionManagementForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="FileIntegrityCheckForm.resx">
+    <EmbeddedResource Include="Management\FileIntegrityCheckForm.resx">
       <DependentUpon>FileIntegrityCheckForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Form1.resx">
+    <EmbeddedResource Include="Documents\Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="LoginForm.resx">
+    <EmbeddedResource Include="Authentication\LoginForm.resx">
       <DependentUpon>LoginForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="PersonalNoteForm.resx">
+    <EmbeddedResource Include="Documents\PersonalNoteForm.resx">
       <DependentUpon>PersonalNoteForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
@@ -161,16 +161,16 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
-    <EmbeddedResource Include="RegisterForm.resx">
+    <EmbeddedResource Include="Authentication\RegisterForm.resx">
       <DependentUpon>RegisterForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Report.resx">
+    <EmbeddedResource Include="Reports\Report.resx">
       <DependentUpon>Report.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="ToastNotification.resx">
+    <EmbeddedResource Include="UI\ToastNotification.resx">
       <DependentUpon>ToastNotification.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="UserManagementForm.resx">
+    <EmbeddedResource Include="Management\UserManagementForm.resx">
       <DependentUpon>UserManagementForm.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="packages.config" />
