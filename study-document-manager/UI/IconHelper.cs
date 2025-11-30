@@ -10,27 +10,36 @@ namespace study_document_manager
     public static class IconHelper
     {
         /// <summary>
-        /// Lấy icon theo loại tài liệu
+        /// Lấy icon theo loại tài liệu và tên file
         /// </summary>
-        public static Bitmap GetDocumentIcon(string loai, int size = 24)
+        public static Bitmap GetDocumentIcon(string loai, int size = 24, string fileName = null)
         {
             loai = loai?.ToLower() ?? "";
+            fileName = fileName?.ToLower() ?? "";
+            string fileExt = System.IO.Path.GetExtension(fileName) ?? "";
 
-            if (loai.Contains("slide") || loai.Contains("ppt") || loai.Contains("powerpoint"))
+            if (fileExt == ".xlsx" || fileExt == ".xls" || fileExt == ".xlsm" || fileExt == ".csv" ||
+                fileName.EndsWith("xlsx") || fileName.EndsWith("xls") || fileName.EndsWith("xlsm") ||
+                loai.Contains("excel") || loai.Contains("xls"))
             {
-                return CreatePowerPointIcon(size);
+                return CreateExcelIcon(size);
             }
-            else if (loai.Contains("bài tập") || loai.Contains("word") || loai.Contains("doc"))
-            {
-                return CreateWordIcon(size);
-            }
-            else if (loai.Contains("đề thi") || loai.Contains("pdf"))
+            else if (fileExt == ".pdf" || fileName.EndsWith("pdf") ||
+                     loai.Contains("đề thi") || loai.Contains("pdf"))
             {
                 return CreatePdfIcon(size);
             }
-            else if (loai.Contains("excel") || loai.Contains("xls"))
+            else if (fileExt == ".pptx" || fileExt == ".ppt" || fileExt == ".ppsx" ||
+                     fileName.EndsWith("pptx") || fileName.EndsWith("ppt") ||
+                     loai.Contains("slide") || loai.Contains("ppt") || loai.Contains("powerpoint"))
             {
-                return CreateExcelIcon(size);
+                return CreatePowerPointIcon(size);
+            }
+            else if (fileExt == ".docx" || fileExt == ".doc" || fileExt == ".rtf" ||
+                     fileName.EndsWith("docx") || fileName.EndsWith("doc") ||
+                     loai.Contains("bài tập") || loai.Contains("word") || loai.Contains("doc"))
+            {
+                return CreateWordIcon(size);
             }
             else
             {
@@ -232,7 +241,7 @@ namespace study_document_manager
         }
 
         /// <summary>
-        /// Tạo icon mặc định (màu xám)
+        /// Tạo icon mặc định (icon tài liệu)
         /// </summary>
         private static Bitmap CreateDefaultIcon(int size)
         {
@@ -242,26 +251,57 @@ namespace study_document_manager
                 g.SmoothingMode = SmoothingMode.AntiAlias;
                 g.Clear(Color.Transparent);
 
-                // Nền xám
-                using (Brush brush = new SolidBrush(Color.FromArgb(158, 158, 158)))
+                float margin = size * 0.15f;
+                float width = size - 2 * margin;
+                float height = size - 2 * margin;
+                float foldSize = size * 0.2f;
+
+                // Vẽ hình tài liệu với góc gập
+                PointF[] docShape = new PointF[]
                 {
-                    g.FillRectangle(brush, 2, 2, size - 4, size - 4);
+                    new PointF(margin, margin),
+                    new PointF(margin + width - foldSize, margin),
+                    new PointF(margin + width, margin + foldSize),
+                    new PointF(margin + width, margin + height),
+                    new PointF(margin, margin + height)
+                };
+
+                // Nền trắng
+                using (Brush brush = new SolidBrush(Color.FromArgb(250, 250, 250)))
+                {
+                    g.FillPolygon(brush, docShape);
                 }
 
-                // Viền xám đậm
-                using (Pen pen = new Pen(Color.FromArgb(117, 117, 117), 2))
+                // Góc gập
+                PointF[] foldShape = new PointF[]
                 {
-                    g.DrawRectangle(pen, 2, 2, size - 4, size - 4);
+                    new PointF(margin + width - foldSize, margin),
+                    new PointF(margin + width - foldSize, margin + foldSize),
+                    new PointF(margin + width, margin + foldSize)
+                };
+                using (Brush foldBrush = new SolidBrush(Color.FromArgb(200, 200, 200)))
+                {
+                    g.FillPolygon(foldBrush, foldShape);
                 }
 
-                // Icon file
-                using (Font font = new Font("Segoe UI Symbol", size / 3, FontStyle.Regular))
-                using (Brush textBrush = new SolidBrush(Color.White))
+                // Viền xám
+                using (Pen pen = new Pen(Color.FromArgb(158, 158, 158), 1.5f))
                 {
-                    StringFormat sf = new StringFormat();
-                    sf.Alignment = StringAlignment.Center;
-                    sf.LineAlignment = StringAlignment.Center;
-                    g.DrawString("??", font, textBrush, new RectangleF(0, 0, size, size), sf);
+                    g.DrawPolygon(pen, docShape);
+                    g.DrawPolygon(pen, foldShape);
+                }
+
+                // Các đường kẻ ngang giả lập text
+                using (Pen linePen = new Pen(Color.FromArgb(180, 180, 180), 1f))
+                {
+                    float lineY = margin + foldSize + size * 0.1f;
+                    float lineSpacing = size * 0.12f;
+                    for (int i = 0; i < 3; i++)
+                    {
+                        float lineWidth = (i == 2) ? width * 0.5f : width * 0.7f;
+                        g.DrawLine(linePen, margin + size * 0.1f, lineY, margin + size * 0.1f + lineWidth, lineY);
+                        lineY += lineSpacing;
+                    }
                 }
             }
             return bitmap;

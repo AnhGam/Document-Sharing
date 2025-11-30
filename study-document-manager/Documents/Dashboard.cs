@@ -1080,12 +1080,13 @@ namespace study_document_manager
                 if (colName == "Icon" && dgvDocuments.Columns[e.ColumnIndex] is DataGridViewImageColumn)
                 {
                     var loaiCell = dgvDocuments.Rows[e.RowIndex].Cells["loai"];
-                    if (loaiCell.Value != null && loaiCell.Value != DBNull.Value)
-                    {
-                        string loai = loaiCell.Value.ToString();
-                        e.Value = IconHelper.GetDocumentIcon(loai, 24);
-                        e.FormattingApplied = true;
-                    }
+                    var tenCell = dgvDocuments.Rows[e.RowIndex].Cells["ten"];
+                    
+                    string loai = loaiCell?.Value?.ToString() ?? "";
+                    string fileName = tenCell?.Value?.ToString() ?? "";
+                    
+                    e.Value = IconHelper.GetDocumentIcon(loai, 24, fileName);
+                    e.FormattingApplied = true;
                 }
                 // Format deadline column - highlight màu theo ngày còn lại
                 else if (colName == "deadline")
