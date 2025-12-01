@@ -84,6 +84,7 @@
       <DependentUpon>Dashboard.cs</DependentUpon>
     </Compile>
     <Compile Include="UI\IconHelper.cs" />
+    <Compile Include="UI\AppTheme.cs" />
     <Compile Include="Authentication\LoginForm.cs">
       <SubType>Form</SubType>
     </Compile>

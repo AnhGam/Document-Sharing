@@ -1,7 +1,9 @@
 using System;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
+using study_document_manager.UI;
 
 namespace study_document_manager
 {
@@ -16,13 +18,62 @@ namespace study_document_manager
 
         private void RegisterForm_Load(object sender, EventArgs e)
         {
-            // Thiết lập icon cho button show password
             btnShowPassword.Image = IconHelper.CreateEyeIcon(16, true);
             btnShowPassword.Text = "";
             btnShowConfirmPassword.Image = IconHelper.CreateEyeIcon(16, true);
             btnShowConfirmPassword.Text = "";
 
+            lblWelcome.Text = "Tạo tài khoản mới";
+            lblAppName.Text = "Study Document\nManager";
+            lblTagline.Text = "Đăng ký để bắt đầu quản lý tài liệu học tập của bạn một cách thông minh.";
+            lblTitle.Text = "Đăng ký tài khoản";
+            lblSubtitle.Text = "Điền thông tin bên dưới";
+            lblUsername.Text = "Tên đăng nhập *";
+            lblPassword.Text = "Mật khẩu *";
+            lblConfirmPassword.Text = "Xác nhận mật khẩu *";
+            lblFullName.Text = "Họ tên *";
+            lblEmail.Text = "Email (tùy chọn)";
+            btnRegister.Text = "Đăng ký";
+            btnCancel.Text = "Hủy";
+
             txtUsername.Focus();
+        }
+
+        private void pnlLeft_Paint(object sender, PaintEventArgs e)
+        {
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+
+            using (LinearGradientBrush brush = new LinearGradientBrush(
+                pnlLeft.ClientRectangle,
+                Color.FromArgb(240, 253, 250),
+                Color.FromArgb(204, 251, 241),
+                LinearGradientMode.ForwardDiagonal))
+            {
+                e.Graphics.FillRectangle(brush, pnlLeft.ClientRectangle);
+            }
+
+            using (SolidBrush circleBrush = new SolidBrush(Color.FromArgb(25, 20, 184, 166)))
+            {
+                e.Graphics.FillEllipse(circleBrush, -70, 420, 200, 200);
+                e.Graphics.FillEllipse(circleBrush, 240, -50, 160, 160);
+                e.Graphics.FillEllipse(circleBrush, 120, 500, 100, 100);
+            }
+
+            using (SolidBrush accentBrush = new SolidBrush(Color.FromArgb(15, 16, 185, 129)))
+            {
+                e.Graphics.FillEllipse(accentBrush, 30, 520, 70, 70);
+                e.Graphics.FillEllipse(accentBrush, 280, 80, 50, 50);
+            }
+        }
+
+        private void btnRegister_MouseEnter(object sender, EventArgs e)
+        {
+            btnRegister.BackColor = AppTheme.PrimaryLight;
+        }
+
+        private void btnRegister_MouseLeave(object sender, EventArgs e)
+        {
+            btnRegister.BackColor = AppTheme.Primary;
         }
 
         /// <summary>

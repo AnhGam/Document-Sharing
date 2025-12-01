@@ -1,3 +1,5 @@
+using study_document_manager.UI;
+
 namespace study_document_manager
 {
     partial class AccountSettingsForm
@@ -17,6 +19,9 @@ namespace study_document_manager
 
         private void InitializeComponent()
         {
+            this.pnlHeader = new System.Windows.Forms.Panel();
+            this.lblTitle = new System.Windows.Forms.Label();
+            this.lblSubtitle = new System.Windows.Forms.Label();
             this.tabControl = new System.Windows.Forms.TabControl();
             this.tabProfile = new System.Windows.Forms.TabPage();
             this.tabPassword = new System.Windows.Forms.TabPage();
@@ -45,21 +50,59 @@ namespace study_document_manager
             
             this.btnCancel = new System.Windows.Forms.Button();
             
+            this.pnlHeader.SuspendLayout();
             this.tabControl.SuspendLayout();
             this.tabProfile.SuspendLayout();
             this.tabPassword.SuspendLayout();
             this.SuspendLayout();
             
             // 
+            // pnlHeader
+            // 
+            this.pnlHeader.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(253)))), ((int)(((byte)(250)))));
+            this.pnlHeader.Controls.Add(this.lblTitle);
+            this.pnlHeader.Controls.Add(this.lblSubtitle);
+            this.pnlHeader.Dock = System.Windows.Forms.DockStyle.Top;
+            this.pnlHeader.Location = new System.Drawing.Point(0, 0);
+            this.pnlHeader.Name = "pnlHeader";
+            this.pnlHeader.Size = new System.Drawing.Size(480, 80);
+            this.pnlHeader.TabIndex = 0;
+            
+            // 
+            // lblTitle
+            // 
+            this.lblTitle.AutoSize = true;
+            this.lblTitle.Font = new System.Drawing.Font("Segoe UI", 16F, System.Drawing.FontStyle.Bold);
+            this.lblTitle.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(23)))), ((int)(((byte)(42)))));
+            this.lblTitle.Location = new System.Drawing.Point(24, 16);
+            this.lblTitle.Name = "lblTitle";
+            this.lblTitle.Size = new System.Drawing.Size(200, 37);
+            this.lblTitle.TabIndex = 0;
+            this.lblTitle.Text = "Cài đặt tài khoản";
+            
+            // 
+            // lblSubtitle
+            // 
+            this.lblSubtitle.AutoSize = true;
+            this.lblSubtitle.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.lblSubtitle.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(71)))), ((int)(((byte)(85)))), ((int)(((byte)(105)))));
+            this.lblSubtitle.Location = new System.Drawing.Point(26, 53);
+            this.lblSubtitle.Name = "lblSubtitle";
+            this.lblSubtitle.Size = new System.Drawing.Size(260, 20);
+            this.lblSubtitle.TabIndex = 1;
+            this.lblSubtitle.Text = "Quản lý thông tin cá nhân và mật khẩu";
+            
+            // 
             // tabControl
             // 
             this.tabControl.Controls.Add(this.tabProfile);
             this.tabControl.Controls.Add(this.tabPassword);
-            this.tabControl.Location = new System.Drawing.Point(12, 12);
+            this.tabControl.Font = new System.Drawing.Font("Segoe UI Semibold", 9.5F, System.Drawing.FontStyle.Bold);
+            this.tabControl.Location = new System.Drawing.Point(24, 96);
             this.tabControl.Name = "tabControl";
             this.tabControl.SelectedIndex = 0;
-            this.tabControl.Size = new System.Drawing.Size(410, 300);
-            this.tabControl.TabIndex = 0;
+            this.tabControl.Size = new System.Drawing.Size(432, 320);
+            this.tabControl.TabIndex = 1;
             
             // 
             // tabProfile
@@ -76,10 +119,10 @@ namespace study_document_manager
             this.tabProfile.Controls.Add(this.lblLoginTimeLabel);
             this.tabProfile.Controls.Add(this.lblLoginTime);
             this.tabProfile.Controls.Add(this.btnSaveProfile);
-            this.tabProfile.Location = new System.Drawing.Point(4, 29);
+            this.tabProfile.Location = new System.Drawing.Point(4, 31);
             this.tabProfile.Name = "tabProfile";
-            this.tabProfile.Padding = new System.Windows.Forms.Padding(20);
-            this.tabProfile.Size = new System.Drawing.Size(402, 267);
+            this.tabProfile.Padding = new System.Windows.Forms.Padding(24);
+            this.tabProfile.Size = new System.Drawing.Size(424, 285);
             this.tabProfile.TabIndex = 0;
             this.tabProfile.Text = "Thông tin cá nhân";
             
@@ -87,65 +130,84 @@ namespace study_document_manager
             // lblUsernameLabel
             // 
             this.lblUsernameLabel.AutoSize = true;
-            this.lblUsernameLabel.Location = new System.Drawing.Point(20, 25);
+            this.lblUsernameLabel.Font = new System.Drawing.Font("Segoe UI Semibold", 9F, System.Drawing.FontStyle.Bold);
+            this.lblUsernameLabel.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(51)))), ((int)(((byte)(65)))), ((int)(((byte)(85)))));
+            this.lblUsernameLabel.Location = new System.Drawing.Point(24, 24);
             this.lblUsernameLabel.Name = "lblUsernameLabel";
             this.lblUsernameLabel.Size = new System.Drawing.Size(100, 20);
             this.lblUsernameLabel.TabIndex = 0;
-            this.lblUsernameLabel.Text = "Tên đăng nhập:";
+            this.lblUsernameLabel.Text = "Tên đăng nhập";
             
             // 
             // txtUsername
             // 
-            this.txtUsername.Location = new System.Drawing.Point(150, 22);
+            this.txtUsername.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(248)))), ((int)(((byte)(250)))), ((int)(((byte)(252)))));
+            this.txtUsername.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.txtUsername.Font = new System.Drawing.Font("Segoe UI", 10F);
+            this.txtUsername.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(148)))), ((int)(((byte)(163)))), ((int)(((byte)(184)))));
+            this.txtUsername.Location = new System.Drawing.Point(24, 47);
             this.txtUsername.Name = "txtUsername";
             this.txtUsername.ReadOnly = true;
-            this.txtUsername.Size = new System.Drawing.Size(220, 27);
+            this.txtUsername.Size = new System.Drawing.Size(376, 30);
             this.txtUsername.TabIndex = 1;
-            this.txtUsername.BackColor = System.Drawing.Color.FromArgb(245, 245, 245);
             
             // 
             // lblFullNameLabel
             // 
             this.lblFullNameLabel.AutoSize = true;
-            this.lblFullNameLabel.Location = new System.Drawing.Point(20, 65);
+            this.lblFullNameLabel.Font = new System.Drawing.Font("Segoe UI Semibold", 9F, System.Drawing.FontStyle.Bold);
+            this.lblFullNameLabel.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(51)))), ((int)(((byte)(65)))), ((int)(((byte)(85)))));
+            this.lblFullNameLabel.Location = new System.Drawing.Point(24, 88);
             this.lblFullNameLabel.Name = "lblFullNameLabel";
-            this.lblFullNameLabel.Size = new System.Drawing.Size(60, 20);
+            this.lblFullNameLabel.Size = new System.Drawing.Size(55, 20);
             this.lblFullNameLabel.TabIndex = 2;
-            this.lblFullNameLabel.Text = "Họ tên:";
+            this.lblFullNameLabel.Text = "Họ tên";
             
             // 
             // txtFullName
             // 
-            this.txtFullName.Location = new System.Drawing.Point(150, 62);
+            this.txtFullName.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(248)))), ((int)(((byte)(250)))), ((int)(((byte)(252)))));
+            this.txtFullName.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.txtFullName.Font = new System.Drawing.Font("Segoe UI", 10F);
+            this.txtFullName.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(23)))), ((int)(((byte)(42)))));
+            this.txtFullName.Location = new System.Drawing.Point(24, 111);
             this.txtFullName.Name = "txtFullName";
-            this.txtFullName.Size = new System.Drawing.Size(220, 27);
+            this.txtFullName.Size = new System.Drawing.Size(376, 30);
             this.txtFullName.TabIndex = 3;
             
             // 
             // lblEmailLabel
             // 
             this.lblEmailLabel.AutoSize = true;
-            this.lblEmailLabel.Location = new System.Drawing.Point(20, 105);
+            this.lblEmailLabel.Font = new System.Drawing.Font("Segoe UI Semibold", 9F, System.Drawing.FontStyle.Bold);
+            this.lblEmailLabel.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(51)))), ((int)(((byte)(65)))), ((int)(((byte)(85)))));
+            this.lblEmailLabel.Location = new System.Drawing.Point(24, 152);
             this.lblEmailLabel.Name = "lblEmailLabel";
-            this.lblEmailLabel.Size = new System.Drawing.Size(46, 20);
+            this.lblEmailLabel.Size = new System.Drawing.Size(42, 20);
             this.lblEmailLabel.TabIndex = 4;
-            this.lblEmailLabel.Text = "Email:";
+            this.lblEmailLabel.Text = "Email";
             
             // 
             // txtEmail
             // 
-            this.txtEmail.Location = new System.Drawing.Point(150, 102);
+            this.txtEmail.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(248)))), ((int)(((byte)(250)))), ((int)(((byte)(252)))));
+            this.txtEmail.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.txtEmail.Font = new System.Drawing.Font("Segoe UI", 10F);
+            this.txtEmail.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(23)))), ((int)(((byte)(42)))));
+            this.txtEmail.Location = new System.Drawing.Point(24, 175);
             this.txtEmail.Name = "txtEmail";
-            this.txtEmail.Size = new System.Drawing.Size(220, 27);
+            this.txtEmail.Size = new System.Drawing.Size(376, 30);
             this.txtEmail.TabIndex = 5;
             
             // 
             // lblRoleLabel
             // 
             this.lblRoleLabel.AutoSize = true;
-            this.lblRoleLabel.Location = new System.Drawing.Point(20, 145);
+            this.lblRoleLabel.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.lblRoleLabel.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(71)))), ((int)(((byte)(85)))), ((int)(((byte)(105)))));
+            this.lblRoleLabel.Location = new System.Drawing.Point(24, 218);
             this.lblRoleLabel.Name = "lblRoleLabel";
-            this.lblRoleLabel.Size = new System.Drawing.Size(55, 20);
+            this.lblRoleLabel.Size = new System.Drawing.Size(51, 20);
             this.lblRoleLabel.TabIndex = 6;
             this.lblRoleLabel.Text = "Vai trò:";
             
@@ -153,11 +215,11 @@ namespace study_document_manager
             // lblRole
             // 
             this.lblRole.AutoSize = true;
-            this.lblRole.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
-            this.lblRole.ForeColor = System.Drawing.Color.FromArgb(33, 150, 243);
-            this.lblRole.Location = new System.Drawing.Point(150, 145);
+            this.lblRole.Font = new System.Drawing.Font("Segoe UI Semibold", 9F, System.Drawing.FontStyle.Bold);
+            this.lblRole.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(20)))), ((int)(((byte)(184)))), ((int)(((byte)(166)))));
+            this.lblRole.Location = new System.Drawing.Point(80, 218);
             this.lblRole.Name = "lblRole";
-            this.lblRole.Size = new System.Drawing.Size(40, 20);
+            this.lblRole.Size = new System.Drawing.Size(37, 20);
             this.lblRole.TabIndex = 7;
             this.lblRole.Text = "User";
             
@@ -165,9 +227,11 @@ namespace study_document_manager
             // lblLoginTimeLabel
             // 
             this.lblLoginTimeLabel.AutoSize = true;
-            this.lblLoginTimeLabel.Location = new System.Drawing.Point(20, 175);
+            this.lblLoginTimeLabel.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.lblLoginTimeLabel.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(71)))), ((int)(((byte)(85)))), ((int)(((byte)(105)))));
+            this.lblLoginTimeLabel.Location = new System.Drawing.Point(200, 218);
             this.lblLoginTimeLabel.Name = "lblLoginTimeLabel";
-            this.lblLoginTimeLabel.Size = new System.Drawing.Size(120, 20);
+            this.lblLoginTimeLabel.Size = new System.Drawing.Size(101, 20);
             this.lblLoginTimeLabel.TabIndex = 8;
             this.lblLoginTimeLabel.Text = "Đăng nhập lúc:";
             
@@ -175,24 +239,26 @@ namespace study_document_manager
             // lblLoginTime
             // 
             this.lblLoginTime.AutoSize = true;
-            this.lblLoginTime.ForeColor = System.Drawing.Color.Gray;
-            this.lblLoginTime.Location = new System.Drawing.Point(150, 175);
+            this.lblLoginTime.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.lblLoginTime.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(148)))), ((int)(((byte)(163)))), ((int)(((byte)(184)))));
+            this.lblLoginTime.Location = new System.Drawing.Point(307, 218);
             this.lblLoginTime.Name = "lblLoginTime";
-            this.lblLoginTime.Size = new System.Drawing.Size(100, 20);
+            this.lblLoginTime.Size = new System.Drawing.Size(25, 20);
             this.lblLoginTime.TabIndex = 9;
             this.lblLoginTime.Text = "---";
             
             // 
             // btnSaveProfile
             // 
-            this.btnSaveProfile.BackColor = System.Drawing.Color.FromArgb(76, 175, 80);
+            this.btnSaveProfile.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(20)))), ((int)(((byte)(184)))), ((int)(((byte)(166)))));
+            this.btnSaveProfile.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnSaveProfile.FlatAppearance.BorderSize = 0;
             this.btnSaveProfile.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnSaveProfile.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+            this.btnSaveProfile.Font = new System.Drawing.Font("Segoe UI Semibold", 10F, System.Drawing.FontStyle.Bold);
             this.btnSaveProfile.ForeColor = System.Drawing.Color.White;
-            this.btnSaveProfile.Location = new System.Drawing.Point(150, 215);
+            this.btnSaveProfile.Location = new System.Drawing.Point(24, 248);
             this.btnSaveProfile.Name = "btnSaveProfile";
-            this.btnSaveProfile.Size = new System.Drawing.Size(120, 35);
+            this.btnSaveProfile.Size = new System.Drawing.Size(140, 40);
             this.btnSaveProfile.TabIndex = 10;
             this.btnSaveProfile.Text = "Lưu thay đổi";
             this.btnSaveProfile.UseVisualStyleBackColor = false;
@@ -209,10 +275,10 @@ namespace study_document_manager
             this.tabPassword.Controls.Add(this.lblConfirmPasswordLabel);
             this.tabPassword.Controls.Add(this.txtConfirmPassword);
             this.tabPassword.Controls.Add(this.btnChangePassword);
-            this.tabPassword.Location = new System.Drawing.Point(4, 29);
+            this.tabPassword.Location = new System.Drawing.Point(4, 31);
             this.tabPassword.Name = "tabPassword";
-            this.tabPassword.Padding = new System.Windows.Forms.Padding(20);
-            this.tabPassword.Size = new System.Drawing.Size(402, 267);
+            this.tabPassword.Padding = new System.Windows.Forms.Padding(24);
+            this.tabPassword.Size = new System.Drawing.Size(424, 285);
             this.tabPassword.TabIndex = 1;
             this.tabPassword.Text = "Đổi mật khẩu";
             
@@ -220,70 +286,89 @@ namespace study_document_manager
             // lblCurrentPasswordLabel
             // 
             this.lblCurrentPasswordLabel.AutoSize = true;
-            this.lblCurrentPasswordLabel.Location = new System.Drawing.Point(20, 35);
+            this.lblCurrentPasswordLabel.Font = new System.Drawing.Font("Segoe UI Semibold", 9F, System.Drawing.FontStyle.Bold);
+            this.lblCurrentPasswordLabel.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(51)))), ((int)(((byte)(65)))), ((int)(((byte)(85)))));
+            this.lblCurrentPasswordLabel.Location = new System.Drawing.Point(24, 24);
             this.lblCurrentPasswordLabel.Name = "lblCurrentPasswordLabel";
-            this.lblCurrentPasswordLabel.Size = new System.Drawing.Size(120, 20);
+            this.lblCurrentPasswordLabel.Size = new System.Drawing.Size(124, 20);
             this.lblCurrentPasswordLabel.TabIndex = 0;
-            this.lblCurrentPasswordLabel.Text = "Mật khẩu hiện tại:";
+            this.lblCurrentPasswordLabel.Text = "Mật khẩu hiện tại";
             
             // 
             // txtCurrentPassword
             // 
-            this.txtCurrentPassword.Location = new System.Drawing.Point(150, 32);
+            this.txtCurrentPassword.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(248)))), ((int)(((byte)(250)))), ((int)(((byte)(252)))));
+            this.txtCurrentPassword.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.txtCurrentPassword.Font = new System.Drawing.Font("Segoe UI", 10F);
+            this.txtCurrentPassword.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(23)))), ((int)(((byte)(42)))));
+            this.txtCurrentPassword.Location = new System.Drawing.Point(24, 47);
             this.txtCurrentPassword.Name = "txtCurrentPassword";
             this.txtCurrentPassword.PasswordChar = '*';
-            this.txtCurrentPassword.Size = new System.Drawing.Size(220, 27);
+            this.txtCurrentPassword.Size = new System.Drawing.Size(376, 30);
             this.txtCurrentPassword.TabIndex = 1;
             
             // 
             // lblNewPasswordLabel
             // 
             this.lblNewPasswordLabel.AutoSize = true;
-            this.lblNewPasswordLabel.Location = new System.Drawing.Point(20, 80);
+            this.lblNewPasswordLabel.Font = new System.Drawing.Font("Segoe UI Semibold", 9F, System.Drawing.FontStyle.Bold);
+            this.lblNewPasswordLabel.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(51)))), ((int)(((byte)(65)))), ((int)(((byte)(85)))));
+            this.lblNewPasswordLabel.Location = new System.Drawing.Point(24, 92);
             this.lblNewPasswordLabel.Name = "lblNewPasswordLabel";
             this.lblNewPasswordLabel.Size = new System.Drawing.Size(100, 20);
             this.lblNewPasswordLabel.TabIndex = 2;
-            this.lblNewPasswordLabel.Text = "Mật khẩu mới:";
+            this.lblNewPasswordLabel.Text = "Mật khẩu mới";
             
             // 
             // txtNewPassword
             // 
-            this.txtNewPassword.Location = new System.Drawing.Point(150, 77);
+            this.txtNewPassword.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(248)))), ((int)(((byte)(250)))), ((int)(((byte)(252)))));
+            this.txtNewPassword.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.txtNewPassword.Font = new System.Drawing.Font("Segoe UI", 10F);
+            this.txtNewPassword.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(23)))), ((int)(((byte)(42)))));
+            this.txtNewPassword.Location = new System.Drawing.Point(24, 115);
             this.txtNewPassword.Name = "txtNewPassword";
             this.txtNewPassword.PasswordChar = '*';
-            this.txtNewPassword.Size = new System.Drawing.Size(220, 27);
+            this.txtNewPassword.Size = new System.Drawing.Size(376, 30);
             this.txtNewPassword.TabIndex = 3;
             
             // 
             // lblConfirmPasswordLabel
             // 
             this.lblConfirmPasswordLabel.AutoSize = true;
-            this.lblConfirmPasswordLabel.Location = new System.Drawing.Point(20, 125);
+            this.lblConfirmPasswordLabel.Font = new System.Drawing.Font("Segoe UI Semibold", 9F, System.Drawing.FontStyle.Bold);
+            this.lblConfirmPasswordLabel.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(51)))), ((int)(((byte)(65)))), ((int)(((byte)(85)))));
+            this.lblConfirmPasswordLabel.Location = new System.Drawing.Point(24, 160);
             this.lblConfirmPasswordLabel.Name = "lblConfirmPasswordLabel";
-            this.lblConfirmPasswordLabel.Size = new System.Drawing.Size(120, 20);
+            this.lblConfirmPasswordLabel.Size = new System.Drawing.Size(134, 20);
             this.lblConfirmPasswordLabel.TabIndex = 4;
-            this.lblConfirmPasswordLabel.Text = "Xác nhận mật khẩu:";
+            this.lblConfirmPasswordLabel.Text = "Xác nhận mật khẩu";
             
             // 
             // txtConfirmPassword
             // 
-            this.txtConfirmPassword.Location = new System.Drawing.Point(150, 122);
+            this.txtConfirmPassword.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(248)))), ((int)(((byte)(250)))), ((int)(((byte)(252)))));
+            this.txtConfirmPassword.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.txtConfirmPassword.Font = new System.Drawing.Font("Segoe UI", 10F);
+            this.txtConfirmPassword.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(23)))), ((int)(((byte)(42)))));
+            this.txtConfirmPassword.Location = new System.Drawing.Point(24, 183);
             this.txtConfirmPassword.Name = "txtConfirmPassword";
             this.txtConfirmPassword.PasswordChar = '*';
-            this.txtConfirmPassword.Size = new System.Drawing.Size(220, 27);
+            this.txtConfirmPassword.Size = new System.Drawing.Size(376, 30);
             this.txtConfirmPassword.TabIndex = 5;
             
             // 
             // btnChangePassword
             // 
-            this.btnChangePassword.BackColor = System.Drawing.Color.FromArgb(33, 150, 243);
+            this.btnChangePassword.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(20)))), ((int)(((byte)(184)))), ((int)(((byte)(166)))));
+            this.btnChangePassword.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnChangePassword.FlatAppearance.BorderSize = 0;
             this.btnChangePassword.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnChangePassword.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+            this.btnChangePassword.Font = new System.Drawing.Font("Segoe UI Semibold", 10F, System.Drawing.FontStyle.Bold);
             this.btnChangePassword.ForeColor = System.Drawing.Color.White;
-            this.btnChangePassword.Location = new System.Drawing.Point(150, 175);
+            this.btnChangePassword.Location = new System.Drawing.Point(24, 230);
             this.btnChangePassword.Name = "btnChangePassword";
-            this.btnChangePassword.Size = new System.Drawing.Size(120, 35);
+            this.btnChangePassword.Size = new System.Drawing.Size(140, 40);
             this.btnChangePassword.TabIndex = 6;
             this.btnChangePassword.Text = "Đổi mật khẩu";
             this.btnChangePassword.UseVisualStyleBackColor = false;
@@ -292,21 +377,29 @@ namespace study_document_manager
             // 
             // btnCancel
             // 
-            this.btnCancel.Location = new System.Drawing.Point(327, 320);
+            this.btnCancel.BackColor = System.Drawing.Color.White;
+            this.btnCancel.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnCancel.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(226)))), ((int)(((byte)(232)))), ((int)(((byte)(240)))));
+            this.btnCancel.FlatAppearance.BorderSize = 1;
+            this.btnCancel.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnCancel.Font = new System.Drawing.Font("Segoe UI Semibold", 9.5F, System.Drawing.FontStyle.Bold);
+            this.btnCancel.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(71)))), ((int)(((byte)(85)))), ((int)(((byte)(105)))));
+            this.btnCancel.Location = new System.Drawing.Point(356, 428);
             this.btnCancel.Name = "btnCancel";
-            this.btnCancel.Size = new System.Drawing.Size(95, 35);
-            this.btnCancel.TabIndex = 1;
+            this.btnCancel.Size = new System.Drawing.Size(100, 40);
+            this.btnCancel.TabIndex = 2;
             this.btnCancel.Text = "Đóng";
-            this.btnCancel.UseVisualStyleBackColor = true;
+            this.btnCancel.UseVisualStyleBackColor = false;
             this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
             
             // 
             // AccountSettingsForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 25F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.BackColor = System.Drawing.Color.FromArgb(245, 245, 245);
-            this.ClientSize = new System.Drawing.Size(434, 367);
+            this.BackColor = System.Drawing.Color.White;
+            this.ClientSize = new System.Drawing.Size(480, 488);
+            this.Controls.Add(this.pnlHeader);
             this.Controls.Add(this.tabControl);
             this.Controls.Add(this.btnCancel);
             this.Font = new System.Drawing.Font("Segoe UI", 9F);
@@ -315,9 +408,11 @@ namespace study_document_manager
             this.MinimizeBox = false;
             this.Name = "AccountSettingsForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            this.Text = "Cài đặt tài khoản";
+            this.Text = "Cài đặt tài khoản - Study Document Manager";
             this.Load += new System.EventHandler(this.AccountSettingsForm_Load);
             
+            this.pnlHeader.ResumeLayout(false);
+            this.pnlHeader.PerformLayout();
             this.tabControl.ResumeLayout(false);
             this.tabProfile.ResumeLayout(false);
             this.tabProfile.PerformLayout();
@@ -328,6 +423,9 @@ namespace study_document_manager
 
         #endregion
 
+        private System.Windows.Forms.Panel pnlHeader;
+        private System.Windows.Forms.Label lblTitle;
+        private System.Windows.Forms.Label lblSubtitle;
         private System.Windows.Forms.TabControl tabControl;
         private System.Windows.Forms.TabPage tabProfile;
         private System.Windows.Forms.TabPage tabPassword;

@@ -1,6 +1,7 @@
 using System;
 using System.Drawing;
 using System.Windows.Forms;
+using study_document_manager.UI;
 
 namespace study_document_manager
 {
@@ -9,6 +10,16 @@ namespace study_document_manager
         public AccountSettingsForm()
         {
             InitializeComponent();
+            SetupButtonHoverEffects();
+        }
+
+        private void SetupButtonHoverEffects()
+        {
+            btnSaveProfile.MouseEnter += (s, e) => btnSaveProfile.BackColor = AppTheme.PrimaryLight;
+            btnSaveProfile.MouseLeave += (s, e) => btnSaveProfile.BackColor = AppTheme.Primary;
+            
+            btnChangePassword.MouseEnter += (s, e) => btnChangePassword.BackColor = AppTheme.PrimaryLight;
+            btnChangePassword.MouseLeave += (s, e) => btnChangePassword.BackColor = AppTheme.Primary;
         }
 
         private void AccountSettingsForm_Load(object sender, EventArgs e)

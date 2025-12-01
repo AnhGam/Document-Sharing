@@ -3,6 +3,7 @@ using System.Data;
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
+using study_document_manager.UI;
 
 namespace study_document_manager
 {
@@ -328,6 +329,7 @@ namespace study_document_manager
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            ApplyTheme();
             InitializeCustomComponents();
             this.Text = $"Study Document Manager - {UserSession.FullName} [{UserSession.Role}]";
             
@@ -340,17 +342,12 @@ namespace study_document_manager
             ApplyPermissions();
             
             // Setup icons cho ToolStrip buttons
-            toolBtnNew.Image = IconHelper.CreateAddIcon(16, Color.FromArgb(76, 175, 80));
-            toolBtnEdit.Image = IconHelper.CreateEditIcon(16, Color.FromArgb(33, 150, 243));
-            toolBtnDelete.Image = IconHelper.CreateDeleteIcon(16, Color.FromArgb(244, 67, 54));
-            toolBtnOpen.Image = IconHelper.CreateOpenIcon(16, Color.FromArgb(103, 58, 183));
-            toolBtnExport.Image = IconHelper.CreateExportIcon(16, Color.FromArgb(255, 152, 0));
-            toolBtnRefresh.Image = IconHelper.CreateRefreshIcon(16, Color.FromArgb(0, 150, 136));
-            
-            // Áp dụng màu sắc theo README
-            this.BackColor = Color.FromArgb(227, 242, 253); // #E3F2FD
-            pnlSearch.BackColor = Color.White;
-            pnlContent.BackColor = Color.FromArgb(245, 245, 245);
+            toolBtnNew.Image = IconHelper.CreateAddIcon(16, AppTheme.StatusSuccess);
+            toolBtnEdit.Image = IconHelper.CreateEditIcon(16, AppTheme.Primary);
+            toolBtnDelete.Image = IconHelper.CreateDeleteIcon(16, AppTheme.StatusError);
+            toolBtnOpen.Image = IconHelper.CreateOpenIcon(16, AppTheme.AccentSky);
+            toolBtnExport.Image = IconHelper.CreateExportIcon(16, AppTheme.AccentOrange);
+            toolBtnRefresh.Image = IconHelper.CreateRefreshIcon(16, AppTheme.Secondary);
             
             // Chế độ cá nhân: Không cần filter theo người tạo
             LoadUsersForFilter();
@@ -365,6 +362,69 @@ namespace study_document_manager
             
             // Hiển thị Toast chào mừng
             ToastNotification.Success($"Xin chào, {UserSession.FullName}!");
+        }
+
+        /// <summary>
+        /// Áp dụng theme cho Dashboard
+        /// </summary>
+        private void ApplyTheme()
+        {
+            // Form background
+            this.BackColor = AppTheme.BackgroundSoft;
+            
+            // MenuStrip
+            AppTheme.ApplyMenuStripStyle(menuStrip);
+            
+            // ToolStrip
+            AppTheme.ApplyToolStripStyle(toolStrip);
+            
+            // Search Panel
+            pnlSearch.BackColor = AppTheme.BackgroundMain;
+            lblSearch.ForeColor = AppTheme.TextSecondary;
+            AppTheme.ApplyTextBoxStyle(txtSearch);
+            AppTheme.ApplyComboBoxStyle(cboSubject);
+            AppTheme.ApplyComboBoxStyle(cboType);
+            
+            // Search button - Primary style
+            btnSearch.BackColor = AppTheme.Primary;
+            btnSearch.ForeColor = AppTheme.TextWhite;
+            btnSearch.FlatStyle = FlatStyle.Flat;
+            btnSearch.FlatAppearance.BorderSize = 0;
+            btnSearch.Font = AppTheme.FontButton;
+            btnSearch.Cursor = Cursors.Hand;
+            btnSearch.MouseEnter += (s, e) => btnSearch.BackColor = AppTheme.PrimaryLight;
+            btnSearch.MouseLeave += (s, e) => btnSearch.BackColor = AppTheme.Primary;
+            
+            // Content Panel
+            pnlContent.BackColor = AppTheme.BackgroundSoft;
+            
+            // DataGridView
+            AppTheme.ApplyDataGridViewStyle(dgvDocuments);
+            
+            // Status Strip
+            AppTheme.ApplyStatusStripStyle(statusStrip);
+            
+            // Advanced Filter GroupBox
+            AppTheme.ApplyGroupBoxStyle(grpAdvancedFilter);
+            grpAdvancedFilter.BackColor = AppTheme.BackgroundMain;
+            
+            // Filter Buttons
+            btnApplyAdvancedFilter.BackColor = AppTheme.Primary;
+            btnApplyAdvancedFilter.ForeColor = AppTheme.TextWhite;
+            btnApplyAdvancedFilter.FlatStyle = FlatStyle.Flat;
+            btnApplyAdvancedFilter.FlatAppearance.BorderSize = 0;
+            btnApplyAdvancedFilter.Cursor = Cursors.Hand;
+            btnApplyAdvancedFilter.MouseEnter += (s, e) => btnApplyAdvancedFilter.BackColor = AppTheme.PrimaryLight;
+            btnApplyAdvancedFilter.MouseLeave += (s, e) => btnApplyAdvancedFilter.BackColor = AppTheme.Primary;
+            
+            btnClearAdvancedFilter.BackColor = AppTheme.BackgroundSoft;
+            btnClearAdvancedFilter.ForeColor = AppTheme.TextSecondary;
+            btnClearAdvancedFilter.FlatStyle = FlatStyle.Flat;
+            btnClearAdvancedFilter.FlatAppearance.BorderSize = 1;
+            btnClearAdvancedFilter.FlatAppearance.BorderColor = AppTheme.BorderMedium;
+            btnClearAdvancedFilter.Cursor = Cursors.Hand;
+            btnClearAdvancedFilter.MouseEnter += (s, e) => { btnClearAdvancedFilter.BackColor = AppTheme.BorderLight; };
+            btnClearAdvancedFilter.MouseLeave += (s, e) => { btnClearAdvancedFilter.BackColor = AppTheme.BackgroundSoft; };
         }
 
         /// <summary>
@@ -545,16 +605,16 @@ namespace study_document_manager
                 }
             } // End if (dgvDocuments.Columns.Count > 0)
 
-            // Style
-            dgvDocuments.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(245, 245, 245);
-            dgvDocuments.RowsDefaultCellStyle.BackColor = Color.White;
-            dgvDocuments.RowsDefaultCellStyle.SelectionBackColor = Color.FromArgb(33, 150, 243);
-            dgvDocuments.RowsDefaultCellStyle.SelectionForeColor = Color.White;
-            dgvDocuments.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(52, 73, 94);
-            dgvDocuments.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
-            dgvDocuments.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            // Style - Dùng AppTheme
+            dgvDocuments.AlternatingRowsDefaultCellStyle.BackColor = AppTheme.GridRowAlt;
+            dgvDocuments.RowsDefaultCellStyle.BackColor = AppTheme.BackgroundMain;
+            dgvDocuments.RowsDefaultCellStyle.SelectionBackColor = AppTheme.GridRowSelected;
+            dgvDocuments.RowsDefaultCellStyle.SelectionForeColor = AppTheme.TextPrimary;
+            dgvDocuments.ColumnHeadersDefaultCellStyle.BackColor = AppTheme.GridHeaderBg;
+            dgvDocuments.ColumnHeadersDefaultCellStyle.ForeColor = AppTheme.GridHeaderFg;
+            dgvDocuments.ColumnHeadersDefaultCellStyle.Font = AppTheme.FontSmallBold;
             dgvDocuments.EnableHeadersVisualStyles = false;
-            dgvDocuments.RowTemplate.Height = 32;
+            dgvDocuments.RowTemplate.Height = 40;
         }
 
         /// <summary>
