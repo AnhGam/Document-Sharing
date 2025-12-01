@@ -83,6 +83,8 @@ namespace study_document_manager
         {
             get
             {
+                if (IsDisposed) return base.CreateParams;
+                
                 CreateParams cp = base.CreateParams;
                 cp.ExStyle |= 0x02000000;
                 return cp;
@@ -256,11 +258,14 @@ namespace study_document_manager
 
         private void PositionToast()
         {
+            if (IsDisposed) return;
+            
             int yOffset;
             
             lock (LockObject)
             {
                 int index = ActiveToasts.IndexOf(this);
+                if (index < 0) return;
                 yOffset = (ToastHeight + ToastMargin) * index;
             }
 
@@ -288,6 +293,12 @@ namespace study_document_manager
 
         private void FadeIn_Tick(object sender, EventArgs e)
         {
+            if (IsDisposed) 
+            {
+                _fadeTimer.Stop();
+                return;
+            }
+            
             if (Opacity < 1)
             {
                 Opacity = Math.Min(1, Opacity + FadeStep);
@@ -310,6 +321,12 @@ namespace study_document_manager
 
         private void FadeOut_Tick(object sender, EventArgs e)
         {
+            if (IsDisposed)
+            {
+                _fadeTimer.Stop();
+                return;
+            }
+            
             if (Opacity > 0)
             {
                 Opacity = Math.Max(0, Opacity - FadeStep);
@@ -324,16 +341,25 @@ namespace study_document_manager
 
         private void CloseToast()
         {
+            if (IsDisposed) return;
+            
             lock (LockObject)
             {
                 ActiveToasts.Remove(this);
                 RepositionToasts();
             }
             
-            _closeTimer.Stop();
-            _fadeTimer.Stop();
-            Close();
-            Dispose();
+            _closeTimer?.Stop();
+            _fadeTimer?.Stop();
+            
+            try
+            {
+                Close();
+            }
+            catch (ObjectDisposedException)
+            {
+                // Already disposed, ignore
+            }
         }
 
         private static void RepositionToasts()
@@ -342,7 +368,10 @@ namespace study_document_manager
             {
                 foreach (var toast in ActiveToasts)
                 {
-                    toast.PositionToast();
+                    if (!toast.IsDisposed)
+                    {
+                        toast.PositionToast();
+                    }
                 }
             }
         }

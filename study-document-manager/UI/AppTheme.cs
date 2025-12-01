@@ -39,6 +39,12 @@ namespace study_document_manager.UI
         public static readonly Color StatusError = Color.FromArgb(239, 68, 68);
         public static readonly Color StatusInfo = Color.FromArgb(59, 130, 246);
 
+        // Shorthand aliases for common colors
+        public static readonly Color Success = StatusSuccess;
+        public static readonly Color Warning = StatusWarning;
+        public static readonly Color Danger = StatusError;
+        public static readonly Color Info = StatusInfo;
+
         public static readonly Color InputBackground = Color.FromArgb(255, 255, 255);
         public static readonly Color InputBorder = Color.FromArgb(203, 213, 225);
         public static readonly Color InputBorderFocus = Color.FromArgb(20, 184, 166);
@@ -120,6 +126,21 @@ namespace study_document_manager.UI
             Color hoverColor = Color.FromArgb(220, 38, 38);
             btn.MouseEnter += (s, e) => btn.BackColor = hoverColor;
             btn.MouseLeave += (s, e) => btn.BackColor = StatusError;
+        }
+
+        public static void ApplyButtonWarning(Button btn)
+        {
+            btn.BackColor = StatusWarning;
+            btn.ForeColor = TextPrimary;
+            btn.FlatStyle = FlatStyle.Flat;
+            btn.FlatAppearance.BorderSize = 0;
+            btn.Font = FontButton;
+            btn.Cursor = Cursors.Hand;
+            btn.Height = 44;
+
+            Color hoverColor = Color.FromArgb(202, 138, 4);
+            btn.MouseEnter += (s, e) => btn.BackColor = hoverColor;
+            btn.MouseLeave += (s, e) => btn.BackColor = StatusWarning;
         }
 
         public static void ApplyButtonSecondary(Button btn)

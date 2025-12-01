@@ -1,8 +1,10 @@
 using System;
 using System.Data;
 using System.Data.SqlClient;
+using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
+using study_document_manager.UI;
 
 namespace study_document_manager
 {
@@ -15,6 +17,32 @@ namespace study_document_manager
         public FileIntegrityCheckForm()
         {
             InitializeComponent();
+            ApplyTheme();
+        }
+
+        private void ApplyTheme()
+        {
+            this.BackColor = AppTheme.BackgroundMain;
+            
+            // Title
+            lblTitle.ForeColor = AppTheme.Primary;
+            lblTitle.Font = new Font("Segoe UI", 14F, FontStyle.Bold);
+            
+            // Buttons
+            AppTheme.ApplyButtonPrimary(btnScan);
+            AppTheme.ApplyButtonDanger(btnDeleteAll);
+            AppTheme.ApplyButtonSecondary(btnClose);
+            
+            // Labels
+            lblProgress.ForeColor = AppTheme.TextSecondary;
+            lblSummary.ForeColor = AppTheme.TextPrimary;
+            lblSummary.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            
+            // Progress bar
+            progressBar.ForeColor = AppTheme.Primary;
+            
+            // DataGridView
+            AppTheme.ApplyDataGridViewStyle(dgvMissingFiles);
         }
 
         /// <summary>

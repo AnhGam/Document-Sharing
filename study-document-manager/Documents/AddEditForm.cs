@@ -1,24 +1,74 @@
 ﻿using System;
 using System.IO;
 using System.Windows.Forms;
+using study_document_manager.UI;
 
 namespace study_document_manager
 {
     public partial class AddEditForm : Form
     {
-        private int? document_id = null; // null = thêm mới, có giá trị = sửa
+        private int? document_id = null;
         
-        /// <summary>
-        /// Constructor cho chế độ thêm mới
-        /// </summary>
         public AddEditForm()
         {
             InitializeComponent();
             this.Text = "Thêm tài liệu mới";
             LoadComboBoxData();
+            ApplyTheme();
             
-            // Event cho checkbox deadline
             chkHasDeadline.CheckedChanged += ChkHasDeadline_CheckedChanged;
+        }
+
+        private void ApplyTheme()
+        {
+            this.BackColor = AppTheme.BackgroundMain;
+            
+            foreach (Control ctrl in this.Controls)
+            {
+                if (ctrl is Label lbl)
+                {
+                    lbl.ForeColor = AppTheme.TextSecondary;
+                    lbl.Font = AppTheme.FontSmall;
+                }
+                else if (ctrl is TextBox txt)
+                {
+                    AppTheme.ApplyTextBoxStyle(txt);
+                }
+                else if (ctrl is ComboBox cbo)
+                {
+                    AppTheme.ApplyComboBoxStyle(cbo);
+                }
+            }
+            
+            btn_chon_file.BackColor = AppTheme.Primary;
+            btn_chon_file.ForeColor = AppTheme.TextWhite;
+            btn_chon_file.FlatStyle = FlatStyle.Flat;
+            btn_chon_file.FlatAppearance.BorderSize = 0;
+            btn_chon_file.Font = AppTheme.FontButton;
+            btn_chon_file.Cursor = Cursors.Hand;
+            btn_chon_file.MouseEnter += (s, e) => btn_chon_file.BackColor = AppTheme.PrimaryLight;
+            btn_chon_file.MouseLeave += (s, e) => btn_chon_file.BackColor = AppTheme.Primary;
+            
+            btn_luu.BackColor = AppTheme.Primary;
+            btn_luu.ForeColor = AppTheme.TextWhite;
+            btn_luu.FlatStyle = FlatStyle.Flat;
+            btn_luu.FlatAppearance.BorderSize = 0;
+            btn_luu.Font = AppTheme.FontButton;
+            btn_luu.Cursor = Cursors.Hand;
+            btn_luu.MouseEnter += (s, e) => btn_luu.BackColor = AppTheme.PrimaryLight;
+            btn_luu.MouseLeave += (s, e) => btn_luu.BackColor = AppTheme.Primary;
+            
+            btn_huy.BackColor = AppTheme.BackgroundSoft;
+            btn_huy.ForeColor = AppTheme.TextSecondary;
+            btn_huy.FlatStyle = FlatStyle.Flat;
+            btn_huy.FlatAppearance.BorderSize = 1;
+            btn_huy.FlatAppearance.BorderColor = AppTheme.BorderMedium;
+            btn_huy.Font = AppTheme.FontButton;
+            btn_huy.Cursor = Cursors.Hand;
+            btn_huy.MouseEnter += (s, e) => btn_huy.BackColor = AppTheme.BorderLight;
+            btn_huy.MouseLeave += (s, e) => btn_huy.BackColor = AppTheme.BackgroundSoft;
+            
+            chk_quan_trong.ForeColor = AppTheme.AccentAmber;
         }
 
         private void ChkHasDeadline_CheckedChanged(object sender, EventArgs e)

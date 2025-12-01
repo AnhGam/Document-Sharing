@@ -3,6 +3,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Drawing;
 using System.Windows.Forms;
+using study_document_manager.UI;
 
 namespace study_document_manager
 {
@@ -17,6 +18,34 @@ namespace study_document_manager
             InitializeComponent();
             documentId = docId;
             documentName = docName;
+            ApplyTheme();
+        }
+
+        private void ApplyTheme()
+        {
+            this.BackColor = AppTheme.BackgroundMain;
+            
+            // Title styling
+            lblTitle.ForeColor = AppTheme.Primary;
+            lblTitle.Font = new Font("Segoe UI", 14F, FontStyle.Bold);
+            
+            // Document name styling
+            lblDocumentName.ForeColor = AppTheme.TextSecondary;
+            
+            // Labels
+            lblStatus.ForeColor = AppTheme.TextPrimary;
+            lblNote.ForeColor = AppTheme.TextPrimary;
+            
+            // ComboBox styling
+            AppTheme.ApplyComboBoxStyle(cboStatus);
+            
+            // TextBox styling
+            AppTheme.ApplyTextBoxStyle(txtNote);
+            
+            // Buttons
+            AppTheme.ApplyButtonSuccess(btnSave);
+            AppTheme.ApplyButtonDanger(btnDelete);
+            AppTheme.ApplyButtonSecondary(btnCancel);
         }
 
         private void PersonalNoteForm_Load(object sender, EventArgs e)

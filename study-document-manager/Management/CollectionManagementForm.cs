@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
+using study_document_manager.UI;
 
 namespace study_document_manager
 {
@@ -14,12 +15,45 @@ namespace study_document_manager
         public CollectionManagementForm()
         {
             InitializeComponent();
+            ApplyTheme();
+        }
+
+        private void ApplyTheme()
+        {
+            this.BackColor = AppTheme.BackgroundMain;
+            
+            // Collection title
+            lblCollectionTitle.ForeColor = AppTheme.Primary;
+            
+            // Doc title
+            lblDocTitle.ForeColor = AppTheme.Primary;
+            
+            // Buttons
+            AppTheme.ApplyButtonSuccess(btnNewCollection);
+            AppTheme.ApplyButtonDanger(btnDeleteCollection);
+            AppTheme.ApplyButtonWarning(btnRemoveFromCollection);
+            AppTheme.ApplyButtonPrimary(btnOpenAll);
+            AppTheme.ApplyButtonSecondary(btnClose);
+            
+            // Status strip
+            statusStrip.BackColor = AppTheme.BackgroundSoft;
+            
+            // ListView styling
+            lstCollections.BackColor = Color.White;
+            lstCollections.ForeColor = AppTheme.TextPrimary;
+            
+            // Split container panels
+            splitContainer.Panel1.BackColor = AppTheme.BackgroundMain;
+            splitContainer.Panel2.BackColor = AppTheme.BackgroundSoft;
         }
 
         private void CollectionManagementForm_Load(object sender, EventArgs e)
         {
             LoadCollections();
             SetupDocumentsGrid();
+            
+            // Apply DataGridView theme
+            AppTheme.ApplyDataGridViewStyle(dgvDocuments);
         }
 
         private void LoadCollections()

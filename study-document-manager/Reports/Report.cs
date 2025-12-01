@@ -3,6 +3,7 @@ using System.Data;
 using System.Drawing;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
+using study_document_manager.UI;
 
 namespace study_document_manager
 {
@@ -13,6 +14,45 @@ namespace study_document_manager
         public Report()
         {
             InitializeComponent();
+            ApplyTheme();
+        }
+
+        private void ApplyTheme()
+        {
+            this.BackColor = AppTheme.BackgroundMain;
+            
+            // Top panel
+            pnlTop.BackColor = AppTheme.Primary;
+            lblTitle.ForeColor = Color.White;
+            lblTitle.Font = new Font("Segoe UI", 16F, FontStyle.Bold);
+            
+            // Close button
+            AppTheme.ApplyButtonDanger(btnClose);
+            
+            // Options panel
+            pnlOptions.BackColor = AppTheme.BackgroundMain;
+            pnlOptions.BorderStyle = BorderStyle.None;
+            lblStatType.ForeColor = AppTheme.TextPrimary;
+            lblChartType.ForeColor = AppTheme.TextPrimary;
+            
+            // Statistic buttons
+            AppTheme.ApplyButtonSuccess(btnBySubject);
+            AppTheme.ApplyButtonPrimary(btnByType);
+            
+            // ComboBox
+            AppTheme.ApplyComboBoxStyle(cboChartType);
+            
+            // Total label
+            lblTotal.ForeColor = AppTheme.Success;
+            
+            // Chart panel
+            pnlChart.BackColor = AppTheme.BackgroundSoft;
+            
+            // Chart background
+            chart.BackColor = Color.White;
+            
+            // Status strip
+            statusStrip.BackColor = AppTheme.BackgroundSoft;
         }
 
         /// <summary>
@@ -172,8 +212,16 @@ namespace study_document_manager
             // Tạo Title
             Title title = new Title(chartTitle);
             title.Font = new Font("Segoe UI", 14F, FontStyle.Bold);
-            title.ForeColor = Color.FromArgb(52, 73, 94);
+            title.ForeColor = AppTheme.Primary;
             chart.Titles.Add(title);
+
+            // Legend - phải tạo trước Series
+            chart.Legends.Clear();
+            Legend legend = new Legend("Legend");
+            legend.Docking = Docking.Bottom;
+            legend.Font = new Font("Segoe UI", 9F);
+            legend.BackColor = Color.Transparent;
+            chart.Legends.Add(legend);
 
             // Lấy kiểu biểu đồ từ ComboBox
             SeriesChartType chartType = GetSelectedChartType();
@@ -181,19 +229,21 @@ namespace study_document_manager
             // Tạo Series
             Series series = new Series("Số lượng");
             series.ChartType = chartType;
+            series.ChartArea = "MainArea";
+            series.Legend = "Legend";
             series.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             
-            // Màu sắc đẹp mắt
+            // Màu sắc Teal/Emerald theme
             Color[] colors = new Color[]
             {
-                Color.FromArgb(76, 175, 80),   // Xanh lá
-                Color.FromArgb(33, 150, 243),  // Xanh dương
-                Color.FromArgb(255, 152, 0),   // Cam
-                Color.FromArgb(244, 67, 54),   // Đỏ
-                Color.FromArgb(156, 39, 176),  // Tím
-                Color.FromArgb(255, 193, 7),   // Vàng
-                Color.FromArgb(0, 150, 136),   // Xanh lục
-                Color.FromArgb(233, 30, 99)    // Hồng
+                AppTheme.Primary,              // Teal
+                AppTheme.Success,              // Emerald
+                AppTheme.PrimaryLight,         // Light Teal
+                Color.FromArgb(16, 185, 129),  // Emerald-500
+                Color.FromArgb(45, 212, 191),  // Teal-400
+                Color.FromArgb(52, 211, 153),  // Emerald-400
+                Color.FromArgb(94, 234, 212),  // Teal-300
+                Color.FromArgb(110, 231, 183)  // Emerald-300
             };
 
             // Thêm dữ liệu vào Series
@@ -232,14 +282,6 @@ namespace study_document_manager
             }
 
             chart.Series.Add(series);
-
-            // Legend
-            chart.Legends.Clear();
-            Legend legend = new Legend("Legend");
-            legend.Docking = Docking.Bottom;
-            legend.Font = new Font("Segoe UI", 9F);
-            legend.BackColor = Color.Transparent;
-            chart.Legends.Add(legend);
 
             // Enable 3D (optional)
             if (chartType == SeriesChartType.Column || chartType == SeriesChartType.Bar)

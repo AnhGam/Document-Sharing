@@ -2,6 +2,7 @@ using System;
 using System.Data;
 using System.Drawing;
 using System.Windows.Forms;
+using study_document_manager.UI;
 
 namespace study_document_manager
 {
@@ -10,6 +11,28 @@ namespace study_document_manager
         public UserManagementForm()
         {
             InitializeComponent();
+            ApplyTheme();
+        }
+
+        private void ApplyTheme()
+        {
+            this.BackColor = AppTheme.BackgroundMain;
+            
+            // Header panel
+            pnlHeader.BackColor = AppTheme.Primary;
+            lblTitle.ForeColor = Color.White;
+            
+            // Buttons
+            AppTheme.ApplyButtonPrimary(btnRefresh);
+            AppTheme.ApplyButtonSuccess(btnAdd);
+            AppTheme.ApplyButtonPrimary(btnChangePassword);
+            AppTheme.ApplyButtonSecondary(btnEditRole);
+            AppTheme.ApplyButtonWarning(btnToggleActive);
+            AppTheme.ApplyButtonDanger(btnDelete);
+            AppTheme.ApplyButtonDanger(btnClose);
+            
+            // Status strip
+            statusStrip1.BackColor = AppTheme.BackgroundSoft;
         }
 
         private void UserManagementForm_Load(object sender, EventArgs e)
@@ -99,16 +122,8 @@ namespace study_document_manager
                     dgvUsers.Columns["updated_by"].Visible = false;
             }
 
-            // Style
-            dgvUsers.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(245, 245, 245);
-            dgvUsers.RowsDefaultCellStyle.BackColor = Color.White;
-            dgvUsers.RowsDefaultCellStyle.SelectionBackColor = Color.FromArgb(33, 150, 243);
-            dgvUsers.RowsDefaultCellStyle.SelectionForeColor = Color.White;
-            dgvUsers.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(52, 73, 94);
-            dgvUsers.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
-            dgvUsers.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            dgvUsers.EnableHeadersVisualStyles = false;
-            dgvUsers.RowTemplate.Height = 32;
+            // Style using AppTheme
+            AppTheme.ApplyDataGridViewStyle(dgvUsers);
             
             // QUAN TRỌNG: Xử lý lỗi DataError
             dgvUsers.DataError += DgvUsers_DataError;

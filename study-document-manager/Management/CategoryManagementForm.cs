@@ -2,6 +2,7 @@ using System;
 using System.Data;
 using System.Drawing;
 using System.Windows.Forms;
+using study_document_manager.UI;
 
 namespace study_document_manager
 {
@@ -12,6 +13,34 @@ namespace study_document_manager
         public CategoryManagementForm()
         {
             InitializeComponent();
+            ApplyTheme();
+        }
+
+        private void ApplyTheme()
+        {
+            this.BackColor = AppTheme.BackgroundMain;
+            
+            // Top panel
+            pnlTop.BackColor = AppTheme.Primary;
+            lblTitle.ForeColor = Color.White;
+            
+            // Close button
+            AppTheme.ApplyButtonDanger(btnClose);
+            
+            // Tab buttons
+            AppTheme.ApplyButtonPrimary(btnSubjects);
+            AppTheme.ApplyButtonSecondary(btnTypes);
+            
+            // Action buttons
+            AppTheme.ApplyButtonSuccess(btnAdd);
+            AppTheme.ApplyButtonPrimary(btnEdit);
+            AppTheme.ApplyButtonDanger(btnDelete);
+            
+            // Labels
+            lblCount.ForeColor = AppTheme.TextSecondary;
+            
+            // Status strip
+            statusStrip.BackColor = AppTheme.BackgroundSoft;
         }
 
         private void CategoryManagementForm_Load(object sender, EventArgs e)
@@ -75,15 +104,7 @@ namespace study_document_manager
                 dgvCategories.Columns[1].Width = 150;
             }
 
-            dgvCategories.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(245, 245, 245);
-            dgvCategories.RowsDefaultCellStyle.BackColor = Color.White;
-            dgvCategories.RowsDefaultCellStyle.SelectionBackColor = Color.FromArgb(33, 150, 243);
-            dgvCategories.RowsDefaultCellStyle.SelectionForeColor = Color.White;
-            dgvCategories.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(52, 73, 94);
-            dgvCategories.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
-            dgvCategories.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            dgvCategories.EnableHeadersVisualStyles = false;
-            dgvCategories.RowTemplate.Height = 32;
+            AppTheme.ApplyDataGridViewStyle(dgvCategories);
         }
 
         /// <summary>
@@ -321,7 +342,7 @@ namespace study_document_manager
                 StartPosition = FormStartPosition.CenterParent,
                 MaximizeBox = false,
                 MinimizeBox = false,
-                BackColor = Color.White
+                BackColor = AppTheme.BackgroundMain
             };
 
             Label lblText = new Label() 
@@ -330,6 +351,7 @@ namespace study_document_manager
                 Top = 20, 
                 Text = label,
                 Font = new Font("Segoe UI", 9F),
+                ForeColor = AppTheme.TextPrimary,
                 AutoSize = true
             };
 
@@ -339,7 +361,9 @@ namespace study_document_manager
                 Top = 45, 
                 Width = 340,
                 Font = new Font("Segoe UI", 9F),
-                Text = defaultValue
+                Text = defaultValue,
+                BackColor = Color.White,
+                BorderStyle = BorderStyle.FixedSingle
             };
 
             Button btnOk = new Button() 
@@ -349,9 +373,10 @@ namespace study_document_manager
                 Width = 80, 
                 Top = 85, 
                 DialogResult = DialogResult.OK,
-                BackColor = Color.FromArgb(76, 175, 80),
+                BackColor = AppTheme.Success,
                 ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat
+                FlatStyle = FlatStyle.Flat,
+                Cursor = Cursors.Hand
             };
             btnOk.FlatAppearance.BorderSize = 0;
 
@@ -362,9 +387,10 @@ namespace study_document_manager
                 Width = 80, 
                 Top = 85, 
                 DialogResult = DialogResult.Cancel,
-                BackColor = Color.FromArgb(158, 158, 158),
+                BackColor = AppTheme.TextMuted,
                 ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat
+                FlatStyle = FlatStyle.Flat,
+                Cursor = Cursors.Hand
             };
             btnCancel.FlatAppearance.BorderSize = 0;
 
