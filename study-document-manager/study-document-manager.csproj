@@ -77,6 +77,7 @@
     </Compile>
     <Compile Include="Data\DatabaseHelper.cs" />
     <Compile Include="Data\DatabaseHelper_UserAuth.cs" />
+    <Compile Include="Data\DashboardStats.cs" />
     <Compile Include="Documents\Dashboard.cs">
       <SubType>Form</SubType>
     </Compile>

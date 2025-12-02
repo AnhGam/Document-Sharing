@@ -9,7 +9,8 @@ namespace study_document_manager
 {
     public partial class Report : Form
     {
-        private string currentStatType = "subject"; // "subject" hoặc "type"
+        private string currentStatType = "subject";
+        private int currentTimelineDays = 7;
 
         public Report()
         {
@@ -21,60 +22,85 @@ namespace study_document_manager
         {
             this.BackColor = AppTheme.BackgroundMain;
             
-            // Top panel - Teal header
             pnlTop.BackColor = AppTheme.Primary;
             lblTitle.ForeColor = Color.White;
-            lblTitle.Font = new Font("Segoe UI", 14F, FontStyle.Bold);
+            lblTitle.Font = new Font("Segoe UI", 16F, FontStyle.Bold);
             
-            // Close button
-            btnClose.BackColor = Color.FromArgb(239, 68, 68);
-            btnClose.ForeColor = Color.White;
-            btnClose.FlatStyle = FlatStyle.Flat;
-            btnClose.FlatAppearance.BorderSize = 0;
-            btnClose.Cursor = Cursors.Hand;
+            AppTheme.ApplyButtonDanger(btnClose);
+            btnClose.Height = 32;
             
-            // Options panel
+            pnlStats.BackColor = AppTheme.BackgroundSoft;
+            ApplyStatCardTheme(pnlStatCard1, lblStatValue1, lblStatLabel1, AppTheme.Primary);
+            ApplyStatCardTheme(pnlStatCard2, lblStatValue2, lblStatLabel2, AppTheme.AccentAmber);
+            ApplyStatCardTheme(pnlStatCard3, lblStatValue3, lblStatLabel3, AppTheme.Danger);
+            ApplyStatCardTheme(pnlStatCard4, lblStatValue4, lblStatLabel4, AppTheme.Info);
+            ApplyStatCardTheme(pnlStatCard5, lblStatValue5, lblStatLabel5, AppTheme.TextMuted);
+            ApplyStatCardTheme(pnlStatCard6, lblStatValue6, lblStatLabel6, AppTheme.Secondary);
+            
             pnlOptions.BackColor = AppTheme.BackgroundMain;
             pnlOptions.BorderStyle = BorderStyle.None;
             lblStatType.ForeColor = AppTheme.TextPrimary;
             lblStatType.Font = AppTheme.FontSmallBold;
-            lblChartType.ForeColor = AppTheme.TextPrimary;
-            lblChartType.Font = AppTheme.FontSmallBold;
+            lblChartType.ForeColor = AppTheme.TextSecondary;
+            lblChartType.Font = AppTheme.FontSmall;
             
-            // Statistic buttons
             AppTheme.ApplyButtonSuccess(btnBySubject);
+            btnBySubject.Height = 32;
             AppTheme.ApplyButtonPrimary(btnByType);
+            btnByType.Height = 32;
             
-            // ComboBox
+            btnByTimeline.BackColor = AppTheme.Info;
+            btnByTimeline.ForeColor = Color.White;
+            btnByTimeline.FlatStyle = FlatStyle.Flat;
+            btnByTimeline.FlatAppearance.BorderSize = 0;
+            btnByTimeline.Font = AppTheme.FontButton;
+            btnByTimeline.Cursor = Cursors.Hand;
+            
+            btnByMonth.BackColor = Color.FromArgb(139, 92, 246);
+            btnByMonth.ForeColor = Color.White;
+            btnByMonth.FlatStyle = FlatStyle.Flat;
+            btnByMonth.FlatAppearance.BorderSize = 0;
+            btnByMonth.Font = AppTheme.FontButton;
+            btnByMonth.Cursor = Cursors.Hand;
+            
             AppTheme.ApplyComboBoxStyle(cboChartType);
             
-            // Total label
             lblTotal.ForeColor = AppTheme.Primary;
             lblTotal.Font = new Font("Segoe UI", 11F, FontStyle.Bold);
             
-            // Chart panel
-            pnlChart.BackColor = AppTheme.BackgroundSoft;
+            pnlCharts.BackColor = AppTheme.BackgroundSoft;
+            pnlChart.BackColor = Color.White;
+            pnlTimelineChart.BackColor = Color.White;
+            lblTimelineTitle.ForeColor = AppTheme.TextPrimary;
+            lblTimelineTitle.Font = new Font("Segoe UI Semibold", 11F, FontStyle.Bold);
             
-            // Chart background
             chart.BackColor = Color.White;
+            chartTimeline.BackColor = Color.White;
             
-            // Status strip
             statusStrip.BackColor = AppTheme.BackgroundSoft;
             lblStatus.ForeColor = AppTheme.TextSecondary;
         }
 
-        /// <summary>
-        /// Load form
-        /// </summary>
+        private void ApplyStatCardTheme(Panel card, Label valueLabel, Label textLabel, Color accentColor)
+        {
+            card.BackColor = Color.White;
+            card.Padding = new Padding(12);
+            
+            valueLabel.Font = new Font("Segoe UI", 24F, FontStyle.Bold);
+            valueLabel.ForeColor = accentColor;
+            
+            textLabel.Font = AppTheme.FontSmall;
+            textLabel.ForeColor = AppTheme.TextSecondary;
+        }
+
         private void Report_Load(object sender, EventArgs e)
         {
             InitializeChartTypes();
+            LoadDashboardStats();
             LoadStatisticsBySubject();
+            LoadTimelineChart(7);
         }
 
-        /// <summary>
-        /// Khởi tạo ComboBox kiểu biểu đồ
-        /// </summary>
         private void InitializeChartTypes()
         {
             cboChartType.Items.Clear();
@@ -86,47 +112,67 @@ namespace study_document_manager
             cboChartType.SelectedIndex = 0;
         }
 
-        /// <summary>
-        /// Button thống kê theo môn học
-        /// </summary>
+        private void LoadDashboardStats()
+        {
+            try
+            {
+                var stats = DatabaseHelper.GetDashboardStatistics();
+                
+                lblStatValue1.Text = stats.TotalDocuments.ToString();
+                lblStatValue2.Text = stats.ImportantDocuments.ToString();
+                lblStatValue3.Text = stats.OverdueDocuments.ToString();
+                lblStatValue4.Text = stats.NearDeadlineDocuments.ToString();
+                lblStatValue5.Text = stats.NoFileDocuments.ToString();
+                lblStatValue6.Text = stats.TotalCollections.ToString();
+                
+                lblTotal.Text = $"Tổng: {stats.TotalDocuments} tài liệu";
+            }
+            catch (Exception ex)
+            {
+                ToastNotification.Error("Lỗi tải thống kê: " + ex.Message);
+            }
+        }
+
         private void btnBySubject_Click(object sender, EventArgs e)
         {
             LoadStatisticsBySubject();
         }
 
-        /// <summary>
-        /// Button thống kê theo loại
-        /// </summary>
         private void btnByType_Click(object sender, EventArgs e)
         {
             LoadStatisticsByType();
         }
 
-        /// <summary>
-        /// Thay đổi kiểu biểu đồ
-        /// </summary>
+        private void btnByTimeline_Click(object sender, EventArgs e)
+        {
+            LoadTimelineChart(7);
+            lblTimelineTitle.Text = "Tài liệu thêm 7 ngày qua";
+        }
+
+        private void btnByMonth_Click(object sender, EventArgs e)
+        {
+            LoadMonthlyChart(12);
+            lblTimelineTitle.Text = "Tài liệu thêm 12 tháng qua";
+        }
+
         private void cboChartType_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (currentStatType == "subject")
             {
                 LoadStatisticsBySubject();
             }
-            else
+            else if (currentStatType == "type")
             {
                 LoadStatisticsByType();
             }
         }
 
-        /// <summary>
-        /// Load thống kê theo môn học
-        /// </summary>
         private void LoadStatisticsBySubject()
         {
             try
             {
                 currentStatType = "subject";
                 
-                // Lấy dữ liệu từ database
                 DataTable dt = DatabaseHelper.GetStatisticsBySubject();
 
                 if (dt.Rows.Count == 0)
@@ -135,7 +181,6 @@ namespace study_document_manager
                     return;
                 }
 
-                // Tổng số tài liệu
                 int total = 0;
                 foreach (DataRow row in dt.Rows)
                 {
@@ -143,7 +188,6 @@ namespace study_document_manager
                 }
                 lblTotal.Text = $"Tổng: {total} tài liệu";
 
-                // Vẽ biểu đồ
                 DrawChart(dt, "Danh mục", "Số lượng tài liệu theo danh mục");
                 
                 lblStatus.Text = "Đã tải thống kê theo danh mục";
@@ -154,16 +198,12 @@ namespace study_document_manager
             }
         }
 
-        /// <summary>
-        /// Load thống kê theo loại
-        /// </summary>
         private void LoadStatisticsByType()
         {
             try
             {
                 currentStatType = "type";
                 
-                // Lấy dữ liệu từ database
                 DataTable dt = DatabaseHelper.GetStatisticsByType();
 
                 if (dt.Rows.Count == 0)
@@ -172,7 +212,6 @@ namespace study_document_manager
                     return;
                 }
 
-                // Tổng số tài liệu
                 int total = 0;
                 foreach (DataRow row in dt.Rows)
                 {
@@ -180,7 +219,6 @@ namespace study_document_manager
                 }
                 lblTotal.Text = $"Tổng: {total} tài liệu";
 
-                // Vẽ biểu đồ
                 DrawChart(dt, "Loại tài liệu", "Số lượng tài liệu theo loại");
                 
                 lblStatus.Text = "Đã tải thống kê theo loại tài liệu";
@@ -191,17 +229,55 @@ namespace study_document_manager
             }
         }
 
-        /// <summary>
-        /// Vẽ biểu đồ
-        /// </summary>
+        private void LoadTimelineChart(int days)
+        {
+            try
+            {
+                currentTimelineDays = days;
+                DataTable dt = DatabaseHelper.GetDocumentsByDay(days);
+
+                if (dt.Rows.Count == 0)
+                {
+                    ToastNotification.Info("Không có dữ liệu timeline!");
+                    return;
+                }
+
+                DrawTimelineChart(dt, "ngay_format", $"Tài liệu thêm {days} ngày qua");
+                lblStatus.Text = $"Đã tải biểu đồ {days} ngày";
+            }
+            catch (Exception ex)
+            {
+                ToastNotification.Error("Lỗi tải timeline: " + ex.Message);
+            }
+        }
+
+        private void LoadMonthlyChart(int months)
+        {
+            try
+            {
+                DataTable dt = DatabaseHelper.GetDocumentsByMonth(months);
+
+                if (dt.Rows.Count == 0)
+                {
+                    ToastNotification.Info("Không có dữ liệu theo tháng!");
+                    return;
+                }
+
+                DrawTimelineChart(dt, "thang_format", $"Tài liệu thêm {months} tháng qua");
+                lblStatus.Text = $"Đã tải biểu đồ {months} tháng";
+            }
+            catch (Exception ex)
+            {
+                ToastNotification.Error("Lỗi tải biểu đồ tháng: " + ex.Message);
+            }
+        }
+
         private void DrawChart(DataTable dt, string xAxisTitle, string chartTitle)
         {
-            // Clear chart
             chart.Series.Clear();
             chart.ChartAreas.Clear();
             chart.Titles.Clear();
 
-            // Tạo ChartArea
             ChartArea chartArea = new ChartArea("MainArea");
             chartArea.BackColor = Color.White;
             chartArea.AxisX.Title = xAxisTitle;
@@ -210,20 +286,18 @@ namespace study_document_manager
             chartArea.AxisY.LabelStyle.Font = new Font("Segoe UI", 9F);
             chartArea.AxisX.TitleFont = new Font("Segoe UI", 10F, FontStyle.Bold);
             chartArea.AxisY.TitleFont = new Font("Segoe UI", 10F, FontStyle.Bold);
-            
-            // Grid style
-            chartArea.AxisX.MajorGrid.LineColor = Color.LightGray;
-            chartArea.AxisY.MajorGrid.LineColor = Color.LightGray;
+            chartArea.AxisX.MajorGrid.LineColor = Color.FromArgb(230, 230, 230);
+            chartArea.AxisY.MajorGrid.LineColor = Color.FromArgb(230, 230, 230);
+            chartArea.AxisX.LineColor = AppTheme.BorderLight;
+            chartArea.AxisY.LineColor = AppTheme.BorderLight;
             
             chart.ChartAreas.Add(chartArea);
 
-            // Tạo Title
             Title title = new Title(chartTitle);
-            title.Font = new Font("Segoe UI", 14F, FontStyle.Bold);
+            title.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
             title.ForeColor = AppTheme.Primary;
             chart.Titles.Add(title);
 
-            // Legend - phải tạo trước Series
             chart.Legends.Clear();
             Legend legend = new Legend("Legend");
             legend.Docking = Docking.Bottom;
@@ -231,30 +305,26 @@ namespace study_document_manager
             legend.BackColor = Color.Transparent;
             chart.Legends.Add(legend);
 
-            // Lấy kiểu biểu đồ từ ComboBox
             SeriesChartType chartType = GetSelectedChartType();
 
-            // Tạo Series
             Series series = new Series("Số lượng");
             series.ChartType = chartType;
             series.ChartArea = "MainArea";
             series.Legend = "Legend";
             series.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             
-            // Màu sắc Teal/Emerald theme
             Color[] colors = new Color[]
             {
-                AppTheme.Primary,              // Teal
-                AppTheme.Success,              // Emerald
-                AppTheme.PrimaryLight,         // Light Teal
-                Color.FromArgb(16, 185, 129),  // Emerald-500
-                Color.FromArgb(45, 212, 191),  // Teal-400
-                Color.FromArgb(52, 211, 153),  // Emerald-400
-                Color.FromArgb(94, 234, 212),  // Teal-300
-                Color.FromArgb(110, 231, 183)  // Emerald-300
+                AppTheme.Primary,
+                AppTheme.Success,
+                AppTheme.PrimaryLight,
+                Color.FromArgb(16, 185, 129),
+                Color.FromArgb(45, 212, 191),
+                Color.FromArgb(52, 211, 153),
+                Color.FromArgb(94, 234, 212),
+                Color.FromArgb(110, 231, 183)
             };
 
-            // Thêm dữ liệu vào Series
             int colorIndex = 0;
             string categoryColumn = currentStatType == "subject" ? "mon_hoc" : "loai";
             
@@ -268,15 +338,12 @@ namespace study_document_manager
                 point.Color = colors[colorIndex % colors.Length];
                 point.Label = value.ToString();
                 point.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-                
-                // Tooltip
                 point.ToolTip = $"{category}: {value} tài liệu";
                 
                 series.Points.Add(point);
                 colorIndex++;
             }
 
-            // Đặc biệt cho biểu đồ tròn
             if (chartType == SeriesChartType.Pie)
             {
                 series["PieLabelStyle"] = "Outside";
@@ -290,17 +357,57 @@ namespace study_document_manager
             }
 
             chart.Series.Add(series);
-
-            // Enable 3D (optional)
-            if (chartType == SeriesChartType.Column || chartType == SeriesChartType.Bar)
-            {
-                chartArea.Area3DStyle.Enable3D = false; // Tắt 3D để modern hơn
-            }
         }
 
-        /// <summary>
-        /// Lấy kiểu biểu đồ được chọn
-        /// </summary>
+        private void DrawTimelineChart(DataTable dt, string dateColumn, string chartTitle)
+        {
+            chartTimeline.Series.Clear();
+            chartTimeline.ChartAreas.Clear();
+            chartTimeline.Titles.Clear();
+            chartTimeline.Legends.Clear();
+
+            ChartArea chartArea = new ChartArea("TimelineArea");
+            chartArea.BackColor = Color.White;
+            chartArea.AxisX.Title = "";
+            chartArea.AxisY.Title = "Số lượng";
+            chartArea.AxisX.LabelStyle.Font = new Font("Segoe UI", 8F);
+            chartArea.AxisY.LabelStyle.Font = new Font("Segoe UI", 8F);
+            chartArea.AxisX.MajorGrid.LineColor = Color.FromArgb(240, 240, 240);
+            chartArea.AxisY.MajorGrid.LineColor = Color.FromArgb(240, 240, 240);
+            chartArea.AxisX.LineColor = AppTheme.BorderLight;
+            chartArea.AxisY.LineColor = AppTheme.BorderLight;
+            chartArea.AxisX.Interval = 1;
+            
+            chartTimeline.ChartAreas.Add(chartArea);
+
+            Series series = new Series("Số lượng");
+            series.ChartType = SeriesChartType.Area;
+            series.ChartArea = "TimelineArea";
+            series.Color = Color.FromArgb(100, AppTheme.Primary);
+            series.BorderColor = AppTheme.Primary;
+            series.BorderWidth = 2;
+            series.Font = new Font("Segoe UI", 8F, FontStyle.Bold);
+
+            foreach (DataRow row in dt.Rows)
+            {
+                string dateLabel = row[dateColumn]?.ToString() ?? "";
+                int value = Convert.ToInt32(row["so_luong"]);
+                
+                DataPoint point = new DataPoint();
+                point.SetValueXY(dateLabel, value);
+                point.ToolTip = $"{dateLabel}: {value} tài liệu";
+                if (value > 0)
+                {
+                    point.Label = value.ToString();
+                }
+                
+                series.Points.Add(point);
+            }
+
+            series.IsValueShownAsLabel = false;
+            chartTimeline.Series.Add(series);
+        }
+
         private SeriesChartType GetSelectedChartType()
         {
             switch (cboChartType.SelectedIndex)
@@ -314,9 +421,6 @@ namespace study_document_manager
             }
         }
 
-        /// <summary>
-        /// Button đóng
-        /// </summary>
         private void btnClose_Click(object sender, EventArgs e)
         {
             this.Close();

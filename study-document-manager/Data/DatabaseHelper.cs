@@ -725,6 +725,128 @@ namespace study_document_manager
             return result != null ? Convert.ToInt32(result) : 0;
         }
 
+        #region Dashboard Statistics (Phase 3)
+
+        /// <summary>
+        /// Lấy thống kê tổng quan cho Dashboard
+        /// </summary>
+        public static DashboardStats GetDashboardStatistics()
+        {
+            var stats = new DashboardStats();
+            
+            SqlParameter[] userParam = new SqlParameter[] { new SqlParameter("@userId", UserSession.UserId) };
+            
+            // Tổng tài liệu
+            string totalQuery = "SELECT COUNT(*) FROM tai_lieu WHERE user_id = @userId";
+            object totalResult = ExecuteScalar(totalQuery, userParam);
+            stats.TotalDocuments = totalResult != null ? Convert.ToInt32(totalResult) : 0;
+            
+            // Tài liệu quan trọng
+            string importantQuery = "SELECT COUNT(*) FROM tai_lieu WHERE user_id = @userId AND quan_trong = 1";
+            object importantResult = ExecuteScalar(importantQuery, new SqlParameter[] { new SqlParameter("@userId", UserSession.UserId) });
+            stats.ImportantDocuments = importantResult != null ? Convert.ToInt32(importantResult) : 0;
+            
+            // Tài liệu chưa có file (đường dẫn rỗng hoặc null)
+            string noFileQuery = "SELECT COUNT(*) FROM tai_lieu WHERE user_id = @userId AND (duong_dan IS NULL OR duong_dan = '')";
+            object noFileResult = ExecuteScalar(noFileQuery, new SqlParameter[] { new SqlParameter("@userId", UserSession.UserId) });
+            stats.NoFileDocuments = noFileResult != null ? Convert.ToInt32(noFileResult) : 0;
+            
+            // Tài liệu gần deadline (trong 7 ngày tới)
+            string nearDeadlineQuery = @"SELECT COUNT(*) FROM tai_lieu 
+                                        WHERE user_id = @userId 
+                                        AND deadline IS NOT NULL 
+                                        AND deadline >= CAST(GETDATE() AS DATE)
+                                        AND deadline <= DATEADD(day, 7, CAST(GETDATE() AS DATE))";
+            object nearDeadlineResult = ExecuteScalar(nearDeadlineQuery, new SqlParameter[] { new SqlParameter("@userId", UserSession.UserId) });
+            stats.NearDeadlineDocuments = nearDeadlineResult != null ? Convert.ToInt32(nearDeadlineResult) : 0;
+            
+            // Tài liệu quá hạn
+            string overdueQuery = @"SELECT COUNT(*) FROM tai_lieu 
+                                   WHERE user_id = @userId 
+                                   AND deadline IS NOT NULL 
+                                   AND deadline < CAST(GETDATE() AS DATE)";
+            object overdueResult = ExecuteScalar(overdueQuery, new SqlParameter[] { new SqlParameter("@userId", UserSession.UserId) });
+            stats.OverdueDocuments = overdueResult != null ? Convert.ToInt32(overdueResult) : 0;
+            
+            // Số danh mục
+            string categoryQuery = "SELECT COUNT(DISTINCT mon_hoc) FROM tai_lieu WHERE user_id = @userId AND mon_hoc IS NOT NULL AND mon_hoc != ''";
+            object categoryResult = ExecuteScalar(categoryQuery, new SqlParameter[] { new SqlParameter("@userId", UserSession.UserId) });
+            stats.TotalCategories = categoryResult != null ? Convert.ToInt32(categoryResult) : 0;
+            
+            // Số collections
+            string collectionQuery = "SELECT COUNT(*) FROM collections WHERE user_id = @userId";
+            object collectionResult = ExecuteScalar(collectionQuery, new SqlParameter[] { new SqlParameter("@userId", UserSession.UserId) });
+            stats.TotalCollections = collectionResult != null ? Convert.ToInt32(collectionResult) : 0;
+            
+            return stats;
+        }
+
+        /// <summary>
+        /// Lấy thống kê tài liệu theo ngày (7 ngày gần nhất)
+        /// </summary>
+        public static DataTable GetDocumentsByDay(int days = 7)
+        {
+            string query = @"
+                WITH DateSeries AS (
+                    SELECT CAST(GETDATE() AS DATE) AS ngay
+                    UNION ALL
+                    SELECT DATEADD(day, -1, ngay)
+                    FROM DateSeries
+                    WHERE DATEADD(day, -1, ngay) >= DATEADD(day, -@days + 1, CAST(GETDATE() AS DATE))
+                )
+                SELECT 
+                    ds.ngay,
+                    FORMAT(ds.ngay, 'dd/MM') as ngay_format,
+                    ISNULL(COUNT(t.id), 0) as so_luong
+                FROM DateSeries ds
+                LEFT JOIN tai_lieu t ON CAST(t.ngay_them AS DATE) = ds.ngay AND t.user_id = @userId
+                GROUP BY ds.ngay
+                ORDER BY ds.ngay ASC
+                OPTION (MAXRECURSION 365)";
+            
+            SqlParameter[] parameters = new SqlParameter[]
+            {
+                new SqlParameter("@days", days),
+                new SqlParameter("@userId", UserSession.UserId)
+            };
+            
+            return ExecuteQuery(query, parameters);
+        }
+
+        /// <summary>
+        /// Lấy thống kê tài liệu theo tháng (12 tháng gần nhất)
+        /// </summary>
+        public static DataTable GetDocumentsByMonth(int months = 12)
+        {
+            string query = @"
+                WITH MonthSeries AS (
+                    SELECT DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1) AS thang
+                    UNION ALL
+                    SELECT DATEADD(month, -1, thang)
+                    FROM MonthSeries
+                    WHERE DATEADD(month, -1, thang) >= DATEADD(month, -@months + 1, DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1))
+                )
+                SELECT 
+                    ms.thang,
+                    FORMAT(ms.thang, 'MM/yyyy') as thang_format,
+                    ISNULL(COUNT(t.id), 0) as so_luong
+                FROM MonthSeries ms
+                LEFT JOIN tai_lieu t ON DATEFROMPARTS(YEAR(t.ngay_them), MONTH(t.ngay_them), 1) = ms.thang AND t.user_id = @userId
+                GROUP BY ms.thang
+                ORDER BY ms.thang ASC
+                OPTION (MAXRECURSION 365)";
+            
+            SqlParameter[] parameters = new SqlParameter[]
+            {
+                new SqlParameter("@months", months),
+                new SqlParameter("@userId", UserSession.UserId)
+            };
+            
+            return ExecuteQuery(query, parameters);
+        }
+
+        #endregion
+
         #region Quản lý Môn học và Loại tài liệu
 
         /// <summary>
