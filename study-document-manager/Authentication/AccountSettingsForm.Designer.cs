@@ -41,11 +41,17 @@ namespace study_document_manager
             
             // Password Tab Controls
             this.lblCurrentPasswordLabel = new System.Windows.Forms.Label();
+            this.pnlCurrentPasswordContainer = new System.Windows.Forms.Panel();
             this.txtCurrentPassword = new System.Windows.Forms.TextBox();
+            this.btnShowCurrentPassword = new System.Windows.Forms.Button();
             this.lblNewPasswordLabel = new System.Windows.Forms.Label();
+            this.pnlNewPasswordContainer = new System.Windows.Forms.Panel();
             this.txtNewPassword = new System.Windows.Forms.TextBox();
+            this.btnShowNewPassword = new System.Windows.Forms.Button();
             this.lblConfirmPasswordLabel = new System.Windows.Forms.Label();
+            this.pnlConfirmPasswordContainer = new System.Windows.Forms.Panel();
             this.txtConfirmPassword = new System.Windows.Forms.TextBox();
+            this.btnShowConfirmPassword = new System.Windows.Forms.Button();
             this.btnChangePassword = new System.Windows.Forms.Button();
             
             this.btnCancel = new System.Windows.Forms.Button();
@@ -54,6 +60,9 @@ namespace study_document_manager
             this.tabControl.SuspendLayout();
             this.tabProfile.SuspendLayout();
             this.tabPassword.SuspendLayout();
+            this.pnlCurrentPasswordContainer.SuspendLayout();
+            this.pnlNewPasswordContainer.SuspendLayout();
+            this.pnlConfirmPasswordContainer.SuspendLayout();
             this.SuspendLayout();
             
             // 
@@ -269,11 +278,11 @@ namespace study_document_manager
             // 
             this.tabPassword.BackColor = System.Drawing.Color.White;
             this.tabPassword.Controls.Add(this.lblCurrentPasswordLabel);
-            this.tabPassword.Controls.Add(this.txtCurrentPassword);
+            this.tabPassword.Controls.Add(this.pnlCurrentPasswordContainer);
             this.tabPassword.Controls.Add(this.lblNewPasswordLabel);
-            this.tabPassword.Controls.Add(this.txtNewPassword);
+            this.tabPassword.Controls.Add(this.pnlNewPasswordContainer);
             this.tabPassword.Controls.Add(this.lblConfirmPasswordLabel);
-            this.tabPassword.Controls.Add(this.txtConfirmPassword);
+            this.tabPassword.Controls.Add(this.pnlConfirmPasswordContainer);
             this.tabPassword.Controls.Add(this.btnChangePassword);
             this.tabPassword.Location = new System.Drawing.Point(4, 31);
             this.tabPassword.Name = "tabPassword";
@@ -293,20 +302,41 @@ namespace study_document_manager
             this.lblCurrentPasswordLabel.Size = new System.Drawing.Size(124, 20);
             this.lblCurrentPasswordLabel.TabIndex = 0;
             this.lblCurrentPasswordLabel.Text = "Mật khẩu hiện tại";
-            
+            // 
+            // pnlCurrentPasswordContainer
+            // 
+            this.pnlCurrentPasswordContainer.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(248)))), ((int)(((byte)(250)))), ((int)(((byte)(252)))));
+            this.pnlCurrentPasswordContainer.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.pnlCurrentPasswordContainer.Controls.Add(this.txtCurrentPassword);
+            this.pnlCurrentPasswordContainer.Controls.Add(this.btnShowCurrentPassword);
+            this.pnlCurrentPasswordContainer.Location = new System.Drawing.Point(24, 47);
+            this.pnlCurrentPasswordContainer.Name = "pnlCurrentPasswordContainer";
+            this.pnlCurrentPasswordContainer.Size = new System.Drawing.Size(376, 32);
+            this.pnlCurrentPasswordContainer.TabIndex = 1;
             // 
             // txtCurrentPassword
             // 
             this.txtCurrentPassword.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(248)))), ((int)(((byte)(250)))), ((int)(((byte)(252)))));
-            this.txtCurrentPassword.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.txtCurrentPassword.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.txtCurrentPassword.Font = new System.Drawing.Font("Segoe UI", 10F);
             this.txtCurrentPassword.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(23)))), ((int)(((byte)(42)))));
-            this.txtCurrentPassword.Location = new System.Drawing.Point(24, 47);
+            this.txtCurrentPassword.Location = new System.Drawing.Point(10, 5);
             this.txtCurrentPassword.Name = "txtCurrentPassword";
             this.txtCurrentPassword.PasswordChar = '*';
-            this.txtCurrentPassword.Size = new System.Drawing.Size(376, 30);
-            this.txtCurrentPassword.TabIndex = 1;
-            
+            this.txtCurrentPassword.Size = new System.Drawing.Size(326, 23);
+            this.txtCurrentPassword.TabIndex = 0;
+            // 
+            // btnShowCurrentPassword
+            // 
+            this.btnShowCurrentPassword.BackColor = System.Drawing.Color.Transparent;
+            this.btnShowCurrentPassword.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnShowCurrentPassword.FlatAppearance.BorderSize = 0;
+            this.btnShowCurrentPassword.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnShowCurrentPassword.Location = new System.Drawing.Point(341, 3);
+            this.btnShowCurrentPassword.Name = "btnShowCurrentPassword";
+            this.btnShowCurrentPassword.Size = new System.Drawing.Size(28, 24);
+            this.btnShowCurrentPassword.TabIndex = 1;
+            this.btnShowCurrentPassword.Click += new System.EventHandler(this.btnShowCurrentPassword_Click);
             // 
             // lblNewPasswordLabel
             // 
@@ -318,20 +348,41 @@ namespace study_document_manager
             this.lblNewPasswordLabel.Size = new System.Drawing.Size(100, 20);
             this.lblNewPasswordLabel.TabIndex = 2;
             this.lblNewPasswordLabel.Text = "Mật khẩu mới";
-            
+            // 
+            // pnlNewPasswordContainer
+            // 
+            this.pnlNewPasswordContainer.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(248)))), ((int)(((byte)(250)))), ((int)(((byte)(252)))));
+            this.pnlNewPasswordContainer.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.pnlNewPasswordContainer.Controls.Add(this.txtNewPassword);
+            this.pnlNewPasswordContainer.Controls.Add(this.btnShowNewPassword);
+            this.pnlNewPasswordContainer.Location = new System.Drawing.Point(24, 115);
+            this.pnlNewPasswordContainer.Name = "pnlNewPasswordContainer";
+            this.pnlNewPasswordContainer.Size = new System.Drawing.Size(376, 32);
+            this.pnlNewPasswordContainer.TabIndex = 3;
             // 
             // txtNewPassword
             // 
             this.txtNewPassword.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(248)))), ((int)(((byte)(250)))), ((int)(((byte)(252)))));
-            this.txtNewPassword.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.txtNewPassword.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.txtNewPassword.Font = new System.Drawing.Font("Segoe UI", 10F);
             this.txtNewPassword.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(23)))), ((int)(((byte)(42)))));
-            this.txtNewPassword.Location = new System.Drawing.Point(24, 115);
+            this.txtNewPassword.Location = new System.Drawing.Point(10, 5);
             this.txtNewPassword.Name = "txtNewPassword";
             this.txtNewPassword.PasswordChar = '*';
-            this.txtNewPassword.Size = new System.Drawing.Size(376, 30);
-            this.txtNewPassword.TabIndex = 3;
-            
+            this.txtNewPassword.Size = new System.Drawing.Size(326, 23);
+            this.txtNewPassword.TabIndex = 0;
+            // 
+            // btnShowNewPassword
+            // 
+            this.btnShowNewPassword.BackColor = System.Drawing.Color.Transparent;
+            this.btnShowNewPassword.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnShowNewPassword.FlatAppearance.BorderSize = 0;
+            this.btnShowNewPassword.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnShowNewPassword.Location = new System.Drawing.Point(341, 3);
+            this.btnShowNewPassword.Name = "btnShowNewPassword";
+            this.btnShowNewPassword.Size = new System.Drawing.Size(28, 24);
+            this.btnShowNewPassword.TabIndex = 1;
+            this.btnShowNewPassword.Click += new System.EventHandler(this.btnShowNewPassword_Click);
             // 
             // lblConfirmPasswordLabel
             // 
@@ -343,20 +394,41 @@ namespace study_document_manager
             this.lblConfirmPasswordLabel.Size = new System.Drawing.Size(134, 20);
             this.lblConfirmPasswordLabel.TabIndex = 4;
             this.lblConfirmPasswordLabel.Text = "Xác nhận mật khẩu";
-            
+            // 
+            // pnlConfirmPasswordContainer
+            // 
+            this.pnlConfirmPasswordContainer.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(248)))), ((int)(((byte)(250)))), ((int)(((byte)(252)))));
+            this.pnlConfirmPasswordContainer.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.pnlConfirmPasswordContainer.Controls.Add(this.txtConfirmPassword);
+            this.pnlConfirmPasswordContainer.Controls.Add(this.btnShowConfirmPassword);
+            this.pnlConfirmPasswordContainer.Location = new System.Drawing.Point(24, 183);
+            this.pnlConfirmPasswordContainer.Name = "pnlConfirmPasswordContainer";
+            this.pnlConfirmPasswordContainer.Size = new System.Drawing.Size(376, 32);
+            this.pnlConfirmPasswordContainer.TabIndex = 5;
             // 
             // txtConfirmPassword
             // 
             this.txtConfirmPassword.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(248)))), ((int)(((byte)(250)))), ((int)(((byte)(252)))));
-            this.txtConfirmPassword.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.txtConfirmPassword.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.txtConfirmPassword.Font = new System.Drawing.Font("Segoe UI", 10F);
             this.txtConfirmPassword.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(23)))), ((int)(((byte)(42)))));
-            this.txtConfirmPassword.Location = new System.Drawing.Point(24, 183);
+            this.txtConfirmPassword.Location = new System.Drawing.Point(10, 5);
             this.txtConfirmPassword.Name = "txtConfirmPassword";
             this.txtConfirmPassword.PasswordChar = '*';
-            this.txtConfirmPassword.Size = new System.Drawing.Size(376, 30);
-            this.txtConfirmPassword.TabIndex = 5;
-            
+            this.txtConfirmPassword.Size = new System.Drawing.Size(326, 23);
+            this.txtConfirmPassword.TabIndex = 0;
+            // 
+            // btnShowConfirmPassword
+            // 
+            this.btnShowConfirmPassword.BackColor = System.Drawing.Color.Transparent;
+            this.btnShowConfirmPassword.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnShowConfirmPassword.FlatAppearance.BorderSize = 0;
+            this.btnShowConfirmPassword.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnShowConfirmPassword.Location = new System.Drawing.Point(341, 3);
+            this.btnShowConfirmPassword.Name = "btnShowConfirmPassword";
+            this.btnShowConfirmPassword.Size = new System.Drawing.Size(28, 24);
+            this.btnShowConfirmPassword.TabIndex = 1;
+            this.btnShowConfirmPassword.Click += new System.EventHandler(this.btnShowConfirmPassword_Click);
             // 
             // btnChangePassword
             // 
@@ -418,6 +490,12 @@ namespace study_document_manager
             this.tabProfile.PerformLayout();
             this.tabPassword.ResumeLayout(false);
             this.tabPassword.PerformLayout();
+            this.pnlCurrentPasswordContainer.ResumeLayout(false);
+            this.pnlCurrentPasswordContainer.PerformLayout();
+            this.pnlNewPasswordContainer.ResumeLayout(false);
+            this.pnlNewPasswordContainer.PerformLayout();
+            this.pnlConfirmPasswordContainer.ResumeLayout(false);
+            this.pnlConfirmPasswordContainer.PerformLayout();
             this.ResumeLayout(false);
         }
 
@@ -443,11 +521,17 @@ namespace study_document_manager
         private System.Windows.Forms.Button btnSaveProfile;
         
         private System.Windows.Forms.Label lblCurrentPasswordLabel;
+        private System.Windows.Forms.Panel pnlCurrentPasswordContainer;
         private System.Windows.Forms.TextBox txtCurrentPassword;
+        private System.Windows.Forms.Button btnShowCurrentPassword;
         private System.Windows.Forms.Label lblNewPasswordLabel;
+        private System.Windows.Forms.Panel pnlNewPasswordContainer;
         private System.Windows.Forms.TextBox txtNewPassword;
+        private System.Windows.Forms.Button btnShowNewPassword;
         private System.Windows.Forms.Label lblConfirmPasswordLabel;
+        private System.Windows.Forms.Panel pnlConfirmPasswordContainer;
         private System.Windows.Forms.TextBox txtConfirmPassword;
+        private System.Windows.Forms.Button btnShowConfirmPassword;
         private System.Windows.Forms.Button btnChangePassword;
         
         private System.Windows.Forms.Button btnCancel;

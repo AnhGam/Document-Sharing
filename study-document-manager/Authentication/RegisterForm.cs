@@ -10,6 +10,8 @@ namespace study_document_manager
     public partial class RegisterForm : Form
     {
         public string RegisteredUsername { get; private set; }
+        private bool _passwordVisible = false;
+        private bool _confirmPasswordVisible = false;
 
         public RegisterForm()
         {
@@ -207,35 +209,23 @@ namespace study_document_manager
         }
 
         /// <summary>
-        /// Hiện mật khẩu khi giữ chuột
+        /// Toggle hiện/ẩn mật khẩu
         /// </summary>
-        private void btnShowPassword_MouseDown(object sender, MouseEventArgs e)
+        private void btnShowPassword_Click(object sender, EventArgs e)
         {
-            txtPassword.PasswordChar = '\0';
+            _passwordVisible = !_passwordVisible;
+            txtPassword.PasswordChar = _passwordVisible ? '\0' : '*';
+            btnShowPassword.Image = IconHelper.CreateEyeIcon(16, !_passwordVisible);
         }
 
         /// <summary>
-        /// Ẩn mật khẩu khi nhả chuột
+        /// Toggle hiện/ẩn mật khẩu xác nhận
         /// </summary>
-        private void btnShowPassword_MouseUp(object sender, MouseEventArgs e)
+        private void btnShowConfirmPassword_Click(object sender, EventArgs e)
         {
-            txtPassword.PasswordChar = '*';
-        }
-
-        /// <summary>
-        /// Hiện mật khẩu xác nhận khi giữ chuột
-        /// </summary>
-        private void btnShowConfirmPassword_MouseDown(object sender, MouseEventArgs e)
-        {
-            txtConfirmPassword.PasswordChar = '\0';
-        }
-
-        /// <summary>
-        /// Ẩn mật khẩu xác nhận khi nhả chuột
-        /// </summary>
-        private void btnShowConfirmPassword_MouseUp(object sender, MouseEventArgs e)
-        {
-            txtConfirmPassword.PasswordChar = '*';
+            _confirmPasswordVisible = !_confirmPasswordVisible;
+            txtConfirmPassword.PasswordChar = _confirmPasswordVisible ? '\0' : '*';
+            btnShowConfirmPassword.Image = IconHelper.CreateEyeIcon(16, !_confirmPasswordVisible);
         }
     }
 }

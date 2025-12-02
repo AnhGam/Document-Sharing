@@ -227,8 +227,7 @@ namespace study_document_manager
             this.btnShowPassword.Name = "btnShowPassword";
             this.btnShowPassword.Size = new System.Drawing.Size(28, 24);
             this.btnShowPassword.TabIndex = 1;
-            this.btnShowPassword.MouseDown += new System.Windows.Forms.MouseEventHandler(this.btnShowPassword_MouseDown);
-            this.btnShowPassword.MouseUp += new System.Windows.Forms.MouseEventHandler(this.btnShowPassword_MouseUp);
+            this.btnShowPassword.Click += new System.EventHandler(this.btnShowPassword_Click);
             // 
             // lblConfirmPassword
             // 
@@ -274,8 +273,7 @@ namespace study_document_manager
             this.btnShowConfirmPassword.Name = "btnShowConfirmPassword";
             this.btnShowConfirmPassword.Size = new System.Drawing.Size(28, 24);
             this.btnShowConfirmPassword.TabIndex = 1;
-            this.btnShowConfirmPassword.MouseDown += new System.Windows.Forms.MouseEventHandler(this.btnShowConfirmPassword_MouseDown);
-            this.btnShowConfirmPassword.MouseUp += new System.Windows.Forms.MouseEventHandler(this.btnShowConfirmPassword_MouseUp);
+            this.btnShowConfirmPassword.Click += new System.EventHandler(this.btnShowConfirmPassword_Click);
             // 
             // lblFullName
             // 

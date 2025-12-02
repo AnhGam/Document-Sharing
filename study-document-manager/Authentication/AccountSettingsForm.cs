@@ -7,6 +7,10 @@ namespace study_document_manager
 {
     public partial class AccountSettingsForm : Form
     {
+        private bool _currentPasswordVisible = false;
+        private bool _newPasswordVisible = false;
+        private bool _confirmPasswordVisible = false;
+
         public AccountSettingsForm()
         {
             InitializeComponent();
@@ -25,6 +29,17 @@ namespace study_document_manager
         private void AccountSettingsForm_Load(object sender, EventArgs e)
         {
             LoadUserInfo();
+            InitPasswordIcons();
+        }
+
+        private void InitPasswordIcons()
+        {
+            btnShowCurrentPassword.Image = IconHelper.CreateEyeIcon(16, true);
+            btnShowCurrentPassword.Text = "";
+            btnShowNewPassword.Image = IconHelper.CreateEyeIcon(16, true);
+            btnShowNewPassword.Text = "";
+            btnShowConfirmPassword.Image = IconHelper.CreateEyeIcon(16, true);
+            btnShowConfirmPassword.Text = "";
         }
 
         private void LoadUserInfo()
@@ -149,6 +164,27 @@ namespace study_document_manager
             {
                 return false;
             }
+        }
+
+        private void btnShowCurrentPassword_Click(object sender, EventArgs e)
+        {
+            _currentPasswordVisible = !_currentPasswordVisible;
+            txtCurrentPassword.PasswordChar = _currentPasswordVisible ? '\0' : '*';
+            btnShowCurrentPassword.Image = IconHelper.CreateEyeIcon(16, !_currentPasswordVisible);
+        }
+
+        private void btnShowNewPassword_Click(object sender, EventArgs e)
+        {
+            _newPasswordVisible = !_newPasswordVisible;
+            txtNewPassword.PasswordChar = _newPasswordVisible ? '\0' : '*';
+            btnShowNewPassword.Image = IconHelper.CreateEyeIcon(16, !_newPasswordVisible);
+        }
+
+        private void btnShowConfirmPassword_Click(object sender, EventArgs e)
+        {
+            _confirmPasswordVisible = !_confirmPasswordVisible;
+            txtConfirmPassword.PasswordChar = _confirmPasswordVisible ? '\0' : '*';
+            btnShowConfirmPassword.Image = IconHelper.CreateEyeIcon(16, !_confirmPasswordVisible);
         }
     }
 }

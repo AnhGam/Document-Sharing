@@ -222,8 +222,7 @@ namespace study_document_manager
             this.btnShowPassword.Size = new System.Drawing.Size(32, 28);
             this.btnShowPassword.TabIndex = 1;
             this.btnShowPassword.UseVisualStyleBackColor = false;
-            this.btnShowPassword.MouseDown += new System.Windows.Forms.MouseEventHandler(this.btnShowPassword_MouseDown);
-            this.btnShowPassword.MouseUp += new System.Windows.Forms.MouseEventHandler(this.btnShowPassword_MouseUp);
+            this.btnShowPassword.Click += new System.EventHandler(this.btnShowPassword_Click);
             // 
             // chkRememberMe
             // 

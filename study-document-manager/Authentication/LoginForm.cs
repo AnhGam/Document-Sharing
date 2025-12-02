@@ -10,6 +10,7 @@ namespace study_document_manager
     {
         private bool isDragging = false;
         private Point dragStart;
+        private bool _passwordVisible = false;
 
         public LoginForm()
         {
@@ -216,14 +217,11 @@ namespace study_document_manager
             btnExit.BackColor = Color.White;
         }
 
-        private void btnShowPassword_MouseDown(object sender, MouseEventArgs e)
+        private void btnShowPassword_Click(object sender, EventArgs e)
         {
-            txtPassword.PasswordChar = '\0';
-        }
-
-        private void btnShowPassword_MouseUp(object sender, MouseEventArgs e)
-        {
-            txtPassword.PasswordChar = '*';
+            _passwordVisible = !_passwordVisible;
+            txtPassword.PasswordChar = _passwordVisible ? '\0' : '*';
+            btnShowPassword.Image = IconHelper.CreateEyeIcon(18, !_passwordVisible);
         }
     }
 }
