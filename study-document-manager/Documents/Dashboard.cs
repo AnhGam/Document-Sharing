@@ -1,9 +1,9 @@
-﻿using System;
+﻿using study_document_manager.UI;
+using System;
 using System.Data;
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
-using study_document_manager.UI;
 
 namespace study_document_manager
 {
@@ -12,10 +12,10 @@ namespace study_document_manager
         public Dashboard()
         {
             InitializeComponent();
-            
+
             // Tạo menu Quản lý động
             CreateManagementMenu();
-            
+
             // Đăng ký event CellFormatting
             dgvDocuments.CellFormatting += dgvDocuments_CellFormatting;
             // Đăng ký event DataError để xử lý lỗi format
@@ -33,7 +33,7 @@ namespace study_document_manager
         private void AddPersonalNoteContextMenu()
         {
             contextMenuDocument.Items.Add(new ToolStripSeparator());
-            
+
             ToolStripMenuItem ctxMenuPersonalNote = new ToolStripMenuItem("Ghi chú cá nhân...");
             ctxMenuPersonalNote.Name = "ctxMenuPersonalNote";
             ctxMenuPersonalNote.Click += ctxMenuPersonalNote_Click;
@@ -62,7 +62,7 @@ namespace study_document_manager
 
             // Lấy danh sách collections
             DataTable collections = DatabaseHelper.GetCollections();
-            
+
             if (collections.Rows.Count == 0)
             {
                 if (MessageBox.Show("Bạn chưa có bộ sưu tập nào.\nTạo bộ sưu tập mới?",
@@ -70,7 +70,7 @@ namespace study_document_manager
                 {
                     string name = Microsoft.VisualBasic.Interaction.InputBox(
                         "Nhập tên bộ sưu tập:", "Tạo bộ sưu tập mới", "");
-                    
+
                     if (!string.IsNullOrWhiteSpace(name))
                     {
                         int newId = DatabaseHelper.CreateCollection(name.Trim());
@@ -318,7 +318,7 @@ namespace study_document_manager
         {
             AccountSettingsForm form = new AccountSettingsForm();
             form.ShowDialog();
-            
+
             // Cập nhật title nếu user đổi tên
             this.Text = $"Study Document Manager - {UserSession.FullName} [{UserSession.Role}]";
             lblStatus.Text = $"Xin chào, {UserSession.FullName} ({UserSession.Role})";
@@ -332,15 +332,15 @@ namespace study_document_manager
             ApplyTheme();
             InitializeCustomComponents();
             this.Text = $"Study Document Manager - {UserSession.FullName} [{UserSession.Role}]";
-            
+
             // Hiển thị thông tin user
             lblStatus.Text = $"Xin chào, {UserSession.FullName} ({UserSession.Role})";
-            
+
             // ============================================
             // PHÂN QUYỀN
             // ============================================
             ApplyPermissions();
-            
+
             // Setup icons cho ToolStrip buttons
             toolBtnNew.Image = IconHelper.CreateAddIcon(16, AppTheme.StatusSuccess);
             toolBtnEdit.Image = IconHelper.CreateEditIcon(16, AppTheme.Primary);
@@ -348,10 +348,10 @@ namespace study_document_manager
             toolBtnOpen.Image = IconHelper.CreateOpenIcon(16, AppTheme.AccentSky);
             toolBtnExport.Image = IconHelper.CreateExportIcon(16, AppTheme.AccentOrange);
             toolBtnRefresh.Image = IconHelper.CreateRefreshIcon(16, AppTheme.Secondary);
-            
+
             // Chế độ cá nhân: Không cần filter theo người tạo
             LoadUsersForFilter();
-            
+
             // Khởi tạo giá trị mặc định cho date pickers
             dtpFromDate.Value = DateTime.Now.AddMonths(-1);
             dtpToDate.Value = DateTime.Now;
@@ -359,7 +359,7 @@ namespace study_document_manager
             dtpToDate.Enabled = false;
             nudMinSize.Enabled = false;
             nudMaxSize.Enabled = false;
-            
+
             // Hiển thị Toast chào mừng
             ToastNotification.Success($"Xin chào, {UserSession.FullName}!");
         }
@@ -371,51 +371,51 @@ namespace study_document_manager
         {
             // Form background
             this.BackColor = AppTheme.BackgroundSoft;
-            
+
             // MenuStrip - Teal header style
             menuStrip.BackColor = AppTheme.BackgroundMain;
             menuStrip.ForeColor = AppTheme.TextPrimary;
             menuStrip.Font = AppTheme.FontSmall;
             menuStrip.Padding = new Padding(8, 2, 8, 2);
             AppTheme.ApplyMenuStripStyle(menuStrip);
-            
+
             // ToolStrip - Clean modern look
             toolStrip.BackColor = AppTheme.BackgroundMain;
             toolStrip.GripStyle = ToolStripGripStyle.Hidden;
             toolStrip.Padding = new Padding(8, 4, 8, 4);
             AppTheme.ApplyToolStripStyle(toolStrip);
-            
+
             // Search Panel - Soft background with rounded feel
             pnlSearch.BackColor = AppTheme.BackgroundMain;
             pnlSearch.Padding = new Padding(16, 12, 16, 12);
-            
+
             // Search label
             lblSearch.ForeColor = AppTheme.TextSecondary;
             lblSearch.Font = AppTheme.FontSmall;
-            
+
             // Subject/Type labels
             lblSubject.ForeColor = AppTheme.TextSecondary;
             lblSubject.Font = AppTheme.FontSmall;
             lblType.ForeColor = AppTheme.TextSecondary;
             lblType.Font = AppTheme.FontSmall;
-            
+
             // Search TextBox - Modern rounded feel
             txtSearch.BackColor = Color.White;
             txtSearch.ForeColor = AppTheme.TextPrimary;
             txtSearch.Font = AppTheme.FontInput;
             txtSearch.BorderStyle = BorderStyle.FixedSingle;
-            
+
             // ComboBoxes - Consistent white style
             cboSubject.BackColor = Color.White;
             cboSubject.ForeColor = AppTheme.TextPrimary;
             cboSubject.Font = AppTheme.FontBody;
             cboSubject.FlatStyle = FlatStyle.Flat;
-            
+
             cboType.BackColor = AppTheme.Primary;
             cboType.ForeColor = Color.White;
             cboType.Font = AppTheme.FontBody;
             cboType.FlatStyle = FlatStyle.Flat;
-            
+
             // Search button - Primary Teal
             btnSearch.BackColor = AppTheme.Primary;
             btnSearch.ForeColor = Color.White;
@@ -425,39 +425,39 @@ namespace study_document_manager
             btnSearch.Cursor = Cursors.Hand;
             btnSearch.MouseEnter += (s, e) => btnSearch.BackColor = AppTheme.PrimaryLight;
             btnSearch.MouseLeave += (s, e) => btnSearch.BackColor = AppTheme.Primary;
-            
+
             // Content Panel
             pnlContent.BackColor = AppTheme.BackgroundSoft;
             pnlContent.Padding = new Padding(16);
-            
+
             // DataGridView - Clean modern table
             AppTheme.ApplyDataGridViewStyle(dgvDocuments);
             dgvDocuments.BorderStyle = BorderStyle.None;
             dgvDocuments.BackgroundColor = AppTheme.BackgroundMain;
-            
+
             // Status Strip
             statusStrip.BackColor = AppTheme.BackgroundSoft;
             statusStrip.ForeColor = AppTheme.TextSecondary;
             lblStatus.ForeColor = AppTheme.Primary;
             lblCount.ForeColor = AppTheme.Primary;
-            
+
             // Advanced Filter GroupBox - Card style
             grpAdvancedFilter.BackColor = AppTheme.BackgroundMain;
             grpAdvancedFilter.ForeColor = AppTheme.TextPrimary;
             grpAdvancedFilter.Font = AppTheme.FontSmallBold;
-            
+
             // Filter labels
             lblDateFilter.ForeColor = AppTheme.TextSecondary;
             lblDateTo.ForeColor = AppTheme.TextSecondary;
             lblSizeFilter.ForeColor = AppTheme.TextSecondary;
             lblSizeTo.ForeColor = AppTheme.TextSecondary;
             lblSizeMB.ForeColor = AppTheme.TextSecondary;
-            
+
             // Checkboxes
             chkEnableDateFilter.ForeColor = AppTheme.TextPrimary;
             chkEnableSizeFilter.ForeColor = AppTheme.TextPrimary;
             chkImportantOnly.ForeColor = AppTheme.TextPrimary;
-            
+
             // Filter Buttons - Primary and Secondary
             btnApplyAdvancedFilter.BackColor = AppTheme.Primary;
             btnApplyAdvancedFilter.ForeColor = Color.White;
@@ -467,7 +467,7 @@ namespace study_document_manager
             btnApplyAdvancedFilter.Cursor = Cursors.Hand;
             btnApplyAdvancedFilter.MouseEnter += (s, e) => btnApplyAdvancedFilter.BackColor = AppTheme.PrimaryLight;
             btnApplyAdvancedFilter.MouseLeave += (s, e) => btnApplyAdvancedFilter.BackColor = AppTheme.Primary;
-            
+
             btnClearAdvancedFilter.BackColor = AppTheme.BackgroundSoft;
             btnClearAdvancedFilter.ForeColor = AppTheme.TextSecondary;
             btnClearAdvancedFilter.FlatStyle = FlatStyle.Flat;
@@ -477,11 +477,11 @@ namespace study_document_manager
             btnClearAdvancedFilter.Cursor = Cursors.Hand;
             btnClearAdvancedFilter.MouseEnter += (s, e) => { btnClearAdvancedFilter.BackColor = AppTheme.BorderLight; };
             btnClearAdvancedFilter.MouseLeave += (s, e) => { btnClearAdvancedFilter.BackColor = AppTheme.BackgroundSoft; };
-            
+
             // Date pickers styling
             dtpFromDate.Font = AppTheme.FontSmall;
             dtpToDate.Font = AppTheme.FontSmall;
-            
+
             // Numeric updowns styling  
             nudMinSize.Font = AppTheme.FontSmall;
             nudMaxSize.Font = AppTheme.FontSmall;
@@ -607,7 +607,7 @@ namespace study_document_manager
                 }
                 if (dgvDocuments.Columns.Contains("tac_gia"))
                     dgvDocuments.Columns["tac_gia"].HeaderText = "Tác giả";
-                
+
                 // Cột Tags (Phase 2)
                 if (dgvDocuments.Columns.Contains("tags"))
                 {
@@ -637,16 +637,16 @@ namespace study_document_manager
                 {
                     dgvDocuments.Columns["creator_name"].Visible = false;
                 }
-                
+
                 if (dgvDocuments.Columns.Contains("creator_username"))
                     dgvDocuments.Columns["creator_username"].Visible = false;
-                    
+
                 if (dgvDocuments.Columns.Contains("user_id"))
                     dgvDocuments.Columns["user_id"].Visible = false;
-                
+
                 // Set ReadOnly = false cho grid để checkbox hoạt động
                 dgvDocuments.ReadOnly = false;
-                
+
                 // Set ReadOnly = true cho các cột khác (không cho phép edit)
                 foreach (DataGridViewColumn col in dgvDocuments.Columns)
                 {
@@ -674,7 +674,7 @@ namespace study_document_manager
             dgvDocuments.RowsDefaultCellStyle.SelectionForeColor = AppTheme.TextPrimary;
             dgvDocuments.RowsDefaultCellStyle.Font = AppTheme.FontSmall;
             dgvDocuments.RowsDefaultCellStyle.Padding = new Padding(4, 2, 4, 2);
-            
+
             // Header style
             dgvDocuments.ColumnHeadersDefaultCellStyle.BackColor = AppTheme.GridHeaderBg;
             dgvDocuments.ColumnHeadersDefaultCellStyle.ForeColor = AppTheme.GridHeaderFg;
@@ -684,7 +684,7 @@ namespace study_document_manager
             dgvDocuments.ColumnHeadersHeight = 36;
             dgvDocuments.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
             dgvDocuments.EnableHeadersVisualStyles = false;
-            
+
             // Row settings
             dgvDocuments.RowTemplate.Height = 36;
             dgvDocuments.RowHeadersVisible = false;
@@ -749,7 +749,7 @@ namespace study_document_manager
             }
 
             int id = Convert.ToInt32(dgvDocuments.SelectedRows[0].Cells["id"].Value);
-            
+
             // Kiểm tra quyền sửa tài liệu
             if (!DatabaseHelper.CanUserEditDocument(id, UserSession.UserId, UserSession.Role))
             {
@@ -777,7 +777,7 @@ namespace study_document_manager
             }
 
             int id = Convert.ToInt32(dgvDocuments.SelectedRows[0].Cells["id"].Value);
-            
+
             // Kiểm tra quyền xóa tài liệu
             if (!DatabaseHelper.CanUserEditDocument(id, UserSession.UserId, UserSession.Role))
             {
@@ -786,7 +786,7 @@ namespace study_document_manager
             }
 
             string ten = dgvDocuments.SelectedRows[0].Cells["ten"].Value.ToString();
-            if (MessageBox.Show($"Xóa tài liệu:\n\"{ten}\"?", 
+            if (MessageBox.Show($"Xóa tài liệu:\n\"{ten}\"?",
                 "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
             {
                 if (DatabaseHelper.DeleteDocument(id))
@@ -817,7 +817,7 @@ namespace study_document_manager
             }
 
             string duong_dan = dgvDocuments.SelectedRows[0].Cells["duong_dan"].Value.ToString();
-            
+
             if (!File.Exists(duong_dan))
             {
                 ToastNotification.Error("File không tồn tại!");
@@ -872,7 +872,7 @@ namespace study_document_manager
         private void PerformSearch()
         {
             string keyword = txtSearch.Text.Trim();
-            
+
             if (string.IsNullOrEmpty(keyword))
             {
                 LoadData();
@@ -965,11 +965,11 @@ namespace study_document_manager
                 try
                 {
                     DataTable dt = (DataTable)dgvDocuments.DataSource;
-                    
+
                     using (StreamWriter writer = new StreamWriter(save.FileName, false, System.Text.Encoding.UTF8))
                     {
                         writer.WriteLine("ID,Tên tài liệu,Danh mục,Loại,Đường dẫn,Ghi chú,Ngày thêm,Kích thước (MB),Tác giả,Quan trọng");
-                        
+
                         foreach (DataRow row in dt.Rows)
                         {
                             writer.WriteLine($"{row["id"]}," +
@@ -987,7 +987,7 @@ namespace study_document_manager
 
                     lblStatus.Text = "Đã xuất file thành công";
                     ToastNotification.Success($"Xuất thành công: {System.IO.Path.GetFileName(save.FileName)}");
-                    
+
                     System.Diagnostics.Process.Start("explorer.exe", "/select, \"" + save.FileName + "\"");
                 }
                 catch (Exception ex)
@@ -1020,7 +1020,7 @@ namespace study_document_manager
         private void EnableDragDrop()
         {
             dgvDocuments.AllowDrop = true;
-            
+
             dgvDocuments.DragEnter += (s, e) =>
             {
                 if (e.Data.GetDataPresent(DataFormats.FileDrop))
@@ -1031,23 +1031,23 @@ namespace study_document_manager
             {
                 string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
                 int successCount = 0;
-                
+
                 foreach (string file in files)
                 {
                     string ext = Path.GetExtension(file).ToLower();
-                    if (ext == ".pdf" || ext == ".doc" || ext == ".docx" || 
-                        ext == ".ppt" || ext == ".pptx" || ext == ".txt" || 
+                    if (ext == ".pdf" || ext == ".doc" || ext == ".docx" ||
+                        ext == ".ppt" || ext == ".pptx" || ext == ".txt" ||
                         ext == ".xlsx" || ext == ".xls")
                     {
                         // Tạo AddEditForm và tự động điền thông tin file
                         AddEditForm form = new AddEditForm();
-                        
+
                         // Điền đường dẫn file
                         form.txt_duong_dan.Text = file;
-                        
+
                         // Tự động điền tên file
                         form.txt_ten.Text = Path.GetFileNameWithoutExtension(file);
-                        
+
                         // Tính kích thước file
                         try
                         {
@@ -1059,7 +1059,7 @@ namespace study_document_manager
                         {
                             form.txt_kich_thuoc.Text = "0.00";
                         }
-                        
+
                         // Tự động chọn loại tài liệu dựa vào extension
                         if (ext == ".ppt" || ext == ".pptx")
                             form.cbo_loai.Text = "slide";
@@ -1069,7 +1069,7 @@ namespace study_document_manager
                             form.cbo_loai.Text = "đề thi";
                         else if (ext == ".xlsx" || ext == ".xls")
                             form.cbo_loai.Text = "tài liệu khác";
-                        
+
                         if (form.ShowDialog() == DialogResult.OK)
                         {
                             successCount++;
@@ -1080,7 +1080,7 @@ namespace study_document_manager
                         ToastNotification.Warning($"File không hỗ trợ: {Path.GetFileName(file)}");
                     }
                 }
-                
+
                 if (successCount > 0)
                 {
                     LoadData();
@@ -1119,7 +1119,7 @@ namespace study_document_manager
             {
                 CategoryManagementForm categoryForm = new CategoryManagementForm();
                 categoryForm.ShowDialog();
-                
+
                 // Refresh lại dữ liệu sau khi đóng form quản lý danh mục
                 LoadData();
                 lblStatus.Text = "Đã làm mới dữ liệu";
@@ -1216,10 +1216,10 @@ namespace study_document_manager
                 {
                     var loaiCell = dgvDocuments.Rows[e.RowIndex].Cells["loai"];
                     var tenCell = dgvDocuments.Rows[e.RowIndex].Cells["ten"];
-                    
+
                     string loai = loaiCell?.Value?.ToString() ?? "";
                     string fileName = tenCell?.Value?.ToString() ?? "";
-                    
+
                     e.Value = IconHelper.GetDocumentIcon(loai, 24, fileName);
                     e.FormattingApplied = true;
                 }
@@ -1264,10 +1264,10 @@ namespace study_document_manager
         {
             // Log lỗi để debug
             System.Diagnostics.Debug.WriteLine($"DataGridView error at row {e.RowIndex}, column {e.ColumnIndex}: {e.Exception.Message}");
-            
+
             // Ngăn hiển thị dialog lỗi mặc định
             e.ThrowException = false;
-            
+
             // Có thể hiển thị thông báo lỗi tùy chỉnh nếu cần
             if (e.Context == DataGridViewDataErrorContexts.Formatting)
             {
@@ -1284,7 +1284,7 @@ namespace study_document_manager
             {
                 // Commit edit để lấy giá trị mới của checkbox
                 dgvDocuments.CommitEdit(DataGridViewDataErrorContexts.Commit);
-                
+
                 // Lấy giá trị mới (đã được thay đổi bởi click)
                 var cell = dgvDocuments.Rows[e.RowIndex].Cells["quan_trong"];
                 bool newValue = cell.Value != null && cell.Value != DBNull.Value && Convert.ToBoolean(cell.Value);
@@ -1370,7 +1370,7 @@ namespace study_document_manager
                 if (monHoc == "Tất cả") monHoc = null;
                 string loai = cboType.SelectedItem?.ToString();
                 if (loai == "Tất cả") loai = null;
-                
+
                 DateTime? fromDate = null;
                 DateTime? toDate = null;
                 if (chkEnableDateFilter.Checked)
@@ -1378,7 +1378,7 @@ namespace study_document_manager
                     fromDate = dtpFromDate.Value.Date;
                     toDate = dtpToDate.Value.Date;
                 }
-                
+
                 double? minSize = null;
                 double? maxSize = null;
                 if (chkEnableSizeFilter.Checked)
@@ -1391,23 +1391,23 @@ namespace study_document_manager
                         return;
                     }
                 }
-                
+
                 bool? isImportant = chkImportantOnly.Checked ? (bool?)true : null;
-                
+
                 // Chế độ cá nhân: Không cần filter theo người tạo
                 int? creatorUserId = null;
-                
+
                 lblStatus.Text = "Đang lọc dữ liệu...";
                 Application.DoEvents();
-                
+
                 DataTable dt = DatabaseHelper.SearchDocumentsAdvanced(
                     keyword, monHoc, loai, fromDate, toDate,
                     minSize, maxSize, isImportant, creatorUserId
                 );
-                
+
                 dgvDocuments.DataSource = dt;
                 SetupDataGridView();
-                
+
                 lblCount.Text = $"Tìm thấy: {dt.Rows.Count} tài liệu";
                 lblStatus.Text = "Đã áp dụng filter";
             }
@@ -1433,12 +1433,12 @@ namespace study_document_manager
             nudMinSize.Value = 0;
             nudMaxSize.Value = 100;
             chkImportantOnly.Checked = false;
-            
+
             if (cboCreatorFilter.Visible && cboCreatorFilter.Items.Count > 0)
             {
                 cboCreatorFilter.SelectedIndex = 0;
             }
-            
+
             LoadData();
             lblStatus.Text = "Đã xóa filter";
         }
@@ -1595,7 +1595,7 @@ namespace study_document_manager
                 DataTable dt = DatabaseHelper.GetUpcomingDeadlines(7);
                 dgvDocuments.DataSource = dt;
                 SetupDataGridView();
-                
+
                 lblCount.Text = $"Sắp đến hạn: {dt.Rows.Count} tài liệu";
                 lblStatus.Text = "Đang xem tài liệu sắp đến hạn (7 ngày tới)";
             }
@@ -1615,7 +1615,7 @@ namespace study_document_manager
                 DataTable dt = DatabaseHelper.GetOverdueDocuments();
                 dgvDocuments.DataSource = dt;
                 SetupDataGridView();
-                
+
                 lblCount.Text = $"Quá hạn: {dt.Rows.Count} tài liệu";
                 lblStatus.Text = "Đang xem tài liệu đã quá hạn";
             }
