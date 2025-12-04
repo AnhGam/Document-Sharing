@@ -1,6 +1,6 @@
 <div align="center">
 
-![Study Document Manager](assets/logo/hero-banner.png)
+![Study Document Manager](study-document-manager/assets/logo/hero-banner.png)
 
 # Study Document Manager
 
