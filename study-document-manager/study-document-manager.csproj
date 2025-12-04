@@ -13,6 +13,7 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
     <TargetFrameworkProfile />
+    <ApplicationIcon>assets\logo\logo.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -56,6 +57,7 @@
     <Compile Include="Authentication\AccountSettingsForm.Designer.cs">
       <DependentUpon>AccountSettingsForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Core\EnvLoader.cs" />
     <Compile Include="Documents\AddEditForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -175,6 +177,7 @@
     <EmbeddedResource Include="Management\UserManagementForm.resx">
       <DependentUpon>UserManagementForm.cs</DependentUpon>
     </EmbeddedResource>
+    <None Include=".env" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -188,6 +191,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="assets\logo\logo.ico" />
+    <Content Include="assets\logo\logo.png" />
+    <Content Include="assets\logo\hero-banner.png" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Application\" />

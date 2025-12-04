@@ -5,6 +5,7 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Windows.Forms;
 using System.Xml.Linq;
+using study_document_manager.Core;
 
 namespace study_document_manager
 {
@@ -13,16 +14,24 @@ namespace study_document_manager
     /// </summary>
     public partial class DatabaseHelper
     {
-        // Connection string - đọc từ App.config
-        private static string connection_string = GetConnectionStringFromConfig();
+        // Connection string - ưu tiên đọc từ .env, fallback về App.config
+        private static string connection_string = GetConnectionStringFromEnvOrConfig();
 
         /// <summary>
-        /// Đọc connection string từ App.config
+        /// Đọc connection string từ .env hoặc App.config
         /// </summary>
-        private static string GetConnectionStringFromConfig()
+        private static string GetConnectionStringFromEnvOrConfig()
         {
             try
             {
+                EnvLoader.Load();
+                
+                var envConnectionString = EnvLoader.GetConnectionString();
+                if (!string.IsNullOrEmpty(envConnectionString))
+                {
+                    return envConnectionString;
+                }
+                
                 string configPath = AppDomain.CurrentDomain.SetupInformation.ConfigurationFile;
                 XDocument doc = XDocument.Load(configPath);
                 var connectionString = doc.Descendants("connectionStrings")
@@ -35,7 +44,6 @@ namespace study_document_manager
             }
             catch
             {
-                // Fallback nếu không đọc được
                 return "Server=DESKTOP-H1DIIG3\\SQL2012;Database=quan_ly_tai_lieu;Integrated Security=True;";
             }
         }
