@@ -2,8 +2,6 @@
 
 ![Study Document Manager](study-document-manager/assets/logo/hero-banner.png)
 
-# Study Document Manager
-
 > Ứng dụng quản lý tài liệu cá nhân
 
 [![.NET Framework](https://img.shields.io/badge/.NET%20Framework-4.8-512BD4?logo=.net)](https://dotnet.microsoft.com/)
