@@ -22,39 +22,24 @@ namespace study_document_manager
         private void ApplyTheme()
         {
             this.BackColor = AppTheme.BackgroundMain;
-            
-            // Collection title
-            lblCollectionTitle.ForeColor = AppTheme.Primary;
-            lblCollectionTitle.Font = new Font("Segoe UI", 11F, FontStyle.Bold);
-            
-            // Doc title
-            lblDocTitle.ForeColor = AppTheme.Primary;
-            lblDocTitle.Font = new Font("Segoe UI", 11F, FontStyle.Bold);
-            
+
             // Buttons
             AppTheme.ApplyButtonSuccess(btnNewCollection);
             AppTheme.ApplyButtonDanger(btnDeleteCollection);
             AppTheme.ApplyButtonWarning(btnRemoveFromCollection);
             AppTheme.ApplyButtonPrimary(btnOpenAll);
-            
-            // Close button
-            btnClose.BackColor = AppTheme.BackgroundSoft;
-            btnClose.ForeColor = AppTheme.TextSecondary;
-            btnClose.FlatStyle = FlatStyle.Flat;
-            btnClose.FlatAppearance.BorderSize = 1;
-            btnClose.FlatAppearance.BorderColor = AppTheme.BorderMedium;
-            btnClose.Cursor = Cursors.Hand;
-            
+            AppTheme.ApplyButtonDanger(btnClose);
+
             // Status strip
             statusStrip.BackColor = AppTheme.BackgroundSoft;
-            
+
             // ListView styling
             lstCollections.BackColor = Color.White;
             lstCollections.ForeColor = AppTheme.TextPrimary;
             lstCollections.Font = AppTheme.FontBody;
-            
+
             // Split container panels
-            splitContainer.Panel1.BackColor = AppTheme.BackgroundMain;
+            splitContainer.Panel1.BackColor = Color.White;
             splitContainer.Panel2.BackColor = AppTheme.BackgroundSoft;
         }
 
@@ -62,9 +47,24 @@ namespace study_document_manager
         {
             LoadCollections();
             SetupDocumentsGrid();
-            
+
             // Apply DataGridView theme
             AppTheme.ApplyDataGridViewStyle(dgvDocuments);
+
+            // Auto-resize ListView columns on form resize
+            lstCollections.Resize += (s, ev) => ResizeListViewColumns();
+            ResizeListViewColumns();
+        }
+
+        private void ResizeListViewColumns()
+        {
+            if (lstCollections.Columns.Count >= 2)
+            {
+                int totalWidth = lstCollections.ClientSize.Width;
+                int countWidth = 75;
+                lstCollections.Columns[0].Width = totalWidth - countWidth - 5;
+                lstCollections.Columns[1].Width = countWidth;
+            }
         }
 
         private void LoadCollections()

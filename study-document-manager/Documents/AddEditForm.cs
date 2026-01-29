@@ -3,45 +3,48 @@ using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
 using study_document_manager.UI;
+using study_document_manager.UI.Controls;
 
 namespace study_document_manager
 {
     public partial class AddEditForm : Form
     {
         private int? document_id = null;
-        
+
         public AddEditForm()
         {
             InitializeComponent();
             this.Text = "Thêm tài liệu mới";
             LoadComboBoxData();
             ApplyTheme();
-            
+
             chkHasDeadline.CheckedChanged += ChkHasDeadline_CheckedChanged;
         }
 
         private void ApplyTheme()
         {
             this.BackColor = AppTheme.BackgroundMain;
-            
-            // Style all labels
+            this.Padding = new Padding(AppTheme.Space4);
+
+            // Style all controls
             foreach (Control ctrl in this.Controls)
             {
                 if (ctrl is Label lbl)
                 {
                     lbl.ForeColor = AppTheme.TextPrimary;
                     lbl.Font = AppTheme.FontSmallBold;
+                    lbl.BringToFront(); // Đảm bảo labels không bị che
                 }
                 else if (ctrl is TextBox txt)
                 {
-                    txt.BackColor = Color.White;
+                    txt.BackColor = AppTheme.BackgroundCard;
                     txt.ForeColor = AppTheme.TextPrimary;
                     txt.Font = AppTheme.FontBody;
                     txt.BorderStyle = BorderStyle.FixedSingle;
                 }
                 else if (ctrl is ComboBox cbo)
                 {
-                    cbo.BackColor = Color.White;
+                    cbo.BackColor = AppTheme.BackgroundCard;
                     cbo.ForeColor = AppTheme.TextPrimary;
                     cbo.Font = AppTheme.FontBody;
                     cbo.FlatStyle = FlatStyle.Flat;
@@ -52,44 +55,31 @@ namespace study_document_manager
                     chk.Font = AppTheme.FontSmall;
                 }
             }
-            
-            // Choose file button - Primary
-            btn_chon_file.BackColor = AppTheme.Primary;
-            btn_chon_file.ForeColor = Color.White;
-            btn_chon_file.FlatStyle = FlatStyle.Flat;
-            btn_chon_file.FlatAppearance.BorderSize = 0;
-            btn_chon_file.Font = AppTheme.FontButton;
-            btn_chon_file.Cursor = Cursors.Hand;
-            btn_chon_file.MouseEnter += (s, e) => btn_chon_file.BackColor = AppTheme.PrimaryLight;
-            btn_chon_file.MouseLeave += (s, e) => btn_chon_file.BackColor = AppTheme.Primary;
-            
-            // Save button - Success
-            btn_luu.BackColor = AppTheme.StatusSuccess;
-            btn_luu.ForeColor = Color.White;
-            btn_luu.FlatStyle = FlatStyle.Flat;
-            btn_luu.FlatAppearance.BorderSize = 0;
-            btn_luu.Font = AppTheme.FontButton;
-            btn_luu.Cursor = Cursors.Hand;
-            btn_luu.MouseEnter += (s, e) => btn_luu.BackColor = AppTheme.SecondaryLight;
-            btn_luu.MouseLeave += (s, e) => btn_luu.BackColor = AppTheme.StatusSuccess;
-            
-            // Cancel button - Secondary
-            btn_huy.BackColor = AppTheme.BackgroundSoft;
-            btn_huy.ForeColor = AppTheme.TextSecondary;
-            btn_huy.FlatStyle = FlatStyle.Flat;
-            btn_huy.FlatAppearance.BorderSize = 1;
-            btn_huy.FlatAppearance.BorderColor = AppTheme.BorderMedium;
-            btn_huy.Font = AppTheme.FontButton;
-            btn_huy.Cursor = Cursors.Hand;
-            btn_huy.MouseEnter += (s, e) => btn_huy.BackColor = AppTheme.BorderLight;
-            btn_huy.MouseLeave += (s, e) => btn_huy.BackColor = AppTheme.BackgroundSoft;
-            
+
+            // Choose file button - Primary variant with glow
+            btn_chon_file.Variant = ModernButton.ButtonVariant.Primary;
+            btn_chon_file.BorderRadius = AppTheme.BorderRadius;
+            btn_chon_file.EnableGlow = true;
+
+            // Save button - Success variant
+            btn_luu.Variant = ModernButton.ButtonVariant.Success;
+            btn_luu.BorderRadius = AppTheme.BorderRadius;
+            btn_luu.EnableGlow = true;
+
+            // Cancel button - Secondary variant (subtle)
+            btn_huy.Variant = ModernButton.ButtonVariant.Secondary;
+            btn_huy.BorderRadius = AppTheme.BorderRadius;
+            btn_huy.EnableGlow = false;
+
             // Important checkbox - Amber color
             chk_quan_trong.ForeColor = AppTheme.AccentAmber;
-            chk_quan_trong.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            
+            chk_quan_trong.Font = new Font(AppTheme.FontFamily, 9F, FontStyle.Bold);
+
             // Deadline checkbox
             chkHasDeadline.ForeColor = AppTheme.TextSecondary;
+
+            // DateTimePicker styling
+            dtpDeadline.Font = AppTheme.FontBody;
         }
 
         private void ChkHasDeadline_CheckedChanged(object sender, EventArgs e)

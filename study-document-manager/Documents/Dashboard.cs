@@ -228,6 +228,30 @@ namespace study_document_manager
                     };
                     dgvDocuments.Columns.Insert(0, iconColumn);
                 }
+
+                // Set Vietnamese HeaderText with diacritics
+                SetColumnHeader("ten", "Tên tài liệu");
+                SetColumnHeader("Ten", "Tên tài liệu");
+                SetColumnHeader("mon_hoc", "Danh mục");
+                SetColumnHeader("MonHoc", "Danh mục");
+                SetColumnHeader("loai", "Loại");
+                SetColumnHeader("Loai", "Loại");
+                SetColumnHeader("duong_dan", "Đường dẫn");
+                SetColumnHeader("DuongDan", "Đường dẫn");
+                SetColumnHeader("ghi_chu", "Ghi chú");
+                SetColumnHeader("GhiChu", "Ghi chú");
+                SetColumnHeader("ngay_them", "Ngày thêm");
+                SetColumnHeader("NgayThem", "Ngày thêm");
+                SetColumnHeader("kich_thuoc", "Kích thước (MB)");
+                SetColumnHeader("KichThuoc", "Kích thước (MB)");
+                SetColumnHeader("tac_gia", "Tác giả");
+                SetColumnHeader("TacGia", "Tác giả");
+                SetColumnHeader("quan_trong", "★");
+                SetColumnHeader("QuanTrong", "★");
+                SetColumnHeader("tags", "Tags");
+                SetColumnHeader("Tags", "Tags");
+                SetColumnHeader("deadline", "Hạn chót");
+                SetColumnHeader("Deadline", "Hạn chót");
             }
 
             // Styling
@@ -241,6 +265,14 @@ namespace study_document_manager
             dgvDocuments.RowTemplate.Height = 36;
         }
 
+        private void SetColumnHeader(string columnName, string headerText)
+        {
+            if (dgvDocuments.Columns.Contains(columnName))
+            {
+                dgvDocuments.Columns[columnName].HeaderText = headerText;
+            }
+        }
+
         private void ApplyTheme()
         {
             // Reuse existing theming logic
@@ -251,21 +283,18 @@ namespace study_document_manager
             pnlContent.BackColor = AppTheme.BackgroundSoft;
             statusStrip.BackColor = AppTheme.BackgroundSoft;
 
-            // Button Styles
-            StyleButton(btnSearch, AppTheme.Primary);
-            StyleButton(btnApplyAdvancedFilter, AppTheme.Primary);
-            StyleButton(btnClearAdvancedFilter, AppTheme.BackgroundSoft, AppTheme.TextSecondary, true);
-        }
+            // Apply Modern Button Variants
+            btnSearch.Variant = UI.Controls.ModernButton.ButtonVariant.Primary;
+            btnSearch.BorderRadius = AppTheme.BorderRadius;
+            btnSearch.EnableGlow = true;
 
-        private void StyleButton(Button btn, Color bg, Color? fg = null, bool border = false)
-        {
-            btn.BackColor = bg;
-            btn.ForeColor = fg ?? Color.White;
-            btn.FlatStyle = FlatStyle.Flat;
-            btn.FlatAppearance.BorderSize = border ? 1 : 0;
-            if(border) btn.FlatAppearance.BorderColor = AppTheme.BorderMedium;
-            btn.Font = AppTheme.FontButton;
-            btn.Cursor = Cursors.Hand;
+            btnApplyAdvancedFilter.Variant = UI.Controls.ModernButton.ButtonVariant.Primary;
+            btnApplyAdvancedFilter.BorderRadius = AppTheme.BorderRadius;
+            btnApplyAdvancedFilter.EnableGlow = true;
+
+            btnClearAdvancedFilter.Variant = UI.Controls.ModernButton.ButtonVariant.Secondary;
+            btnClearAdvancedFilter.BorderRadius = AppTheme.BorderRadius;
+            btnClearAdvancedFilter.EnableGlow = false;
         }
 
         private void HideCreatorFilter()

@@ -15,14 +15,14 @@
 *.user
 *.userosscache
 *.sln.docstates
-.github/
 .kiro/
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 nul
 # Mono auto generated files
 mono_crash.*
-
+AGENTS.md
+WORKFLOWS.md
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/

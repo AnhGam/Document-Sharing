@@ -4,6 +4,7 @@ using System.Data.SQLite;
 using System.Drawing;
 using System.Windows.Forms;
 using study_document_manager.UI;
+using study_document_manager.UI.Controls;
 
 namespace study_document_manager
 {
@@ -48,17 +49,10 @@ namespace study_document_manager
             txtNote.Font = AppTheme.FontBody;
             txtNote.BorderStyle = BorderStyle.FixedSingle;
 
-            // Buttons
+            // Buttons - use ModernButton variants
             AppTheme.ApplyButtonSuccess(btnSave);
             AppTheme.ApplyButtonDanger(btnDelete);
-
-            // Cancel button
-            btnCancel.BackColor = AppTheme.BackgroundSoft;
-            btnCancel.ForeColor = AppTheme.TextSecondary;
-            btnCancel.FlatStyle = FlatStyle.Flat;
-            btnCancel.FlatAppearance.BorderSize = 1;
-            btnCancel.FlatAppearance.BorderColor = AppTheme.BorderMedium;
-            btnCancel.Cursor = Cursors.Hand;
+            AppTheme.ApplyButtonSecondary(btnCancel);
         }
 
         private void PersonalNoteForm_Load(object sender, EventArgs e)

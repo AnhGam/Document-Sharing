@@ -20,42 +20,37 @@ namespace study_document_manager
         private void ApplyTheme()
         {
             this.BackColor = AppTheme.BackgroundMain;
-            
-            // Top panel - Teal header
-            pnlTop.BackColor = AppTheme.Primary;
+
+            // Header panel - Teal header
+            headerPanel.BackColor = AppTheme.Primary;
             lblTitle.ForeColor = Color.White;
             lblTitle.Font = new Font("Segoe UI", 14F, FontStyle.Bold);
-            
+
             // Close button
             btnClose.BackColor = Color.FromArgb(239, 68, 68);
             btnClose.ForeColor = Color.White;
             btnClose.FlatStyle = FlatStyle.Flat;
             btnClose.FlatAppearance.BorderSize = 0;
             btnClose.Cursor = Cursors.Hand;
-            
+
             // Tabs panel
             pnlTabs.BackColor = AppTheme.BackgroundMain;
-            pnlTabs.BorderStyle = BorderStyle.None;
-            
+
             // Tab buttons - Active tab style
             AppTheme.ApplyButtonPrimary(btnSubjects);
             AppTheme.ApplyButtonSecondary(btnTypes);
-            
+
             // Buttons panel
             pnlButtons.BackColor = AppTheme.BackgroundMain;
-            pnlButtons.BorderStyle = BorderStyle.None;
-            
+
             // Action buttons
             AppTheme.ApplyButtonSuccess(btnAdd);
             AppTheme.ApplyButtonPrimary(btnEdit);
             AppTheme.ApplyButtonDanger(btnDelete);
-            
-            // Content panel
-            pnlContent.BackColor = AppTheme.BackgroundSoft;
-            
+
             // Labels
             lblCount.ForeColor = AppTheme.Primary;
-            
+
             // Status strip
             statusStrip.BackColor = AppTheme.BackgroundSoft;
             lblStatus.ForeColor = AppTheme.TextSecondary;

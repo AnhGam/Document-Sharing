@@ -102,6 +102,7 @@
             // 
             this.menuStrip.BackColor = System.Drawing.Color.White;
             this.menuStrip.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.menuStrip.GripMargin = new System.Windows.Forms.Padding(2, 2, 0, 2);
             this.menuStrip.ImageScalingSize = new System.Drawing.Size(24, 24);
             this.menuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.menuFile,
@@ -110,7 +111,7 @@
             this.menuHelp});
             this.menuStrip.Location = new System.Drawing.Point(0, 0);
             this.menuStrip.Name = "menuStrip";
-            this.menuStrip.Size = new System.Drawing.Size(1200, 24);
+            this.menuStrip.Size = new System.Drawing.Size(1200, 36);
             this.menuStrip.TabIndex = 0;
             // 
             // menuFile
@@ -123,14 +124,14 @@
             this.menuFileSeparator2,
             this.menuFileExit});
             this.menuFile.Name = "menuFile";
-            this.menuFile.Size = new System.Drawing.Size(56, 20);
+            this.menuFile.Size = new System.Drawing.Size(82, 32);
             this.menuFile.Text = "Tệp tin";
             // 
             // menuFileNew
             // 
             this.menuFileNew.Name = "menuFileNew";
             this.menuFileNew.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.N)));
-            this.menuFileNew.Size = new System.Drawing.Size(210, 22);
+            this.menuFileNew.Size = new System.Drawing.Size(314, 34);
             this.menuFileNew.Text = "Thêm tài liệu mới";
             this.menuFileNew.Click += new System.EventHandler(this.btn_them_Click);
             // 
@@ -138,33 +139,33 @@
             // 
             this.menuFileOpen.Name = "menuFileOpen";
             this.menuFileOpen.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.O)));
-            this.menuFileOpen.Size = new System.Drawing.Size(210, 22);
+            this.menuFileOpen.Size = new System.Drawing.Size(314, 34);
             this.menuFileOpen.Text = "Mở tài liệu";
             this.menuFileOpen.Click += new System.EventHandler(this.btn_mo_file_Click);
             // 
             // menuFileSeparator1
             // 
             this.menuFileSeparator1.Name = "menuFileSeparator1";
-            this.menuFileSeparator1.Size = new System.Drawing.Size(207, 6);
+            this.menuFileSeparator1.Size = new System.Drawing.Size(311, 6);
             // 
             // menuFileExport
             // 
             this.menuFileExport.Name = "menuFileExport";
             this.menuFileExport.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.E)));
-            this.menuFileExport.Size = new System.Drawing.Size(210, 22);
+            this.menuFileExport.Size = new System.Drawing.Size(314, 34);
             this.menuFileExport.Text = "Xuất dữ liệu";
             this.menuFileExport.Click += new System.EventHandler(this.btn_xuat_Click);
             // 
             // menuFileSeparator2
             // 
             this.menuFileSeparator2.Name = "menuFileSeparator2";
-            this.menuFileSeparator2.Size = new System.Drawing.Size(207, 6);
+            this.menuFileSeparator2.Size = new System.Drawing.Size(311, 6);
             // 
             // menuFileExit
             // 
             this.menuFileExit.Name = "menuFileExit";
             this.menuFileExit.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.F4)));
-            this.menuFileExit.Size = new System.Drawing.Size(210, 22);
+            this.menuFileExit.Size = new System.Drawing.Size(314, 34);
             this.menuFileExit.Text = "Thoát";
             this.menuFileExit.Click += new System.EventHandler(this.menuFileExit_Click);
             // 
@@ -176,14 +177,14 @@
             this.menuEditSeparator,
             this.menuEditRefresh});
             this.menuEdit.Name = "menuEdit";
-            this.menuEdit.Size = new System.Drawing.Size(72, 20);
+            this.menuEdit.Size = new System.Drawing.Size(106, 32);
             this.menuEdit.Text = "Chỉnh sửa";
             // 
             // menuEditUpdate
             // 
             this.menuEditUpdate.Name = "menuEditUpdate";
             this.menuEditUpdate.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.U)));
-            this.menuEditUpdate.Size = new System.Drawing.Size(197, 22);
+            this.menuEditUpdate.Size = new System.Drawing.Size(299, 34);
             this.menuEditUpdate.Text = "Sửa tài liệu";
             this.menuEditUpdate.Click += new System.EventHandler(this.btn_sua_Click);
             // 
@@ -191,20 +192,20 @@
             // 
             this.menuEditDelete.Name = "menuEditDelete";
             this.menuEditDelete.ShortcutKeys = System.Windows.Forms.Keys.Delete;
-            this.menuEditDelete.Size = new System.Drawing.Size(197, 22);
+            this.menuEditDelete.Size = new System.Drawing.Size(299, 34);
             this.menuEditDelete.Text = "Xóa tài liệu";
             this.menuEditDelete.Click += new System.EventHandler(this.btn_xoa_Click);
             // 
             // menuEditSeparator
             // 
             this.menuEditSeparator.Name = "menuEditSeparator";
-            this.menuEditSeparator.Size = new System.Drawing.Size(194, 6);
+            this.menuEditSeparator.Size = new System.Drawing.Size(296, 6);
             // 
             // menuEditRefresh
             // 
             this.menuEditRefresh.Name = "menuEditRefresh";
             this.menuEditRefresh.ShortcutKeys = System.Windows.Forms.Keys.F5;
-            this.menuEditRefresh.Size = new System.Drawing.Size(197, 22);
+            this.menuEditRefresh.Size = new System.Drawing.Size(299, 34);
             this.menuEditRefresh.Text = "Làm mới danh sách";
             this.menuEditRefresh.Click += new System.EventHandler(this.btn_lam_moi_Click);
             // 
@@ -215,7 +216,7 @@
             this.menuViewSeparator,
             this.menuViewCategories});
             this.menuView.Name = "menuView";
-            this.menuView.Size = new System.Drawing.Size(64, 20);
+            this.menuView.Size = new System.Drawing.Size(94, 32);
             this.menuView.Text = "Công cụ";
             this.menuView.Click += new System.EventHandler(this.menuView_Click);
             // 
@@ -223,20 +224,20 @@
             // 
             this.menuViewStatistics.Name = "menuViewStatistics";
             this.menuViewStatistics.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S)));
-            this.menuViewStatistics.Size = new System.Drawing.Size(218, 22);
+            this.menuViewStatistics.Size = new System.Drawing.Size(328, 34);
             this.menuViewStatistics.Text = "Thống kê";
             this.menuViewStatistics.Click += new System.EventHandler(this.btn_thong_ke_Click);
             // 
             // menuViewSeparator
             // 
             this.menuViewSeparator.Name = "menuViewSeparator";
-            this.menuViewSeparator.Size = new System.Drawing.Size(215, 6);
+            this.menuViewSeparator.Size = new System.Drawing.Size(325, 6);
             // 
             // menuViewCategories
             // 
             this.menuViewCategories.Name = "menuViewCategories";
             this.menuViewCategories.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.M)));
-            this.menuViewCategories.Size = new System.Drawing.Size(218, 22);
+            this.menuViewCategories.Size = new System.Drawing.Size(328, 34);
             this.menuViewCategories.Text = "Quản lý Danh mục";
             this.menuViewCategories.Click += new System.EventHandler(this.menuViewCategories_Click);
             // 
@@ -245,13 +246,13 @@
             this.menuHelp.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.menuHelpAbout});
             this.menuHelp.Name = "menuHelp";
-            this.menuHelp.Size = new System.Drawing.Size(63, 20);
+            this.menuHelp.Size = new System.Drawing.Size(93, 32);
             this.menuHelp.Text = "Trợ giúp";
             // 
             // menuHelpAbout
             // 
             this.menuHelpAbout.Name = "menuHelpAbout";
-            this.menuHelpAbout.Size = new System.Drawing.Size(125, 22);
+            this.menuHelpAbout.Size = new System.Drawing.Size(189, 34);
             this.menuHelpAbout.Text = "Giới thiệu";
             this.menuHelpAbout.Click += new System.EventHandler(this.menuHelpAbout_Click);
             // 
@@ -269,68 +270,71 @@
             this.toolBtnExport,
             this.toolSeparator2,
             this.toolBtnRefresh});
-            this.toolStrip.Location = new System.Drawing.Point(0, 24);
+            this.toolStrip.Location = new System.Drawing.Point(0, 36);
             this.toolStrip.Name = "toolStrip";
             this.toolStrip.Padding = new System.Windows.Forms.Padding(8, 4, 1, 4);
-            this.toolStrip.Size = new System.Drawing.Size(1200, 31);
+            this.toolStrip.Size = new System.Drawing.Size(1200, 42);
             this.toolStrip.TabIndex = 1;
             // 
             // toolBtnNew
             // 
             this.toolBtnNew.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
             this.toolBtnNew.Name = "toolBtnNew";
-            this.toolBtnNew.Size = new System.Drawing.Size(43, 20);
+            this.toolBtnNew.Size = new System.Drawing.Size(64, 29);
             this.toolBtnNew.Text = "Thêm";
             this.toolBtnNew.Click += new System.EventHandler(this.btn_them_Click);
             // 
             // toolBtnEdit
             // 
             this.toolBtnEdit.Name = "toolBtnEdit";
-            this.toolBtnEdit.Size = new System.Drawing.Size(30, 20);
+            this.toolBtnEdit.Size = new System.Drawing.Size(46, 29);
             this.toolBtnEdit.Text = "Sửa";
             this.toolBtnEdit.Click += new System.EventHandler(this.btn_sua_Click);
             // 
             // toolBtnDelete
             // 
             this.toolBtnDelete.Name = "toolBtnDelete";
-            this.toolBtnDelete.Size = new System.Drawing.Size(31, 20);
+            this.toolBtnDelete.Size = new System.Drawing.Size(47, 29);
             this.toolBtnDelete.Text = "Xóa";
             this.toolBtnDelete.Click += new System.EventHandler(this.btn_xoa_Click);
             // 
             // toolSeparator1
             // 
             this.toolSeparator1.Name = "toolSeparator1";
-            this.toolSeparator1.Size = new System.Drawing.Size(6, 23);
+            this.toolSeparator1.Size = new System.Drawing.Size(6, 34);
             // 
             // toolBtnOpen
             // 
             this.toolBtnOpen.Name = "toolBtnOpen";
-            this.toolBtnOpen.Size = new System.Drawing.Size(48, 20);
+            this.toolBtnOpen.Size = new System.Drawing.Size(71, 29);
             this.toolBtnOpen.Text = "Mở file";
             this.toolBtnOpen.Click += new System.EventHandler(this.btn_mo_file_Click);
             // 
             // toolBtnExport
             // 
             this.toolBtnExport.Name = "toolBtnExport";
-            this.toolBtnExport.Size = new System.Drawing.Size(35, 20);
+            this.toolBtnExport.Size = new System.Drawing.Size(52, 29);
             this.toolBtnExport.Text = "Xuất";
             this.toolBtnExport.Click += new System.EventHandler(this.btn_xuat_Click);
             // 
             // toolSeparator2
             // 
             this.toolSeparator2.Name = "toolSeparator2";
-            this.toolSeparator2.Size = new System.Drawing.Size(6, 23);
+            this.toolSeparator2.Size = new System.Drawing.Size(6, 34);
             // 
             // toolBtnRefresh
             // 
             this.toolBtnRefresh.Name = "toolBtnRefresh";
-            this.toolBtnRefresh.Size = new System.Drawing.Size(58, 20);
+            this.toolBtnRefresh.Size = new System.Drawing.Size(85, 29);
             this.toolBtnRefresh.Text = "Làm mới";
             this.toolBtnRefresh.Click += new System.EventHandler(this.btn_lam_moi_Click);
             // 
             // pnlSearch
             // 
             this.pnlSearch.BackColor = System.Drawing.Color.White;
+            this.pnlSearch.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(226)))), ((int)(((byte)(232)))), ((int)(((byte)(240)))));
+            this.pnlSearch.BorderRadius = 0;
+            this.pnlSearch.BorderSize = 1;
             this.pnlSearch.Controls.Add(this.lblSearch);
             this.pnlSearch.Controls.Add(this.txtSearch);
             this.pnlSearch.Controls.Add(this.btnSearch);
@@ -339,11 +343,20 @@
             this.pnlSearch.Controls.Add(this.lblType);
             this.pnlSearch.Controls.Add(this.cboType);
             this.pnlSearch.Dock = System.Windows.Forms.DockStyle.Top;
-            this.pnlSearch.Location = new System.Drawing.Point(0, 55);
+            this.pnlSearch.Elevation = study_document_manager.UI.Controls.ModernPanel.ElevationLevel.None;
+            this.pnlSearch.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(23)))), ((int)(((byte)(42)))));
+            this.pnlSearch.GradientAngle = 90F;
+            this.pnlSearch.GradientBottomColor = System.Drawing.Color.WhiteSmoke;
+            this.pnlSearch.GradientTopColor = System.Drawing.Color.White;
+            this.pnlSearch.HoverEffect = false;
+            this.pnlSearch.Location = new System.Drawing.Point(0, 78);
             this.pnlSearch.Name = "pnlSearch";
             this.pnlSearch.Padding = new System.Windows.Forms.Padding(12, 8, 12, 8);
+            this.pnlSearch.ShowBorder = false;
+            this.pnlSearch.ShowShadow = false;
             this.pnlSearch.Size = new System.Drawing.Size(1200, 56);
             this.pnlSearch.TabIndex = 2;
+            this.pnlSearch.UseGradient = false;
             // 
             // lblSearch
             // 
@@ -351,7 +364,7 @@
             this.lblSearch.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.lblSearch.Location = new System.Drawing.Point(12, 19);
             this.lblSearch.Name = "lblSearch";
-            this.lblSearch.Size = new System.Drawing.Size(60, 15);
+            this.lblSearch.Size = new System.Drawing.Size(88, 25);
             this.lblSearch.TabIndex = 0;
             this.lblSearch.Text = "Tìm kiếm:";
             // 
@@ -360,21 +373,25 @@
             this.txtSearch.Font = new System.Drawing.Font("Segoe UI", 9.75F);
             this.txtSearch.Location = new System.Drawing.Point(80, 15);
             this.txtSearch.Name = "txtSearch";
-            this.txtSearch.Size = new System.Drawing.Size(380, 25);
+            this.txtSearch.Size = new System.Drawing.Size(380, 33);
             this.txtSearch.TabIndex = 1;
             this.txtSearch.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.txt_tim_kiem_KeyPress);
-            //
+            // 
             // btnSearch
-            //
+            // 
             this.btnSearch.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(33)))), ((int)(((byte)(150)))), ((int)(((byte)(243)))));
             this.btnSearch.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(33)))), ((int)(((byte)(150)))), ((int)(((byte)(243)))));
             this.btnSearch.BorderColor = System.Drawing.Color.PaleVioletRed;
             this.btnSearch.BorderRadius = 15;
             this.btnSearch.BorderSize = 0;
+            this.btnSearch.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnSearch.EnableAnimation = true;
+            this.btnSearch.EnableGlow = true;
             this.btnSearch.FlatAppearance.BorderSize = 0;
             this.btnSearch.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnSearch.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
             this.btnSearch.ForeColor = System.Drawing.Color.White;
+            this.btnSearch.IsLoading = false;
             this.btnSearch.Location = new System.Drawing.Point(470, 14);
             this.btnSearch.Name = "btnSearch";
             this.btnSearch.Size = new System.Drawing.Size(100, 27);
@@ -382,6 +399,7 @@
             this.btnSearch.Text = "Tìm kiếm";
             this.btnSearch.TextColor = System.Drawing.Color.White;
             this.btnSearch.UseVisualStyleBackColor = false;
+            this.btnSearch.Variant = study_document_manager.UI.Controls.ModernButton.ButtonVariant.Primary;
             this.btnSearch.Click += new System.EventHandler(this.btnSearch_Click);
             // 
             // lblSubject
@@ -390,7 +408,7 @@
             this.lblSubject.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.lblSubject.Location = new System.Drawing.Point(583, 19);
             this.lblSubject.Name = "lblSubject";
-            this.lblSubject.Size = new System.Drawing.Size(65, 15);
+            this.lblSubject.Size = new System.Drawing.Size(97, 25);
             this.lblSubject.TabIndex = 3;
             this.lblSubject.Text = "Danh mục:";
             // 
@@ -401,7 +419,7 @@
             this.cboSubject.FormattingEnabled = true;
             this.cboSubject.Location = new System.Drawing.Point(654, 16);
             this.cboSubject.Name = "cboSubject";
-            this.cboSubject.Size = new System.Drawing.Size(200, 23);
+            this.cboSubject.Size = new System.Drawing.Size(200, 33);
             this.cboSubject.TabIndex = 4;
             this.cboSubject.SelectedIndexChanged += new System.EventHandler(this.cbo_mon_hoc_SelectedIndexChanged);
             // 
@@ -411,7 +429,7 @@
             this.lblType.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.lblType.Location = new System.Drawing.Point(874, 19);
             this.lblType.Name = "lblType";
-            this.lblType.Size = new System.Drawing.Size(32, 15);
+            this.lblType.Size = new System.Drawing.Size(48, 25);
             this.lblType.TabIndex = 5;
             this.lblType.Text = "Loại:";
             // 
@@ -422,20 +440,32 @@
             this.cboType.FormattingEnabled = true;
             this.cboType.Location = new System.Drawing.Point(913, 16);
             this.cboType.Name = "cboType";
-            this.cboType.Size = new System.Drawing.Size(200, 23);
+            this.cboType.Size = new System.Drawing.Size(200, 33);
             this.cboType.TabIndex = 6;
             this.cboType.SelectedIndexChanged += new System.EventHandler(this.cbo_loai_SelectedIndexChanged);
             // 
             // pnlContent
             // 
             this.pnlContent.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(245)))), ((int)(((byte)(245)))));
+            this.pnlContent.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(226)))), ((int)(((byte)(232)))), ((int)(((byte)(240)))));
+            this.pnlContent.BorderRadius = 0;
+            this.pnlContent.BorderSize = 1;
             this.pnlContent.Controls.Add(this.dgvDocuments);
             this.pnlContent.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.pnlContent.Location = new System.Drawing.Point(0, 276);
+            this.pnlContent.Elevation = study_document_manager.UI.Controls.ModernPanel.ElevationLevel.None;
+            this.pnlContent.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(15)))), ((int)(((byte)(23)))), ((int)(((byte)(42)))));
+            this.pnlContent.GradientAngle = 90F;
+            this.pnlContent.GradientBottomColor = System.Drawing.Color.WhiteSmoke;
+            this.pnlContent.GradientTopColor = System.Drawing.Color.White;
+            this.pnlContent.HoverEffect = false;
+            this.pnlContent.Location = new System.Drawing.Point(0, 299);
             this.pnlContent.Name = "pnlContent";
             this.pnlContent.Padding = new System.Windows.Forms.Padding(12, 8, 12, 8);
-            this.pnlContent.Size = new System.Drawing.Size(1200, 396);
+            this.pnlContent.ShowBorder = false;
+            this.pnlContent.ShowShadow = false;
+            this.pnlContent.Size = new System.Drawing.Size(1200, 373);
             this.pnlContent.TabIndex = 3;
+            this.pnlContent.UseGradient = false;
             // 
             // dgvDocuments
             // 
@@ -453,7 +483,7 @@
             this.dgvDocuments.ReadOnly = true;
             this.dgvDocuments.RowHeadersWidth = 25;
             this.dgvDocuments.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this.dgvDocuments.Size = new System.Drawing.Size(1176, 380);
+            this.dgvDocuments.Size = new System.Drawing.Size(1176, 357);
             this.dgvDocuments.TabIndex = 0;
             this.dgvDocuments.CellDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgv_tai_lieu_CellDoubleClick);
             // 
@@ -470,57 +500,57 @@
             this.ctxMenuSeparator2,
             this.ctxMenuToggleImportant});
             this.contextMenuDocument.Name = "contextMenuDocument";
-            this.contextMenuDocument.Size = new System.Drawing.Size(189, 148);
+            this.contextMenuDocument.Size = new System.Drawing.Size(256, 208);
             // 
             // ctxMenuOpen
             // 
             this.ctxMenuOpen.Name = "ctxMenuOpen";
-            this.ctxMenuOpen.Size = new System.Drawing.Size(188, 22);
+            this.ctxMenuOpen.Size = new System.Drawing.Size(255, 32);
             this.ctxMenuOpen.Text = "Mở file";
             this.ctxMenuOpen.Click += new System.EventHandler(this.ctxMenuOpen_Click);
             // 
             // ctxMenuEdit
             // 
             this.ctxMenuEdit.Name = "ctxMenuEdit";
-            this.ctxMenuEdit.Size = new System.Drawing.Size(188, 22);
+            this.ctxMenuEdit.Size = new System.Drawing.Size(255, 32);
             this.ctxMenuEdit.Text = "Sửa";
             this.ctxMenuEdit.Click += new System.EventHandler(this.ctxMenuEdit_Click);
             // 
             // ctxMenuDelete
             // 
             this.ctxMenuDelete.Name = "ctxMenuDelete";
-            this.ctxMenuDelete.Size = new System.Drawing.Size(188, 22);
+            this.ctxMenuDelete.Size = new System.Drawing.Size(255, 32);
             this.ctxMenuDelete.Text = "Xóa";
             this.ctxMenuDelete.Click += new System.EventHandler(this.ctxMenuDelete_Click);
             // 
             // ctxMenuSeparator1
             // 
             this.ctxMenuSeparator1.Name = "ctxMenuSeparator1";
-            this.ctxMenuSeparator1.Size = new System.Drawing.Size(185, 6);
+            this.ctxMenuSeparator1.Size = new System.Drawing.Size(252, 6);
             // 
             // ctxMenuCopyPath
             // 
             this.ctxMenuCopyPath.Name = "ctxMenuCopyPath";
-            this.ctxMenuCopyPath.Size = new System.Drawing.Size(188, 22);
+            this.ctxMenuCopyPath.Size = new System.Drawing.Size(255, 32);
             this.ctxMenuCopyPath.Text = "Copy đường dẫn file";
             this.ctxMenuCopyPath.Click += new System.EventHandler(this.ctxMenuCopyPath_Click);
             // 
             // ctxMenuOpenFolder
             // 
             this.ctxMenuOpenFolder.Name = "ctxMenuOpenFolder";
-            this.ctxMenuOpenFolder.Size = new System.Drawing.Size(188, 22);
+            this.ctxMenuOpenFolder.Size = new System.Drawing.Size(255, 32);
             this.ctxMenuOpenFolder.Text = "Mở thư mục chứa file";
             this.ctxMenuOpenFolder.Click += new System.EventHandler(this.ctxMenuOpenFolder_Click);
             // 
             // ctxMenuSeparator2
             // 
             this.ctxMenuSeparator2.Name = "ctxMenuSeparator2";
-            this.ctxMenuSeparator2.Size = new System.Drawing.Size(185, 6);
+            this.ctxMenuSeparator2.Size = new System.Drawing.Size(252, 6);
             // 
             // ctxMenuToggleImportant
             // 
             this.ctxMenuToggleImportant.Name = "ctxMenuToggleImportant";
-            this.ctxMenuToggleImportant.Size = new System.Drawing.Size(188, 22);
+            this.ctxMenuToggleImportant.Size = new System.Drawing.Size(255, 32);
             this.ctxMenuToggleImportant.Text = "Đánh dấu quan trọng";
             this.ctxMenuToggleImportant.Click += new System.EventHandler(this.ctxMenuToggleImportant_Click);
             // 
@@ -531,21 +561,21 @@
             this.statusStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.lblStatus,
             this.lblCount});
-            this.statusStrip.Location = new System.Drawing.Point(0, 650);
+            this.statusStrip.Location = new System.Drawing.Point(0, 640);
             this.statusStrip.Name = "statusStrip";
-            this.statusStrip.Size = new System.Drawing.Size(1200, 22);
+            this.statusStrip.Size = new System.Drawing.Size(1200, 32);
             this.statusStrip.TabIndex = 4;
             // 
             // lblStatus
             // 
             this.lblStatus.Name = "lblStatus";
-            this.lblStatus.Size = new System.Drawing.Size(54, 17);
+            this.lblStatus.Size = new System.Drawing.Size(84, 25);
             this.lblStatus.Text = "Sẵn sàng";
             // 
             // lblCount
             // 
             this.lblCount.Name = "lblCount";
-            this.lblCount.Size = new System.Drawing.Size(1131, 17);
+            this.lblCount.Size = new System.Drawing.Size(1101, 25);
             this.lblCount.Spring = true;
             this.lblCount.Text = "Tổng số: 0 tài liệu";
             this.lblCount.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
@@ -571,24 +601,29 @@
             this.grpAdvancedFilter.Controls.Add(this.chkEnableDateFilter);
             this.grpAdvancedFilter.Dock = System.Windows.Forms.DockStyle.Top;
             this.grpAdvancedFilter.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.grpAdvancedFilter.Location = new System.Drawing.Point(0, 111);
+            this.grpAdvancedFilter.Location = new System.Drawing.Point(0, 134);
             this.grpAdvancedFilter.Name = "grpAdvancedFilter";
             this.grpAdvancedFilter.Padding = new System.Windows.Forms.Padding(12, 8, 12, 8);
             this.grpAdvancedFilter.Size = new System.Drawing.Size(1200, 165);
             this.grpAdvancedFilter.TabIndex = 100;
             this.grpAdvancedFilter.TabStop = false;
             this.grpAdvancedFilter.Text = "Filter Nâng Cao";
-            //
+            // 
             // btnClearAdvancedFilter
-            //
+            // 
             this.btnClearAdvancedFilter.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(158)))), ((int)(((byte)(158)))), ((int)(((byte)(158)))));
             this.btnClearAdvancedFilter.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(158)))), ((int)(((byte)(158)))), ((int)(((byte)(158)))));
             this.btnClearAdvancedFilter.BorderColor = System.Drawing.Color.PaleVioletRed;
             this.btnClearAdvancedFilter.BorderRadius = 15;
             this.btnClearAdvancedFilter.BorderSize = 0;
+            this.btnClearAdvancedFilter.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnClearAdvancedFilter.EnableAnimation = true;
+            this.btnClearAdvancedFilter.EnableGlow = true;
             this.btnClearAdvancedFilter.FlatAppearance.BorderSize = 0;
             this.btnClearAdvancedFilter.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnClearAdvancedFilter.Font = new System.Drawing.Font("Segoe UI Semibold", 10F);
             this.btnClearAdvancedFilter.ForeColor = System.Drawing.Color.White;
+            this.btnClearAdvancedFilter.IsLoading = false;
             this.btnClearAdvancedFilter.Location = new System.Drawing.Point(580, 70);
             this.btnClearAdvancedFilter.Name = "btnClearAdvancedFilter";
             this.btnClearAdvancedFilter.Size = new System.Drawing.Size(180, 35);
@@ -596,19 +631,24 @@
             this.btnClearAdvancedFilter.Text = "Xóa Filter";
             this.btnClearAdvancedFilter.TextColor = System.Drawing.Color.White;
             this.btnClearAdvancedFilter.UseVisualStyleBackColor = false;
+            this.btnClearAdvancedFilter.Variant = study_document_manager.UI.Controls.ModernButton.ButtonVariant.Primary;
             this.btnClearAdvancedFilter.Click += new System.EventHandler(this.btnClearAdvancedFilter_Click);
-            //
+            // 
             // btnApplyAdvancedFilter
-            //
+            // 
             this.btnApplyAdvancedFilter.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(33)))), ((int)(((byte)(150)))), ((int)(((byte)(243)))));
             this.btnApplyAdvancedFilter.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(33)))), ((int)(((byte)(150)))), ((int)(((byte)(243)))));
             this.btnApplyAdvancedFilter.BorderColor = System.Drawing.Color.PaleVioletRed;
             this.btnApplyAdvancedFilter.BorderRadius = 15;
             this.btnApplyAdvancedFilter.BorderSize = 0;
+            this.btnApplyAdvancedFilter.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnApplyAdvancedFilter.EnableAnimation = true;
+            this.btnApplyAdvancedFilter.EnableGlow = true;
             this.btnApplyAdvancedFilter.FlatAppearance.BorderSize = 0;
             this.btnApplyAdvancedFilter.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnApplyAdvancedFilter.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold);
             this.btnApplyAdvancedFilter.ForeColor = System.Drawing.Color.White;
+            this.btnApplyAdvancedFilter.IsLoading = false;
             this.btnApplyAdvancedFilter.Location = new System.Drawing.Point(580, 25);
             this.btnApplyAdvancedFilter.Name = "btnApplyAdvancedFilter";
             this.btnApplyAdvancedFilter.Size = new System.Drawing.Size(180, 35);
@@ -616,6 +656,7 @@
             this.btnApplyAdvancedFilter.Text = "Áp dụng Filter";
             this.btnApplyAdvancedFilter.TextColor = System.Drawing.Color.White;
             this.btnApplyAdvancedFilter.UseVisualStyleBackColor = false;
+            this.btnApplyAdvancedFilter.Variant = study_document_manager.UI.Controls.ModernButton.ButtonVariant.Primary;
             this.btnApplyAdvancedFilter.Click += new System.EventHandler(this.btnApplyAdvancedFilter_Click);
             // 
             // cboCreatorFilter
@@ -624,7 +665,7 @@
             this.cboCreatorFilter.FormattingEnabled = true;
             this.cboCreatorFilter.Location = new System.Drawing.Point(360, 95);
             this.cboCreatorFilter.Name = "cboCreatorFilter";
-            this.cboCreatorFilter.Size = new System.Drawing.Size(200, 23);
+            this.cboCreatorFilter.Size = new System.Drawing.Size(200, 33);
             this.cboCreatorFilter.TabIndex = 13;
             this.cboCreatorFilter.Visible = false;
             // 
@@ -633,7 +674,7 @@
             this.lblCreatorFilter.AutoSize = true;
             this.lblCreatorFilter.Location = new System.Drawing.Point(280, 98);
             this.lblCreatorFilter.Name = "lblCreatorFilter";
-            this.lblCreatorFilter.Size = new System.Drawing.Size(63, 15);
+            this.lblCreatorFilter.Size = new System.Drawing.Size(97, 25);
             this.lblCreatorFilter.TabIndex = 12;
             this.lblCreatorFilter.Text = "Người tạo:";
             this.lblCreatorFilter.Visible = false;
@@ -643,7 +684,7 @@
             this.chkImportantOnly.AutoSize = true;
             this.chkImportantOnly.Location = new System.Drawing.Point(15, 95);
             this.chkImportantOnly.Name = "chkImportantOnly";
-            this.chkImportantOnly.Size = new System.Drawing.Size(208, 19);
+            this.chkImportantOnly.Size = new System.Drawing.Size(306, 29);
             this.chkImportantOnly.TabIndex = 11;
             this.chkImportantOnly.Text = "Chỉ hiển thị tài liệu quan trọng (★)";
             this.chkImportantOnly.UseVisualStyleBackColor = true;
@@ -653,7 +694,7 @@
             this.lblSizeMB.AutoSize = true;
             this.lblSizeMB.Location = new System.Drawing.Point(335, 63);
             this.lblSizeMB.Name = "lblSizeMB";
-            this.lblSizeMB.Size = new System.Drawing.Size(25, 15);
+            this.lblSizeMB.Size = new System.Drawing.Size(38, 25);
             this.lblSizeMB.TabIndex = 10;
             this.lblSizeMB.Text = "MB";
             // 
@@ -668,7 +709,7 @@
             0,
             0});
             this.nudMaxSize.Name = "nudMaxSize";
-            this.nudMaxSize.Size = new System.Drawing.Size(80, 23);
+            this.nudMaxSize.Size = new System.Drawing.Size(80, 31);
             this.nudMaxSize.TabIndex = 9;
             this.nudMaxSize.Value = new decimal(new int[] {
             100,
@@ -681,7 +722,7 @@
             this.lblSizeTo.AutoSize = true;
             this.lblSizeTo.Location = new System.Drawing.Point(205, 63);
             this.lblSizeTo.Name = "lblSizeTo";
-            this.lblSizeTo.Size = new System.Drawing.Size(38, 15);
+            this.lblSizeTo.Size = new System.Drawing.Size(59, 25);
             this.lblSizeTo.TabIndex = 8;
             this.lblSizeTo.Text = "MB →";
             // 
@@ -696,7 +737,7 @@
             0,
             0});
             this.nudMinSize.Name = "nudMinSize";
-            this.nudMinSize.Size = new System.Drawing.Size(80, 23);
+            this.nudMinSize.Size = new System.Drawing.Size(80, 31);
             this.nudMinSize.TabIndex = 7;
             // 
             // lblSizeFilter
@@ -704,7 +745,7 @@
             this.lblSizeFilter.AutoSize = true;
             this.lblSizeFilter.Location = new System.Drawing.Point(40, 63);
             this.lblSizeFilter.Name = "lblSizeFilter";
-            this.lblSizeFilter.Size = new System.Drawing.Size(73, 15);
+            this.lblSizeFilter.Size = new System.Drawing.Size(112, 25);
             this.lblSizeFilter.TabIndex = 6;
             this.lblSizeFilter.Text = "Dung lượng:";
             // 
@@ -713,7 +754,7 @@
             this.chkEnableSizeFilter.AutoSize = true;
             this.chkEnableSizeFilter.Location = new System.Drawing.Point(15, 60);
             this.chkEnableSizeFilter.Name = "chkEnableSizeFilter";
-            this.chkEnableSizeFilter.Size = new System.Drawing.Size(15, 14);
+            this.chkEnableSizeFilter.Size = new System.Drawing.Size(22, 21);
             this.chkEnableSizeFilter.TabIndex = 5;
             this.chkEnableSizeFilter.UseVisualStyleBackColor = true;
             this.chkEnableSizeFilter.CheckedChanged += new System.EventHandler(this.chkEnableSizeFilter_CheckedChanged);
@@ -724,7 +765,7 @@
             this.dtpToDate.Format = System.Windows.Forms.DateTimePickerFormat.Short;
             this.dtpToDate.Location = new System.Drawing.Point(280, 25);
             this.dtpToDate.Name = "dtpToDate";
-            this.dtpToDate.Size = new System.Drawing.Size(120, 23);
+            this.dtpToDate.Size = new System.Drawing.Size(120, 31);
             this.dtpToDate.TabIndex = 4;
             // 
             // lblDateTo
@@ -732,7 +773,7 @@
             this.lblDateTo.AutoSize = true;
             this.lblDateTo.Location = new System.Drawing.Point(230, 28);
             this.lblDateTo.Name = "lblDateTo";
-            this.lblDateTo.Size = new System.Drawing.Size(44, 15);
+            this.lblDateTo.Size = new System.Drawing.Size(69, 25);
             this.lblDateTo.TabIndex = 3;
             this.lblDateTo.Text = "→ Đến:";
             // 
@@ -742,7 +783,7 @@
             this.dtpFromDate.Format = System.Windows.Forms.DateTimePickerFormat.Short;
             this.dtpFromDate.Location = new System.Drawing.Point(100, 25);
             this.dtpFromDate.Name = "dtpFromDate";
-            this.dtpFromDate.Size = new System.Drawing.Size(120, 23);
+            this.dtpFromDate.Size = new System.Drawing.Size(120, 31);
             this.dtpFromDate.TabIndex = 2;
             // 
             // lblDateFilter
@@ -750,7 +791,7 @@
             this.lblDateFilter.AutoSize = true;
             this.lblDateFilter.Location = new System.Drawing.Point(40, 28);
             this.lblDateFilter.Name = "lblDateFilter";
-            this.lblDateFilter.Size = new System.Drawing.Size(53, 15);
+            this.lblDateFilter.Size = new System.Drawing.Size(80, 25);
             this.lblDateFilter.TabIndex = 1;
             this.lblDateFilter.Text = "Từ ngày:";
             // 
@@ -759,14 +800,14 @@
             this.chkEnableDateFilter.AutoSize = true;
             this.chkEnableDateFilter.Location = new System.Drawing.Point(15, 25);
             this.chkEnableDateFilter.Name = "chkEnableDateFilter";
-            this.chkEnableDateFilter.Size = new System.Drawing.Size(15, 14);
+            this.chkEnableDateFilter.Size = new System.Drawing.Size(22, 21);
             this.chkEnableDateFilter.TabIndex = 0;
             this.chkEnableDateFilter.UseVisualStyleBackColor = true;
             this.chkEnableDateFilter.CheckedChanged += new System.EventHandler(this.chkEnableDateFilter_CheckedChanged);
             // 
-            // Form1
+            // Dashboard
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1200, 672);
             this.Controls.Add(this.statusStrip);
@@ -779,7 +820,7 @@
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MainMenuStrip = this.menuStrip;
             this.MinimumSize = new System.Drawing.Size(1000, 600);
-            this.Name = "Form1";
+            this.Name = "Dashboard";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Study Document Manager";
             this.Load += new System.EventHandler(this.Form1_Load);

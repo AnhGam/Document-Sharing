@@ -15,71 +15,105 @@ namespace study_document_manager
         Info
     }
 
+    /// <summary>
+    /// Modern Toast Notification with AppTheme Integration
+    /// Design: Teal Primary Theme, Glassmorphism, Progress Indicator
+    /// </summary>
     public class ToastNotification : Form
     {
-        // Quản lý danh sách các Toast đang hiển thị
+        #region Static Management
         private static readonly List<ToastNotification> ActiveToasts = new List<ToastNotification>();
         private static readonly object LockObject = new object();
         private static Form _parentForm;
+        #endregion
 
+        #region Instance Fields
         private readonly Timer _closeTimer;
         private readonly Timer _fadeTimer;
+        private readonly Timer _progressTimer;
         private readonly ToastType _toastType;
         private readonly string _message;
+        private readonly int _totalDuration;
+        private int _elapsedMs;
+        private bool _isHovered;
+        private bool _isClosing;
+        private readonly float _dpiScale;
+        #endregion
 
-        // Kích thước và cấu hình giao diện
-        private const int ToastWidth = 380;
-        private const int ToastHeight = 68;
-        private const int ToastMargin = 16;
-        private const int AnimationInterval = 10;
-        private const double FadeStep = 0.06; // Fade mượt hơn
-        private const int BorderRadius = 12;
+        #region Design Constants - Base Values (at 96 DPI)
+        private const int BaseToastWidth = 400;
+        private const int BaseToastHeight = 80;
+        private const int BaseToastMargin = 16;
+        private const int BaseProgressHeight = 4;
+        private const int AnimationInterval = 16; // ~60fps
+        private const double FadeStep = 0.12;
 
-        // Palette màu "Clean & Bright" (Lấy cảm hứng từ Modern Dashboard UI)
-        // Background
-        private static readonly Color BgColor = Color.FromArgb(255, 255, 255); // Trắng tinh khôi
+        // Instance-based scaled values (cached DPI)
+        private int ToastWidthScaled => (int)(BaseToastWidth * _dpiScale);
+        private int ToastHeightScaled => (int)(BaseToastHeight * _dpiScale);
+        private int ToastMarginScaled => (int)(BaseToastMargin * _dpiScale);
+        private int BorderRadiusScaled => (int)(AppTheme.BorderRadius * _dpiScale);
+        private int ProgressHeightScaled => (int)(BaseProgressHeight * _dpiScale);
 
-        // Text Colors
-        private static readonly Color TextPrimary = Color.FromArgb(30, 41, 59);   // Slate-800
-        private static readonly Color TextSecondary = Color.FromArgb(100, 116, 139); // Slate-500
+        // Static values for positioning
+        private static float _cachedDpiScale = 0;
+        private static float CachedDpiScale
+        {
+            get
+            {
+                if (_cachedDpiScale == 0)
+                {
+                    using (var g = Graphics.FromHwnd(IntPtr.Zero))
+                    {
+                        _cachedDpiScale = g.DpiX / 96f;
+                    }
+                }
+                return _cachedDpiScale;
+            }
+        }
+        private static int ToastWidth => (int)(BaseToastWidth * CachedDpiScale);
+        private static int ToastHeight => (int)(BaseToastHeight * CachedDpiScale);
+        private static int ToastMargin => (int)(BaseToastMargin * CachedDpiScale);
+        #endregion
 
-        // Accent Colors (Màu tươi, hiện đại)
-        // Success: Emerald-500
-        private static readonly Color AccSuccess = Color.FromArgb(16, 185, 129);
-        private static readonly Color BgSuccess = Color.FromArgb(236, 253, 245); // Emerald-50
-
-        // Error: Rose-500
-        private static readonly Color AccError = Color.FromArgb(244, 63, 94);
-        private static readonly Color BgError = Color.FromArgb(255, 241, 242);   // Rose-50
-
-        // Warning: Amber-500
-        private static readonly Color AccWarning = Color.FromArgb(245, 158, 11);
-        private static readonly Color BgWarning = Color.FromArgb(255, 251, 235); // Amber-50
-
-        // Info: Sky-500
-        private static readonly Color AccInfo = Color.FromArgb(14, 165, 233);
-        private static readonly Color BgInfo = Color.FromArgb(240, 249, 255);    // Sky-50
-
+        #region Constructor
         private ToastNotification(string message, ToastType type, int durationMs = 3000)
         {
             _toastType = type;
             _message = message;
+            _totalDuration = durationMs;
+            _elapsedMs = 0;
 
+            // Calculate DPI scale once from parent form or primary monitor
+            if (_parentForm != null && !_parentForm.IsDisposed)
+            {
+                using (var g = _parentForm.CreateGraphics())
+                {
+                    _dpiScale = g.DpiX / 96f;
+                }
+            }
+            else
+            {
+                _dpiScale = CachedDpiScale;
+            }
+
+            // Form Setup
             FormBorderStyle = FormBorderStyle.None;
             StartPosition = FormStartPosition.Manual;
             ShowInTaskbar = false;
             TopMost = true;
-            Size = new Size(ToastWidth, ToastHeight);
+            Size = new Size(ToastWidthScaled, ToastHeightScaled);
             Opacity = 0;
-            BackColor = Color.White; // Nền form trong suốt giả lập bằng White (vì Region sẽ cắt)
+            BackColor = Color.White;
 
-            // Cấu hình vẽ chất lượng cao
+            // High-quality rendering
             SetStyle(ControlStyles.AllPaintingInWmPaint |
                      ControlStyles.UserPaint |
                      ControlStyles.OptimizedDoubleBuffer |
                      ControlStyles.ResizeRedraw |
                      ControlStyles.SupportsTransparentBackColor, true);
 
+            // Close timer
             _closeTimer = new Timer { Interval = durationMs };
             _closeTimer.Tick += (s, e) =>
             {
@@ -87,13 +121,28 @@ namespace study_document_manager
                 StartFadeOut();
             };
 
+            // Fade animation timer
             _fadeTimer = new Timer { Interval = AnimationInterval };
 
-            // Click để đóng
+            // Progress timer
+            _progressTimer = new Timer { Interval = 50 };
+            _progressTimer.Tick += (s, e) =>
+            {
+                if (!_isHovered && !_isClosing)
+                {
+                    _elapsedMs += 50;
+                    Invalidate();
+                }
+            };
+
+            // Mouse events
+            MouseEnter += (s, e) => { _isHovered = true; Invalidate(); };
+            MouseLeave += (s, e) => { _isHovered = false; Invalidate(); };
             Click += (s, e) => StartFadeOut();
         }
+        #endregion
 
-        // Drop Shadow Effect
+        #region Windows API - Drop Shadow
         protected override CreateParams CreateParams
         {
             get
@@ -104,117 +153,249 @@ namespace study_document_manager
                 return cp;
             }
         }
+        #endregion
 
+        #region Paint - Main Rendering
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
             var g = e.Graphics;
             g.SmoothingMode = SmoothingMode.AntiAlias;
             g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+            g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
 
             var bounds = new Rectangle(0, 0, Width - 1, Height - 1);
+            var palette = GetPalette(_toastType);
 
-            Color accentColor = GetAccentColor(_toastType);
-            Color iconBgColor = GetIconBgColor(_toastType);
+            // Layer 1: Glow Effect
+            DrawGlowEffect(g, bounds, palette.Glow);
 
-            // 1. Vẽ nền (Background)
-            // Thay vì nền trắng hoàn toàn, ta dùng màu tint nhẹ (BgSuccess, BgError...) để tạo cảm giác mềm mại
-            using (var path = CreateRoundedRectangle(bounds, BorderRadius))
-            using (var brush = new SolidBrush(Color.White)) // Nền trắng chủ đạo
-            {
-                g.FillPath(brush, path);
+            // Layer 2: Background with gradient
+            DrawBackground(g, bounds, palette.LightBg);
 
-                // Vẽ viền rất nhạt để định hình
-                using (var pen = new Pen(Color.FromArgb(226, 232, 240), 1)) // Slate-200
-                {
-                    g.DrawPath(pen, path);
-                }
-            }
+            // Layer 3: Left Accent Bar
+            DrawAccentBar(g, bounds, palette.Primary, palette.PrimaryDark);
 
-            // 2. Vẽ Icon
-            DrawIcon(g, bounds, accentColor, iconBgColor);
+            // Layer 4: Icon Circle
+            DrawIcon(g, bounds, palette.Primary, palette.PrimaryDark, palette.LightBg);
 
-            // 3. Vẽ Nội dung (Message)
-            DrawMessage(g, bounds);
+            // Layer 5: Message Text
+            DrawMessage(g, bounds, palette.Primary);
 
-            // 4. Vẽ Close Button
+            // Layer 6: Close Button
             DrawCloseButton(g, bounds);
 
-            // 5. Vẽ thanh Accent nhỏ bên trái (Minimalist)
-            var accentRect = new Rectangle(6, 18, 4, Height - 36);
-            using (var path = CreateRoundedRectangle(accentRect, 2))
-            using (var brush = new SolidBrush(accentColor))
+            // Layer 7: Progress Bar
+            DrawProgressBar(g, bounds, palette.Primary, palette.PrimaryDark);
+
+            // Layer 8: Border
+            DrawBorder(g, bounds, palette.Border);
+        }
+
+        private void DrawGlowEffect(Graphics g, Rectangle bounds, Color glowColor)
+        {
+            int glowSize = 10;
+            var glowRect = new Rectangle(bounds.X + glowSize, bounds.Y + glowSize,
+                                          bounds.Width - glowSize * 2, bounds.Height - glowSize);
+            using (var path = CreateRoundedRectangle(glowRect, BorderRadiusScaled))
+            using (var brush = new SolidBrush(glowColor))
             {
                 g.FillPath(brush, path);
             }
         }
 
-        private void DrawIcon(Graphics g, Rectangle bounds, Color accentColor, Color iconBgColor)
+        private void DrawBackground(Graphics g, Rectangle bounds, Color bgColor)
         {
-            int iconSize = 36;
-            int iconX = 24;
-            int iconY = (bounds.Height - iconSize) / 2;
+            using (var path = CreateRoundedRectangle(bounds, BorderRadiusScaled))
+            {
+                // Gradient from light tint to white
+                using (var brush = new LinearGradientBrush(
+                    bounds,
+                    Color.FromArgb(250, bgColor),
+                    AppTheme.BackgroundMain,
+                    LinearGradientMode.Vertical))
+                {
+                    g.FillPath(brush, path);
+                }
+            }
+        }
+
+        private void DrawAccentBar(Graphics g, Rectangle bounds, Color startColor, Color endColor)
+        {
+            int barWidth = (int)(6 * _dpiScale);
+            int barMargin = (int)(14 * _dpiScale);
+            int barHeight = bounds.Height - barMargin * 2 - ProgressHeightScaled;
+            var barRect = new Rectangle(barMargin, barMargin, barWidth, barHeight);
+
+            using (var path = CreateRoundedRectangle(barRect, barWidth / 2))
+            using (var brush = new LinearGradientBrush(
+                barRect,
+                startColor,
+                endColor,
+                LinearGradientMode.Vertical))
+            {
+                g.FillPath(brush, path);
+            }
+        }
+
+        private void DrawIcon(Graphics g, Rectangle bounds, Color startColor, Color endColor, Color tintColor)
+        {
+            int iconSize = (int)(44 * _dpiScale);
+            int iconX = (int)(32 * _dpiScale);
+            int iconY = (bounds.Height - iconSize - ProgressHeightScaled) / 2;
             var iconRect = new Rectangle(iconX, iconY, iconSize, iconSize);
 
-            // Vẽ vòng tròn nền icon (Soft Tint)
-            using (var brush = new SolidBrush(iconBgColor))
+            // Outer circle with tint
+            using (var brush = new SolidBrush(Color.FromArgb(160, tintColor)))
             {
                 g.FillEllipse(brush, iconRect);
             }
 
-            // Vẽ Symbol
+            // Inner circle with gradient
+            int innerPadding = (int)(5 * _dpiScale);
+            var innerRect = new Rectangle(iconX + innerPadding, iconY + innerPadding,
+                                           iconSize - innerPadding * 2, iconSize - innerPadding * 2);
+            using (var brush = new LinearGradientBrush(
+                innerRect,
+                startColor,
+                endColor,
+                LinearGradientMode.ForwardDiagonal))
+            {
+                g.FillEllipse(brush, innerRect);
+            }
+
+            // Icon symbol
             string symbol = GetIconSymbol(_toastType);
-            using (var font = new Font("Segoe UI Symbol", 13, FontStyle.Bold))
-            using (var brush = new SolidBrush(accentColor))
+            float fontSize = 13 * _dpiScale;
+            using (var font = new Font(AppTheme.FontFamily, fontSize, FontStyle.Bold))
+            using (var brush = new SolidBrush(Color.White))
             {
                 var sf = new StringFormat
                 {
                     Alignment = StringAlignment.Center,
                     LineAlignment = StringAlignment.Center
                 };
-                g.DrawString(symbol, font, brush, iconRect, sf);
+                g.DrawString(symbol, font, brush, innerRect, sf);
             }
         }
 
-        private void DrawMessage(Graphics g, Rectangle bounds)
+        private void DrawMessage(Graphics g, Rectangle bounds, Color accentColor)
         {
-            // Message Text
-            var textRect = new RectangleF(72, 0, Width - 110, Height);
+            int textLeft = (int)(90 * _dpiScale);
+            int textRight = (int)(50 * _dpiScale);
+            int availableHeight = Height - ProgressHeightScaled;
 
-            using (var font = new Font("Segoe UI", 10.5f, FontStyle.Regular))
-            using (var brush = new SolidBrush(TextPrimary))
+            // Title
+            string title = GetTitle(_toastType);
+            float titleSize = 9.5f * _dpiScale;
+            using (var titleFont = new Font(AppTheme.FontFamily + " Semibold", titleSize))
+            using (var brush = new SolidBrush(accentColor))
             {
+                var titleRect = new RectangleF(textLeft, 14 * _dpiScale, Width - textLeft - textRight, 20 * _dpiScale);
+                var sf = new StringFormat { Alignment = StringAlignment.Near, LineAlignment = StringAlignment.Near };
+                g.DrawString(title, titleFont, brush, titleRect, sf);
+            }
+
+            // Message
+            float msgSize = 10.5f * _dpiScale;
+            using (var msgFont = new Font(AppTheme.FontFamily, msgSize))
+            using (var brush = new SolidBrush(AppTheme.TextPrimary))
+            {
+                var msgRect = new RectangleF(textLeft, 38 * _dpiScale, Width - textLeft - textRight, 28 * _dpiScale);
                 var sf = new StringFormat
                 {
                     Alignment = StringAlignment.Near,
-                    LineAlignment = StringAlignment.Center,
+                    LineAlignment = StringAlignment.Near,
                     Trimming = StringTrimming.EllipsisCharacter,
                     FormatFlags = StringFormatFlags.NoWrap
                 };
-                g.DrawString(_message, font, brush, textRect, sf);
+                g.DrawString(_message, msgFont, brush, msgRect, sf);
             }
         }
 
         private void DrawCloseButton(Graphics g, Rectangle bounds)
         {
-            int closeSize = 24;
-            var closeRect = new Rectangle(bounds.Right - 32, (bounds.Height - closeSize) / 2, closeSize, closeSize);
+            int btnSize = (int)(30 * _dpiScale);
+            int btnMargin = (int)(12 * _dpiScale);
+            var btnRect = new Rectangle(bounds.Right - btnSize - btnMargin, btnMargin, btnSize, btnSize);
 
             var mousePos = PointToClient(MousePosition);
-            bool isHovered = closeRect.Contains(mousePos);
+            bool isHovered = btnRect.Contains(mousePos);
 
-            using (var font = new Font("Segoe UI", 11, FontStyle.Regular))
-            using (var brush = new SolidBrush(isHovered ? TextPrimary : TextSecondary))
+            // Hover background
+            if (isHovered)
+            {
+                using (var brush = new SolidBrush(Color.FromArgb(30, AppTheme.TextSecondary)))
+                {
+                    g.FillEllipse(brush, btnRect);
+                }
+            }
+
+            // X symbol
+            float fontSize = 11 * _dpiScale;
+            using (var font = new Font(AppTheme.FontFamily, fontSize, FontStyle.Regular))
+            using (var brush = new SolidBrush(isHovered ? AppTheme.TextPrimary : AppTheme.TextMuted))
             {
                 var sf = new StringFormat
                 {
                     Alignment = StringAlignment.Center,
                     LineAlignment = StringAlignment.Center
                 };
-                g.DrawString("✕", font, brush, closeRect, sf);
+                g.DrawString("✕", font, brush, btnRect, sf);
             }
         }
 
+        private void DrawProgressBar(Graphics g, Rectangle bounds, Color startColor, Color endColor)
+        {
+            // Background track
+            var trackRect = new Rectangle(0, bounds.Height - ProgressHeightScaled, bounds.Width, ProgressHeightScaled);
+
+            // Round bottom corners
+            using (var clipPath = CreateBottomRoundedRectangle(trackRect, BorderRadiusScaled))
+            {
+                g.SetClip(clipPath);
+
+                using (var brush = new SolidBrush(Color.FromArgb(40, startColor)))
+                {
+                    g.FillRectangle(brush, trackRect);
+                }
+
+                // Progress fill
+                float progress = 1f - ((float)_elapsedMs / _totalDuration);
+                if (progress < 0) progress = 0;
+                if (progress > 1) progress = 1;
+
+                int progressWidth = (int)(bounds.Width * progress);
+                var progressRect = new Rectangle(0, bounds.Height - ProgressHeightScaled, progressWidth, ProgressHeightScaled);
+
+                if (progressWidth > 0)
+                {
+                    using (var brush = new LinearGradientBrush(
+                        new Rectangle(0, bounds.Height - ProgressHeightScaled, bounds.Width, ProgressHeightScaled),
+                        startColor,
+                        endColor,
+                        LinearGradientMode.Horizontal))
+                    {
+                        g.FillRectangle(brush, progressRect);
+                    }
+                }
+
+                g.ResetClip();
+            }
+        }
+
+        private void DrawBorder(Graphics g, Rectangle bounds, Color borderColor)
+        {
+            using (var path = CreateRoundedRectangle(bounds, BorderRadiusScaled))
+            using (var pen = new Pen(Color.FromArgb(100, borderColor), 1.5f))
+            {
+                g.DrawPath(pen, path);
+            }
+        }
+        #endregion
+
+        #region Helper Methods
         private GraphicsPath CreateRoundedRectangle(Rectangle bounds, int radius)
         {
             var path = new GraphicsPath();
@@ -227,25 +408,71 @@ namespace study_document_manager
             return path;
         }
 
-        private static Color GetAccentColor(ToastType type)
+        private GraphicsPath CreateBottomRoundedRectangle(Rectangle bounds, int radius)
         {
-            switch (type)
-            {
-                case ToastType.Success: return AccSuccess;
-                case ToastType.Error: return AccError;
-                case ToastType.Warning: return AccWarning;
-                default: return AccInfo;
-            }
+            var path = new GraphicsPath();
+            int d = radius * 2;
+            // Top left - no radius
+            path.AddLine(bounds.X, bounds.Y, bounds.Right, bounds.Y);
+            // Top right - no radius
+            path.AddLine(bounds.Right, bounds.Y, bounds.Right, bounds.Bottom - radius);
+            // Bottom right arc
+            path.AddArc(bounds.Right - d, bounds.Bottom - d, d, d, 0, 90);
+            // Bottom left arc
+            path.AddArc(bounds.X, bounds.Bottom - d, d, d, 90, 90);
+            path.CloseFigure();
+            return path;
         }
 
-        private static Color GetIconBgColor(ToastType type)
+        private struct ColorPalette
+        {
+            public Color Primary;
+            public Color PrimaryDark;
+            public Color LightBg;
+            public Color Border;
+            public Color Glow;
+        }
+
+        private static ColorPalette GetPalette(ToastType type)
         {
             switch (type)
             {
-                case ToastType.Success: return BgSuccess;
-                case ToastType.Error: return BgError;
-                case ToastType.Warning: return BgWarning;
-                default: return BgInfo;
+                case ToastType.Success:
+                    return new ColorPalette
+                    {
+                        Primary = AppTheme.StatusSuccess,
+                        PrimaryDark = Color.FromArgb(22, 163, 74), // Green-600
+                        LightBg = AppTheme.ValidationSuccessLight,
+                        Border = AppTheme.ValidationSuccessBorder,
+                        Glow = AppTheme.GlowSuccess
+                    };
+                case ToastType.Error:
+                    return new ColorPalette
+                    {
+                        Primary = AppTheme.StatusError,
+                        PrimaryDark = Color.FromArgb(220, 38, 38), // Red-600
+                        LightBg = AppTheme.ValidationErrorLight,
+                        Border = AppTheme.ValidationErrorBorder,
+                        Glow = AppTheme.GlowDanger
+                    };
+                case ToastType.Warning:
+                    return new ColorPalette
+                    {
+                        Primary = AppTheme.StatusWarning,
+                        PrimaryDark = Color.FromArgb(202, 138, 4), // Yellow-600
+                        LightBg = AppTheme.ValidationWarningLight,
+                        Border = AppTheme.ValidationWarningBorder,
+                        Glow = AppTheme.GlowWarning
+                    };
+                default: // Info
+                    return new ColorPalette
+                    {
+                        Primary = AppTheme.StatusInfo,
+                        PrimaryDark = Color.FromArgb(37, 99, 235), // Blue-600
+                        LightBg = Color.FromArgb(239, 246, 255), // Blue-50
+                        Border = Color.FromArgb(147, 197, 253), // Blue-300
+                        Glow = Color.FromArgb(60, 59, 130, 246) // Info glow
+                    };
             }
         }
 
@@ -260,6 +487,19 @@ namespace study_document_manager
             }
         }
 
+        private static string GetTitle(ToastType type)
+        {
+            switch (type)
+            {
+                case ToastType.Success: return "THANH CONG";
+                case ToastType.Error: return "LOI";
+                case ToastType.Warning: return "CANH BAO";
+                default: return "THONG BAO";
+            }
+        }
+        #endregion
+
+        #region Positioning
         private void PositionToast()
         {
             if (IsDisposed) return;
@@ -275,7 +515,7 @@ namespace study_document_manager
             if (_parentForm != null && !_parentForm.IsDisposed)
             {
                 int x = _parentForm.Left + _parentForm.Width - ToastWidth - ToastMargin;
-                int y = _parentForm.Top + ToastMargin + yOffset + 40;
+                int y = _parentForm.Top + ToastMargin + yOffset + 50;
                 Location = new Point(x, y);
             }
             else
@@ -283,41 +523,6 @@ namespace study_document_manager
                 var screen = Screen.PrimaryScreen.WorkingArea;
                 Location = new Point(screen.Right - ToastWidth - ToastMargin, screen.Top + ToastMargin + yOffset);
             }
-        }
-
-        private void StartFadeIn()
-        {
-            _fadeTimer.Tick += FadeIn_Tick;
-            _fadeTimer.Start();
-        }
-
-        private void FadeIn_Tick(object sender, EventArgs e)
-        {
-            if (IsDisposed) { _fadeTimer.Stop(); return; }
-            if (Opacity < 1) Opacity = Math.Min(1, Opacity + FadeStep);
-            else { Opacity = 1; _fadeTimer.Stop(); _fadeTimer.Tick -= FadeIn_Tick; _closeTimer.Start(); }
-        }
-
-        private void StartFadeOut()
-        {
-            _fadeTimer.Tick -= FadeIn_Tick;
-            _fadeTimer.Tick += FadeOut_Tick;
-            _fadeTimer.Start();
-        }
-
-        private void FadeOut_Tick(object sender, EventArgs e)
-        {
-            if (IsDisposed) { _fadeTimer.Stop(); return; }
-            if (Opacity > 0) Opacity = Math.Max(0, Opacity - FadeStep);
-            else { _fadeTimer.Stop(); _fadeTimer.Tick -= FadeOut_Tick; CloseToast(); }
-        }
-
-        private void CloseToast()
-        {
-            if (IsDisposed) return;
-            lock (LockObject) { ActiveToasts.Remove(this); RepositionToasts(); }
-            _closeTimer?.Stop(); _fadeTimer?.Stop();
-            try { Close(); } catch (ObjectDisposedException) { }
         }
 
         private static void RepositionToasts()
@@ -328,24 +533,104 @@ namespace study_document_manager
                     if (!toast.IsDisposed) toast.PositionToast();
             }
         }
+        #endregion
 
-        protected override void OnMouseMove(MouseEventArgs e) { base.OnMouseMove(e); Invalidate(); }
-        protected override void OnMouseLeave(EventArgs e) { base.OnMouseLeave(e); Invalidate(); }
+        #region Animation
+        private void StartFadeIn()
+        {
+            _fadeTimer.Tick += FadeIn_Tick;
+            _fadeTimer.Start();
+            _progressTimer.Start();
+        }
+
+        private void FadeIn_Tick(object sender, EventArgs e)
+        {
+            if (IsDisposed) { _fadeTimer.Stop(); return; }
+            if (Opacity < 1)
+            {
+                Opacity = Math.Min(1, Opacity + FadeStep);
+            }
+            else
+            {
+                Opacity = 1;
+                _fadeTimer.Stop();
+                _fadeTimer.Tick -= FadeIn_Tick;
+                _closeTimer.Start();
+            }
+        }
+
+        private void StartFadeOut()
+        {
+            if (_isClosing) return;
+            _isClosing = true;
+            _closeTimer.Stop();
+            _progressTimer.Stop();
+            _fadeTimer.Tick -= FadeIn_Tick;
+            _fadeTimer.Tick += FadeOut_Tick;
+            _fadeTimer.Start();
+        }
+
+        private void FadeOut_Tick(object sender, EventArgs e)
+        {
+            if (IsDisposed) { _fadeTimer.Stop(); return; }
+            if (Opacity > 0)
+            {
+                Opacity = Math.Max(0, Opacity - FadeStep);
+            }
+            else
+            {
+                _fadeTimer.Stop();
+                _fadeTimer.Tick -= FadeOut_Tick;
+                CloseToast();
+            }
+        }
+
+        private void CloseToast()
+        {
+            if (IsDisposed) return;
+            lock (LockObject)
+            {
+                ActiveToasts.Remove(this);
+                RepositionToasts();
+            }
+            _closeTimer?.Stop();
+            _fadeTimer?.Stop();
+            _progressTimer?.Stop();
+            try { Close(); } catch (ObjectDisposedException) { }
+        }
+        #endregion
+
+        #region Mouse Events
+        protected override void OnMouseMove(MouseEventArgs e)
+        {
+            base.OnMouseMove(e);
+            Invalidate();
+        }
+
+        protected override void OnMouseLeave(EventArgs e)
+        {
+            base.OnMouseLeave(e);
+            Invalidate();
+        }
 
         protected override void OnMouseClick(MouseEventArgs e)
         {
             base.OnMouseClick(e);
-            if (e.X > Width - 50) StartFadeOut();
+            StartFadeOut();
         }
+        #endregion
 
+        #region Lifecycle
         protected override void OnFormClosed(FormClosedEventArgs e)
         {
             _closeTimer?.Dispose();
             _fadeTimer?.Dispose();
+            _progressTimer?.Dispose();
             base.OnFormClosed(e);
         }
+        #endregion
 
-        // Static Show Methods
+        #region Static API
         public static void Show(string message, ToastType type = ToastType.Info, int durationMs = 3000)
         {
             if (Application.OpenForms.Count == 0) return;
@@ -366,6 +651,7 @@ namespace study_document_manager
             toast.StartFadeIn();
         }
 
+        // Convenience methods
         public static void Success(string message, int durationMs = 3000) => Show(message, ToastType.Success, durationMs);
         public static void Error(string message, int durationMs = 4000) => Show(message, ToastType.Error, durationMs);
         public static void Warning(string message, int durationMs = 3500) => Show(message, ToastType.Warning, durationMs);
@@ -376,8 +662,12 @@ namespace study_document_manager
             lock (LockObject)
             {
                 var toastsToClose = new List<ToastNotification>(ActiveToasts);
-                foreach (var toast in toastsToClose) toast.CloseToast();
+                foreach (var toast in toastsToClose)
+                {
+                    if (!toast.IsDisposed) toast.StartFadeOut();
+                }
             }
         }
+        #endregion
     }
 }
