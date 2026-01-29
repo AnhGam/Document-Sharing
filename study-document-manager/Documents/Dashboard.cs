@@ -263,6 +263,10 @@ namespace study_document_manager
             dgvDocuments.ColumnHeadersDefaultCellStyle.ForeColor = AppTheme.GridHeaderFg;
             dgvDocuments.ColumnHeadersDefaultCellStyle.Font = AppTheme.FontSmallBold;
             dgvDocuments.RowTemplate.Height = 36;
+
+            // Register CellFormatting event for icons
+            dgvDocuments.CellFormatting -= dgvDocuments_CellFormatting;
+            dgvDocuments.CellFormatting += dgvDocuments_CellFormatting;
         }
 
         private void SetColumnHeader(string columnName, string headerText)
@@ -374,22 +378,30 @@ namespace study_document_manager
 
         private void dgvDocuments_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {
-            if (e.RowIndex < 0) return;
-            string colName = dgvDocuments.Columns[e.ColumnIndex].Name;
-            var doc = dgvDocuments.Rows[e.RowIndex].DataBoundItem as StudyDocument;
-            if (doc == null) return;
+            if (e.RowIndex < 0 || e.ColumnIndex < 0) return;
 
-            if (colName == "Icon")
+            try
             {
-                e.Value = IconHelper.GetDocumentIcon(doc.Loai, 24, doc.DuongDan);
-                e.FormattingApplied = true;
+                string colName = dgvDocuments.Columns[e.ColumnIndex].Name;
+                var doc = dgvDocuments.Rows[e.RowIndex].DataBoundItem as StudyDocument;
+                if (doc == null) return;
+
+                if (colName == "Icon")
+                {
+                    e.Value = IconHelper.GetDocumentIcon(doc.Loai, 24, doc.DuongDan);
+                    e.FormattingApplied = true;
+                }
+                else if (colName == "deadline" && doc.Deadline.HasValue)
+                {
+                    int daysLeft = (doc.Deadline.Value.Date - DateTime.Now.Date).Days;
+                    if (daysLeft < 0) { e.CellStyle.BackColor = Color.FromArgb(244, 67, 54); e.CellStyle.ForeColor = Color.White; }
+                    else if (daysLeft <= 3) { e.CellStyle.BackColor = Color.FromArgb(255, 152, 0); e.CellStyle.ForeColor = Color.White; }
+                    else if (daysLeft <= 7) { e.CellStyle.BackColor = Color.FromArgb(255, 235, 59); }
+                }
             }
-            else if (colName == "deadline" && doc.Deadline.HasValue)
+            catch
             {
-                int daysLeft = (doc.Deadline.Value.Date - DateTime.Now.Date).Days;
-                if (daysLeft < 0) { e.CellStyle.BackColor = Color.FromArgb(244, 67, 54); e.CellStyle.ForeColor = Color.White; }
-                else if (daysLeft <= 3) { e.CellStyle.BackColor = Color.FromArgb(255, 152, 0); e.CellStyle.ForeColor = Color.White; }
-                else if (daysLeft <= 7) { e.CellStyle.BackColor = Color.FromArgb(255, 235, 59); }
+                // Ignore formatting errors
             }
         }
 
@@ -492,7 +504,7 @@ namespace study_document_manager
         }
         private void menuCollections_Click(object sender, EventArgs e) { new CollectionManagementForm().ShowDialog(); }
         private void menuFileExit_Click(object sender, EventArgs e) => Application.Exit();
-        private void menuHelpAbout_Click(object sender, EventArgs e) => MessageBox.Show("Study Document Manager v4.0 (MVP Architecture)");
+        private void menuHelpAbout_Click(object sender, EventArgs e) => MessageBox.Show("Study Document Manager v2.0.0\n\nKiến trúc MVP - Quản lý tài liệu học tập\n© 2024-2025", "Giới thiệu", MessageBoxButtons.OK, MessageBoxIcon.Information);
         private void menuViewCategories_Click(object sender, EventArgs e) { new CategoryManagementForm().ShowDialog(); TriggerRefresh(); }
         private void btn_thong_ke_Click(object sender, EventArgs e) { new Report().ShowDialog(); }
         private void btn_xuat_Click(object sender, EventArgs e)

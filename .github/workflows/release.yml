@@ -6,14 +6,12 @@ on:
       - "v*"
 
 env:
-  SOLUTION_FILE: study-document-manager.sln
-  BUILD_CONFIGURATION: Release
   APP_NAME: StudyDocumentManager
 
 jobs:
   release:
-    name: Build & Release
-    runs-on: windows-latest
+    name: Create Release
+    runs-on: ubuntu-latest
     permissions:
       contents: write
 
@@ -24,76 +22,34 @@ jobs:
 
       - name: Get version from tag
         id: version
-        shell: bash
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
 
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
-
-      - name: Setup NuGet
-        uses: NuGet/setup-nuget@v2
-
-      - name: Cache NuGet packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: nuget-${{ hashFiles('**/*.csproj') }}
-          restore-keys: nuget-
-
-      - name: Restore NuGet packages
-        run: nuget restore ${{ env.SOLUTION_FILE }}
-
-      - name: Build solution
-        run: msbuild ${{ env.SOLUTION_FILE }} /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:Platform="Any CPU" /t:Rebuild
-
-      - name: Create portable zip
-        shell: pwsh
+      - name: Verify pre-built files exist
         run: |
-          $version = "${{ steps.version.outputs.version }}"
-          $outputDir = "study-document-manager/bin/Release"
-          $zipName = "${{ env.APP_NAME }}_v${version}_Portable.zip"
+          VERSION="${{ steps.version.outputs.version }}"
+          SETUP="installer/${{ env.APP_NAME }}_v${VERSION}_Setup.exe"
+          PORTABLE="installer/${{ env.APP_NAME }}_v${VERSION}_Portable.zip"
 
-          # Remove debug files before zipping
-          Remove-Item "$outputDir/*.pdb" -ErrorAction SilentlyContinue
-          Remove-Item "$outputDir/*.xml" -ErrorAction SilentlyContinue
+          if [ ! -f "$SETUP" ]; then
+            echo "ERROR: $SETUP not found!"
+            echo "Please build the installer locally before creating the tag."
+            exit 1
+          fi
 
-          Compress-Archive -Path "$outputDir/*" -DestinationPath $zipName -Force
-          echo "PORTABLE_ZIP=$zipName" >> $env:GITHUB_ENV
+          if [ ! -f "$PORTABLE" ]; then
+            echo "ERROR: $PORTABLE not found!"
+            echo "Please create the portable zip locally before creating the tag."
+            exit 1
+          fi
 
-      - name: Download and setup Inno Setup
-        shell: pwsh
-        run: |
-          $innoUrl = "https://jrsoftware.org/download.php/is.exe"
-          Invoke-WebRequest -Uri $innoUrl -OutFile "innosetup.exe"
-          Start-Process -FilePath "innosetup.exe" -ArgumentList "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-" -Wait
-          echo "C:\Program Files (x86)\Inno Setup 6" >> $env:GITHUB_PATH
-
-      - name: Build installer
-        shell: cmd
-        run: |
-          "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" setup.iss
-
-      - name: Rename installer
-        shell: pwsh
-        run: |
-          $version = "${{ steps.version.outputs.version }}"
-          $oldName = "StudyDocumentManager_v2.0.0_Setup.exe"
-          $newName = "${{ env.APP_NAME }}_v${version}_Setup.exe"
-          if (Test-Path $oldName) {
-            Rename-Item -Path $oldName -NewName $newName
-          } elseif (Test-Path "installer/$oldName") {
-            Copy-Item "installer/$oldName" $newName
-          }
-          echo "SETUP_EXE=$newName" >> $env:GITHUB_ENV
+          echo "Found installer files:"
+          ls -la installer/
 
       - name: Generate release notes
         id: release_notes
-        shell: bash
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           # Get commits since last tag
           PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
@@ -134,8 +90,8 @@ jobs:
           name: "Study Document Manager ${{ github.ref_name }}"
           body_path: release_notes.md
           files: |
-            ${{ env.APP_NAME }}_v${{ steps.version.outputs.version }}_Setup.exe
-            ${{ env.APP_NAME }}_v${{ steps.version.outputs.version }}_Portable.zip
+            installer/${{ env.APP_NAME }}_v${{ steps.version.outputs.version }}_Setup.exe
+            installer/${{ env.APP_NAME }}_v${{ steps.version.outputs.version }}_Portable.zip
           draft: false
           prerelease: false
         env:
@@ -155,7 +111,7 @@ jobs:
         run: |
           if [ -n "$DISCORD_WEBHOOK" ]; then
             curl -H "Content-Type: application/json" \
-              -d "{\"embeds\": [{\"title\": \"🚀 Study Document Manager ${{ github.ref_name }} Released!\", \"description\": \"New version available for download.\n\n[Download on GitHub](${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ github.ref_name }})\", \"color\": 5793266}]}" \
+              -d "{\"embeds\": [{\"title\": \"Study Document Manager ${{ github.ref_name }} Released!\", \"description\": \"New version available for download.\n\n[Download on GitHub](${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ github.ref_name }})\", \"color\": 5793266}]}" \
               $DISCORD_WEBHOOK
           fi
 
@@ -166,6 +122,6 @@ jobs:
         run: |
           if [ -n "$DISCORD_WEBHOOK" ]; then
             curl -H "Content-Type: application/json" \
-              -d "{\"embeds\": [{\"title\": \"❌ Study Document Manager Release Failed\", \"description\": \"**Tag:** \`${{ github.ref_name }}\`\n\n[View Logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\", \"color\": 15158332}]}" \
+              -d "{\"embeds\": [{\"title\": \"Study Document Manager Release Failed\", \"description\": \"**Tag:** \`${{ github.ref_name }}\`\n\n[View Logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\", \"color\": 15158332}]}" \
               $DISCORD_WEBHOOK
           fi

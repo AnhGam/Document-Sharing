@@ -2,7 +2,7 @@
 ; Created by Claude Code
 
 #define MyAppName "Study Document Manager"
-#define MyAppVersion "2.0.0"
+#define MyAppVersion "2.0.1"
 #define MyAppPublisher "hayato-shino05"
 #define MyAppURL "https://github.com/hayato-shino05/study-document-manager"
 #define MyAppExeName "study-document-manager.exe"
