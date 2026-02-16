@@ -3,8 +3,10 @@ using study_document_manager.Core.Interfaces;
 using study_document_manager.Infrastructure.Repositories;
 using study_document_manager.UI;
 using study_document_manager.UI.Presenters;
+using study_document_manager.Services;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
@@ -124,6 +126,43 @@ namespace study_document_manager
             _presenter.Initialize();
 
             ToastNotification.Success("Hệ thống đã sẵn sàng!");
+
+            // Auto-check for updates (background, non-blocking)
+            CheckForUpdatesAsync();
+        }
+
+        private async void CheckForUpdatesAsync()
+        {
+            try
+            {
+                var updateInfo = await UpdateChecker.CheckForUpdateAsync();
+                if (updateInfo != null && updateInfo.HasUpdate)
+                {
+                    toolBtnUpdate.Text = $"⬆ Cập nhật {updateInfo.NewVersion}";
+                    toolBtnUpdate.ToolTipText = $"Phiên bản mới {updateInfo.NewVersion} đã có sẵn. Nhấn để cập nhật.";
+                    toolBtnUpdate.Tag = updateInfo;
+                    toolBtnUpdate.Visible = true;
+                    toolSeparator3.Visible = true;
+                }
+            }
+            catch { /* Silently ignore update check failures */ }
+        }
+
+        private void toolBtnUpdate_Click(object sender, EventArgs e)
+        {
+            var updateInfo = toolBtnUpdate.Tag as UpdateInfo;
+            if (updateInfo == null) return;
+
+            if (!string.IsNullOrEmpty(updateInfo.DownloadUrl))
+            {
+                UpdateInstaller.DownloadAndInstall(updateInfo.DownloadUrl, updateInfo.NewVersion, this);
+            }
+            else
+            {
+                // Fallback: open release page in browser
+                if (!string.IsNullOrEmpty(updateInfo.ReleasePageUrl))
+                    System.Diagnostics.Process.Start(updateInfo.ReleasePageUrl);
+            }
         }
 
         // --- IDashboardView Implementation ---
@@ -255,14 +294,7 @@ namespace study_document_manager
             }
 
             // Styling
-            dgvDocuments.BorderStyle = BorderStyle.None;
-            dgvDocuments.BackgroundColor = AppTheme.BackgroundMain;
-            dgvDocuments.AlternatingRowsDefaultCellStyle.BackColor = AppTheme.GridRowAlt;
-            dgvDocuments.RowsDefaultCellStyle.BackColor = AppTheme.BackgroundMain;
-            dgvDocuments.ColumnHeadersDefaultCellStyle.BackColor = AppTheme.GridHeaderBg;
-            dgvDocuments.ColumnHeadersDefaultCellStyle.ForeColor = AppTheme.GridHeaderFg;
-            dgvDocuments.ColumnHeadersDefaultCellStyle.Font = AppTheme.FontSmallBold;
-            dgvDocuments.RowTemplate.Height = 36;
+            AppTheme.ApplyDataGridViewStyle(dgvDocuments);
 
             // Register CellFormatting event for icons
             dgvDocuments.CellFormatting -= dgvDocuments_CellFormatting;
@@ -279,26 +311,27 @@ namespace study_document_manager
 
         private void ApplyTheme()
         {
-            // Reuse existing theming logic
             this.BackColor = AppTheme.BackgroundSoft;
-            menuStrip.BackColor = AppTheme.BackgroundMain;
-            toolStrip.BackColor = AppTheme.BackgroundMain;
-            pnlSearch.BackColor = AppTheme.BackgroundMain;
+            this.ForeColor = AppTheme.TextPrimary;
+            this.Font = AppTheme.FontBody;
+
+            // Menu and toolbar
+            AppTheme.ApplyMenuStripStyle(menuStrip);
+            AppTheme.ApplyToolStripStyle(toolStrip);
+            AppTheme.ApplyStatusStripStyle(statusStrip);
+
+            // Panels
+            pnlSearch.BackColor = AppTheme.BackgroundCard;
             pnlContent.BackColor = AppTheme.BackgroundSoft;
-            statusStrip.BackColor = AppTheme.BackgroundSoft;
 
-            // Apply Modern Button Variants
-            btnSearch.Variant = UI.Controls.ModernButton.ButtonVariant.Primary;
-            btnSearch.BorderRadius = AppTheme.BorderRadius;
-            btnSearch.EnableGlow = true;
+            // Buttons
+            AppTheme.ApplyButtonPrimary(btnSearch);
+            AppTheme.ApplyButtonPrimary(btnApplyAdvancedFilter);
+            AppTheme.ApplyButtonSecondary(btnClearAdvancedFilter);
 
-            btnApplyAdvancedFilter.Variant = UI.Controls.ModernButton.ButtonVariant.Primary;
-            btnApplyAdvancedFilter.BorderRadius = AppTheme.BorderRadius;
-            btnApplyAdvancedFilter.EnableGlow = true;
-
-            btnClearAdvancedFilter.Variant = UI.Controls.ModernButton.ButtonVariant.Secondary;
-            btnClearAdvancedFilter.BorderRadius = AppTheme.BorderRadius;
-            btnClearAdvancedFilter.EnableGlow = false;
+            // Labels
+            lblStatus.ForeColor = AppTheme.TextSecondary;
+            lblCount.ForeColor = AppTheme.TextSecondary;
         }
 
         private void HideCreatorFilter()
@@ -391,12 +424,12 @@ namespace study_document_manager
                     e.Value = IconHelper.GetDocumentIcon(doc.Loai, 24, doc.DuongDan);
                     e.FormattingApplied = true;
                 }
-                else if (colName == "deadline" && doc.Deadline.HasValue)
+                else if ((colName == "deadline" || colName == "Deadline") && doc.Deadline.HasValue)
                 {
                     int daysLeft = (doc.Deadline.Value.Date - DateTime.Now.Date).Days;
-                    if (daysLeft < 0) { e.CellStyle.BackColor = Color.FromArgb(244, 67, 54); e.CellStyle.ForeColor = Color.White; }
-                    else if (daysLeft <= 3) { e.CellStyle.BackColor = Color.FromArgb(255, 152, 0); e.CellStyle.ForeColor = Color.White; }
-                    else if (daysLeft <= 7) { e.CellStyle.BackColor = Color.FromArgb(255, 235, 59); }
+                    if (daysLeft < 0) { e.CellStyle.BackColor = AppTheme.ValidationErrorLight; e.CellStyle.ForeColor = AppTheme.StatusError; }
+                    else if (daysLeft <= 3) { e.CellStyle.BackColor = AppTheme.ValidationWarningLight; e.CellStyle.ForeColor = AppTheme.StatusWarning; }
+                    else if (daysLeft <= 7) { e.CellStyle.BackColor = AppTheme.ValidationWarningLight; }
                 }
             }
             catch
@@ -408,14 +441,16 @@ namespace study_document_manager
         private void dgvDocuments_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex < 0) return;
-            if (dgvDocuments.Columns[e.ColumnIndex].Name == "quan_trong")
+            string colName = dgvDocuments.Columns[e.ColumnIndex].Name;
+            if (colName == "quan_trong" || colName == "QuanTrong")
             {
                 dgvDocuments.CommitEdit(DataGridViewDataErrorContexts.Commit);
                 var doc = dgvDocuments.Rows[e.RowIndex].DataBoundItem as StudyDocument;
                 if (doc != null)
                 {
-                    doc.QuanTrong = !doc.QuanTrong; // Toggle in memory
-                    _repository.Update(doc); // Save to DB
+                    doc.QuanTrong = !doc.QuanTrong;
+                    _repository.Update(doc);
+                    dgvDocuments.InvalidateRow(e.RowIndex);
                     ShowMessage(doc.QuanTrong ? "Đã đánh dấu quan trọng" : "Đã bỏ đánh dấu quan trọng");
                 }
             }
@@ -475,16 +510,149 @@ namespace study_document_manager
 
         private void ctxMenuAddToCollection_Click(object sender, EventArgs e)
         {
-             // Collection logic is still tightly coupled in DatabaseHelper for now.
-             // Ideally move this to a CollectionService or CollectionPresenter.
-             // Keeping it simple for this phase.
-             if (dgvDocuments.SelectedRows.Count == 0) return;
-             var doc = dgvDocuments.SelectedRows[0].DataBoundItem as StudyDocument;
+            if (dgvDocuments.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Vui lòng chọn tài liệu trước.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
 
-             // Reuse existing helper
-             // ... (Logic simplified for brevity, refer to original implementation if needed fully)
-             // For now, let's just show message that this feature is being refactored
-             MessageBox.Show("Tính năng thêm vào bộ sưu tập đang được cập nhật trong phiên bản mới.", "Thông báo");
+            var doc = dgvDocuments.SelectedRows[0].DataBoundItem as StudyDocument;
+            if (doc == null) return;
+
+            // Get existing collections
+            var collections = DatabaseHelper.GetCollections();
+
+            using (var dialog = new Form())
+            {
+                dialog.Text = "Thêm vào bộ sưu tập";
+                dialog.Size = new Size(380, 300);
+                dialog.FormBorderStyle = FormBorderStyle.FixedDialog;
+                dialog.StartPosition = FormStartPosition.CenterParent;
+                dialog.MaximizeBox = false;
+                dialog.MinimizeBox = false;
+                dialog.BackColor = AppTheme.BackgroundMain;
+                dialog.ShowInTaskbar = false;
+                if (this.Icon != null) dialog.Icon = this.Icon;
+
+                var lblInfo = new Label
+                {
+                    Text = $"Tài liệu: {doc.Ten}",
+                    Font = AppTheme.FontSmallBold,
+                    ForeColor = AppTheme.TextPrimary,
+                    Location = new Point(20, 15),
+                    AutoSize = true,
+                    MaximumSize = new Size(330, 0)
+                };
+
+                var lblSelect = new Label
+                {
+                    Text = "Chọn bộ sưu tập:",
+                    Font = AppTheme.FontSmall,
+                    ForeColor = AppTheme.TextSecondary,
+                    Location = new Point(20, 50),
+                    AutoSize = true
+                };
+
+                var lstCollections = new ListBox
+                {
+                    Location = new Point(20, 72),
+                    Size = new Size(325, 100),
+                    Font = AppTheme.FontBody,
+                    BackColor = AppTheme.InputBackground
+                };
+
+                // Populate list
+                foreach (DataRow row in collections.Rows)
+                {
+                    lstCollections.Items.Add(new CollectionItem
+                    {
+                        Id = Convert.ToInt32(row["id"]),
+                        Name = row["name"].ToString(),
+                        Count = Convert.ToInt32(row["item_count"])
+                    });
+                }
+
+                var lblNew = new Label
+                {
+                    Text = "Hoặc tạo mới:",
+                    Font = AppTheme.FontSmall,
+                    ForeColor = AppTheme.TextSecondary,
+                    Location = new Point(20, 180),
+                    AutoSize = true
+                };
+
+                var txtNew = new TextBox
+                {
+                    Location = new Point(20, 200),
+                    Size = new Size(220, 25),
+                    Font = AppTheme.FontBody,
+                    BackColor = AppTheme.InputBackground,
+                    Text = "Tên bộ sưu tập mới...",
+                    ForeColor = Color.Gray
+                };
+                txtNew.GotFocus += (s2, e2) => { if (txtNew.ForeColor == Color.Gray) { txtNew.Text = ""; txtNew.ForeColor = AppTheme.TextPrimary; } };
+                txtNew.LostFocus += (s2, e2) => { if (string.IsNullOrWhiteSpace(txtNew.Text)) { txtNew.Text = "Tên bộ sưu tập mới..."; txtNew.ForeColor = Color.Gray; } };
+
+                var btnAdd = new Button
+                {
+                    Text = "Thêm",
+                    Size = new Size(90, 32),
+                    Location = new Point(250, 198),
+                    FlatStyle = FlatStyle.Flat,
+                    BackColor = AppTheme.StatusSuccess,
+                    ForeColor = Color.White,
+                    Font = AppTheme.FontButton,
+                    Cursor = Cursors.Hand
+                };
+                btnAdd.FlatAppearance.BorderSize = 0;
+
+                btnAdd.Click += (s, ev) =>
+                {
+                    int collectionId = -1;
+
+                    // Create new collection if text entered
+                    if (!string.IsNullOrWhiteSpace(txtNew.Text) && txtNew.ForeColor != Color.Gray)
+                    {
+                        DatabaseHelper.CreateCollection(txtNew.Text.Trim(), "");
+                        // Get new collection id
+                        var updated = DatabaseHelper.GetCollections();
+                        foreach (DataRow row in updated.Rows)
+                        {
+                            if (row["name"].ToString() == txtNew.Text.Trim())
+                            {
+                                collectionId = Convert.ToInt32(row["id"]);
+                                break;
+                            }
+                        }
+                    }
+                    else if (lstCollections.SelectedItem is CollectionItem selected)
+                    {
+                        collectionId = selected.Id;
+                    }
+                    else
+                    {
+                        MessageBox.Show("Vui lòng chọn hoặc tạo bộ sưu tập.", "Thông báo");
+                        return;
+                    }
+
+                    if (collectionId > 0)
+                    {
+                        bool added = DatabaseHelper.AddDocumentToCollection(collectionId, doc.Id);
+                        if (added)
+                        {
+                            ToastNotification.Success($"Đã thêm vào bộ sưu tập!");
+                            dialog.Close();
+                        }
+                        else
+                        {
+                            MessageBox.Show("Tài liệu đã có trong bộ sưu tập này.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
+                    }
+                };
+
+                dialog.Controls.AddRange(new Control[] { lblInfo, lblSelect, lstCollections, lblNew, txtNew, btnAdd });
+                dialog.ShowDialog(this);
+            }
         }
 
         private void menuCheckFiles_Click(object sender, EventArgs e) { new FileIntegrityCheckForm().ShowDialog(); TriggerRefresh(); }
@@ -504,13 +672,178 @@ namespace study_document_manager
         }
         private void menuCollections_Click(object sender, EventArgs e) { new CollectionManagementForm().ShowDialog(); }
         private void menuFileExit_Click(object sender, EventArgs e) => Application.Exit();
-        private void menuHelpAbout_Click(object sender, EventArgs e) => MessageBox.Show("Study Document Manager v2.0.0\n\nKiến trúc MVP - Quản lý tài liệu học tập\n© 2024-2025", "Giới thiệu", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        private void menuHelpAbout_Click(object sender, EventArgs e)
+        {
+            using (var aboutForm = new Form())
+            {
+                aboutForm.Text = "Giới thiệu";
+                aboutForm.Size = new Size(420, 360);
+                aboutForm.FormBorderStyle = FormBorderStyle.FixedDialog;
+                aboutForm.StartPosition = FormStartPosition.CenterParent;
+                aboutForm.MaximizeBox = false;
+                aboutForm.MinimizeBox = false;
+                aboutForm.BackColor = AppTheme.BackgroundMain;
+                aboutForm.ShowInTaskbar = false;
+                if (this.Icon != null) aboutForm.Icon = this.Icon;
+
+                var lblAppName = new Label
+                {
+                    Text = "Study Document Manager",
+                    Font = new Font("Segoe UI", 18F, FontStyle.Bold),
+                    ForeColor = AppTheme.Primary,
+                    Location = new Point(30, 25),
+                    AutoSize = true
+                };
+
+                var lblEdition = new Label
+                {
+                    Text = "Professional Edition",
+                    Font = new Font("Segoe UI", 10F, FontStyle.Italic),
+                    ForeColor = AppTheme.TextSecondary,
+                    Location = new Point(32, 60),
+                    AutoSize = true
+                };
+
+                var lblVersion = new Label
+                {
+                    Text = $"Phiên bản {AppVersion.Current}",
+                    Font = AppTheme.FontBody,
+                    ForeColor = AppTheme.TextPrimary,
+                    Location = new Point(32, 95),
+                    AutoSize = true
+                };
+
+                var lblDesc = new Label
+                {
+                    Text = "Ứng dụng quản lý tài liệu học tập\nKiến trúc MVP • .NET Framework 4.8",
+                    Font = AppTheme.FontSmall,
+                    ForeColor = AppTheme.TextSecondary,
+                    Location = new Point(32, 125),
+                    AutoSize = true
+                };
+
+                var lblStudent = new Label
+                {
+                    Text = "Sinh viên thực hiện: Vũ Đức Dũng (hayato-shino05) - TT601-K14\nCán bộ hướng dẫn: Lê Thị Mai",
+                    Font = AppTheme.FontSmall,
+                    ForeColor = AppTheme.TextPrimary,
+                    Location = new Point(32, 170),
+                    AutoSize = true
+                };
+
+                var lblCopyright = new Label
+                {
+                    Text = "© 2024-2025 hayato-shino05",
+                    Font = AppTheme.FontSmall,
+                    ForeColor = AppTheme.TextMuted,
+                    Location = new Point(32, 215),
+                    AutoSize = true
+                };
+
+                var lnkGitHub = new LinkLabel
+                {
+                    Text = "GitHub: hayato-shino05/study-document-manager",
+                    Font = AppTheme.FontSmall,
+                    Location = new Point(32, 240),
+                    AutoSize = true
+                };
+                lnkGitHub.LinkClicked += (s, ev) =>
+                    System.Diagnostics.Process.Start("https://github.com/hayato-shino05/study-document-manager");
+
+                var btnClose = new Button
+                {
+                    Text = "Đóng",
+                    Size = new Size(100, 36),
+                    Location = new Point(290, 275),
+                    FlatStyle = FlatStyle.Flat,
+                    BackColor = AppTheme.Primary,
+                    ForeColor = Color.White,
+                    Font = AppTheme.FontBody,
+                    Cursor = Cursors.Hand,
+                    DialogResult = DialogResult.OK
+                };
+                btnClose.FlatAppearance.BorderSize = 0;
+
+                aboutForm.Controls.AddRange(new Control[] {
+                    lblAppName, lblEdition, lblVersion, lblDesc,
+                    lblStudent, lblCopyright, lnkGitHub, btnClose
+                });
+                aboutForm.AcceptButton = btnClose;
+                aboutForm.ShowDialog(this);
+            }
+        }
         private void menuViewCategories_Click(object sender, EventArgs e) { new CategoryManagementForm().ShowDialog(); TriggerRefresh(); }
         private void btn_thong_ke_Click(object sender, EventArgs e) { new Report().ShowDialog(); }
         private void btn_xuat_Click(object sender, EventArgs e)
         {
-             // Export logic
-             MessageBox.Show("Tính năng xuất dữ liệu đang được cập nhật.");
+            if (dgvDocuments.Rows.Count == 0)
+            {
+                MessageBox.Show("Không có dữ liệu để xuất.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            using (var sfd = new SaveFileDialog())
+            {
+                sfd.Title = "Xuất dữ liệu";
+                sfd.Filter = "CSV files (*.csv)|*.csv|Text files (*.txt)|*.txt";
+                sfd.FileName = $"TaiLieuHocTap_{DateTime.Now:yyyyMMdd}";
+                sfd.DefaultExt = "csv";
+
+                if (sfd.ShowDialog() == DialogResult.OK)
+                {
+                    try
+                    {
+                        using (var writer = new System.IO.StreamWriter(sfd.FileName, false, System.Text.Encoding.UTF8))
+                        {
+                            // Header
+                            writer.WriteLine("Tên tài liệu,Môn học,Loại,Tác giả,Ngày thêm,Kích thước (MB),Quan trọng,Tags,Deadline,Đường dẫn");
+
+                            // Data from current binding
+                            var docs = dgvDocuments.DataSource as List<StudyDocument>;
+                            if (docs != null)
+                            {
+                                foreach (var doc in docs)
+                                {
+                                    string line = string.Join(",",
+                                        EscapeCsv(doc.Ten),
+                                        EscapeCsv(doc.MonHoc),
+                                        EscapeCsv(doc.Loai),
+                                        EscapeCsv(doc.TacGia ?? ""),
+                                        doc.NgayThem.ToString("dd/MM/yyyy"),
+                                        doc.KichThuoc?.ToString("F2") ?? "",
+                                        doc.QuanTrong ? "Có" : "Không",
+                                        EscapeCsv(doc.Tags ?? ""),
+                                        doc.Deadline?.ToString("dd/MM/yyyy") ?? "",
+                                        EscapeCsv(doc.DuongDan ?? "")
+                                    );
+                                    writer.WriteLine(line);
+                                }
+                            }
+                        }
+
+                        var openResult = MessageBox.Show(
+                            $"Đã xuất thành công {(dgvDocuments.DataSource as List<StudyDocument>)?.Count ?? 0} tài liệu!\n\nBạn có muốn mở file?",
+                            "Xuất dữ liệu",
+                            MessageBoxButtons.YesNo,
+                            MessageBoxIcon.Information);
+
+                        if (openResult == DialogResult.Yes)
+                            System.Diagnostics.Process.Start(sfd.FileName);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Lỗi khi xuất: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+
+        private static string EscapeCsv(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return "";
+            if (value.Contains(",") || value.Contains("\"") || value.Contains("\n"))
+                return $"\"{value.Replace("\"", "\"\"")}\"";
+            return value;
         }
 
         private void CreateManagementMenu()
@@ -614,5 +947,17 @@ namespace study_document_manager
         private void txt_tim_kiem_KeyPress(object sender, KeyPressEventArgs e) { /* Handled in RegisterEvents */ }
         private void btn_lam_moi_Click(object sender, EventArgs e) { /* Handled in RegisterEvents */ }
         private void menuView_Click(object sender, EventArgs e) { }
+    }
+
+    /// <summary>
+    /// Helper class for Collection ListBox display
+    /// </summary>
+    internal class CollectionItem
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public int Count { get; set; }
+
+        public override string ToString() => $"{Name} ({Count} tài liệu)";
     }
 }

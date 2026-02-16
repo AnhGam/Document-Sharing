@@ -7,6 +7,7 @@
 [![.NET Framework](https://img.shields.io/badge/.NET%20Framework-4.8-512BD4?logo=.net)](https://dotnet.microsoft.com/)
 [![SQLite](https://img.shields.io/badge/SQLite-Local%20DB-003B57?logo=sqlite)](https://www.sqlite.org/)
 [![Windows Forms](https://img.shields.io/badge/Windows%20Forms-C%23-239120?logo=c-sharp)](https://docs.microsoft.com/dotnet/desktop/winforms/)
+[![Version](https://img.shields.io/badge/Version-2.0.2-blue.svg)](https://github.com/hayato-shino05/study-document-manager/releases)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 </div>
@@ -28,6 +29,10 @@
 - ⭐ **Đánh dấu quan trọng**: Ghim các tài liệu ưu tiên.
 - 🔍 **Bộ lọc mạnh mẽ**: Lọc theo ngày, dung lượng, trạng thái, từ khóa.
 - 📊 **Thống kê trực quan**: Biểu đồ phân bố tài liệu, timeline hoạt động.
+- 📤 **Xuất dữ liệu**: Xuất danh sách tài liệu ra file CSV.
+- 📝 **Ghi chú cá nhân**: Thêm ghi chú và trạng thái riêng cho từng tài liệu.
+- ⏰ **Quản lý Deadline**: Theo dõi tài liệu sắp đến hạn và quá hạn.
+- 🔄 **Tự động cập nhật**: Kiểm tra phiên bản mới từ GitHub Releases.
 - 🧹 **Kiểm tra file rác**: Tự động phát hiện các liên kết file bị hỏng (file đã xóa khỏi ổ cứng).
 
 ---
@@ -81,7 +86,7 @@
 - **UI Framework**: Windows Forms (WinForms)
 - **Database**: SQLite (System.Data.SQLite)
 - **Biểu đồ**: System.Windows.Forms.DataVisualization
-- **Architecture**: 3-Layer, Repository Pattern (đang chuyển đổi)
+- **Architecture**: MVP (Model-View-Presenter), Repository Pattern
 
 ---
 

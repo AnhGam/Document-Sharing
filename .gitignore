@@ -9,6 +9,7 @@
 .env.*.local
 *.env
 .claude/
+rule/
 # User-specific files
 *.rsuser
 *.suo

@@ -152,7 +152,6 @@ namespace study_document_manager
             // btnSave
             //
             this.btnSave.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(76)))), ((int)(((byte)(175)))), ((int)(((byte)(80)))));
-            this.btnSave.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(76)))), ((int)(((byte)(175)))), ((int)(((byte)(80)))));
             this.btnSave.BorderColor = System.Drawing.Color.PaleVioletRed;
             this.btnSave.BorderRadius = 8;
             this.btnSave.BorderSize = 0;
@@ -167,14 +166,12 @@ namespace study_document_manager
             this.btnSave.Size = new System.Drawing.Size(120, 44);
             this.btnSave.TabIndex = 6;
             this.btnSave.Text = "Luu";
-            this.btnSave.TextColor = System.Drawing.Color.White;
             this.btnSave.UseVisualStyleBackColor = false;
             this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
             //
             // btnDelete
             //
             this.btnDelete.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(244)))), ((int)(((byte)(67)))), ((int)(((byte)(54)))));
-            this.btnDelete.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(244)))), ((int)(((byte)(67)))), ((int)(((byte)(54)))));
             this.btnDelete.BorderColor = System.Drawing.Color.PaleVioletRed;
             this.btnDelete.BorderRadius = 8;
             this.btnDelete.BorderSize = 0;
@@ -189,14 +186,12 @@ namespace study_document_manager
             this.btnDelete.Size = new System.Drawing.Size(120, 44);
             this.btnDelete.TabIndex = 7;
             this.btnDelete.Text = "Xoa";
-            this.btnDelete.TextColor = System.Drawing.Color.White;
             this.btnDelete.UseVisualStyleBackColor = false;
             this.btnDelete.Click += new System.EventHandler(this.btnDelete_Click);
             //
             // btnCancel
             //
             this.btnCancel.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(158)))), ((int)(((byte)(158)))), ((int)(((byte)(158)))));
-            this.btnCancel.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(158)))), ((int)(((byte)(158)))), ((int)(((byte)(158)))));
             this.btnCancel.BorderColor = System.Drawing.Color.PaleVioletRed;
             this.btnCancel.BorderRadius = 8;
             this.btnCancel.BorderSize = 0;
@@ -211,7 +206,6 @@ namespace study_document_manager
             this.btnCancel.Size = new System.Drawing.Size(120, 44);
             this.btnCancel.TabIndex = 8;
             this.btnCancel.Text = "Dong";
-            this.btnCancel.TextColor = System.Drawing.Color.White;
             this.btnCancel.UseVisualStyleBackColor = false;
             this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
             //

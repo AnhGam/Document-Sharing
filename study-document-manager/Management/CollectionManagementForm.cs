@@ -34,12 +34,12 @@ namespace study_document_manager
             statusStrip.BackColor = AppTheme.BackgroundSoft;
 
             // ListView styling
-            lstCollections.BackColor = Color.White;
+            lstCollections.BackColor = AppTheme.BackgroundCard;
             lstCollections.ForeColor = AppTheme.TextPrimary;
             lstCollections.Font = AppTheme.FontBody;
 
             // Split container panels
-            splitContainer.Panel1.BackColor = Color.White;
+            splitContainer.Panel1.BackColor = AppTheme.BackgroundCard;
             splitContainer.Panel2.BackColor = AppTheme.BackgroundSoft;
         }
 

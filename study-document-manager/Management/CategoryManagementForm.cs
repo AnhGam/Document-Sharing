@@ -27,8 +27,8 @@ namespace study_document_manager
             lblTitle.Font = new Font("Segoe UI", 14F, FontStyle.Bold);
 
             // Close button
-            btnClose.BackColor = Color.FromArgb(239, 68, 68);
-            btnClose.ForeColor = Color.White;
+            btnClose.BackColor = AppTheme.StatusError;
+            btnClose.ForeColor = AppTheme.TextWhite;
             btnClose.FlatStyle = FlatStyle.Flat;
             btnClose.FlatAppearance.BorderSize = 0;
             btnClose.Cursor = Cursors.Hand;

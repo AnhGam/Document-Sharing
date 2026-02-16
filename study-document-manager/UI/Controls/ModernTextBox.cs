@@ -24,9 +24,9 @@ namespace study_document_manager.UI.Controls
         private Color borderColor = AppTheme.BorderMedium;
         private Color borderFocusColor = AppTheme.Primary;
         private Color borderHoverColor = AppTheme.InputBorderHover;
-        private int borderSize = 2;
+        private int borderSize = 1;
         private bool underlinedStyle = false;
-        private int borderRadius = 10;
+        private int borderRadius = 6;
 
         // State
         private bool isFocused = false;

@@ -24,61 +24,26 @@ namespace study_document_manager
         private void ApplyTheme()
         {
             this.BackColor = AppTheme.BackgroundMain;
+            this.ForeColor = AppTheme.TextPrimary;
+            this.Font = AppTheme.FontBody;
             this.Padding = new Padding(AppTheme.Space4);
 
-            // Style all controls
-            foreach (Control ctrl in this.Controls)
-            {
-                if (ctrl is Label lbl)
-                {
-                    lbl.ForeColor = AppTheme.TextPrimary;
-                    lbl.Font = AppTheme.FontSmallBold;
-                    lbl.BringToFront(); // Đảm bảo labels không bị che
-                }
-                else if (ctrl is TextBox txt)
-                {
-                    txt.BackColor = AppTheme.BackgroundCard;
-                    txt.ForeColor = AppTheme.TextPrimary;
-                    txt.Font = AppTheme.FontBody;
-                    txt.BorderStyle = BorderStyle.FixedSingle;
-                }
-                else if (ctrl is ComboBox cbo)
-                {
-                    cbo.BackColor = AppTheme.BackgroundCard;
-                    cbo.ForeColor = AppTheme.TextPrimary;
-                    cbo.Font = AppTheme.FontBody;
-                    cbo.FlatStyle = FlatStyle.Flat;
-                }
-                else if (ctrl is CheckBox chk)
-                {
-                    chk.ForeColor = AppTheme.TextPrimary;
-                    chk.Font = AppTheme.FontSmall;
-                }
-            }
+            // Style all controls recursively (including those inside containers)
+            ApplyThemeToControls(this.Controls);
 
-            // Choose file button - Primary variant with glow
-            btn_chon_file.Variant = ModernButton.ButtonVariant.Primary;
-            btn_chon_file.BorderRadius = AppTheme.BorderRadius;
-            btn_chon_file.EnableGlow = true;
+            // Buttons
+            AppTheme.ApplyButtonPrimary(btn_chon_file);
+            AppTheme.ApplyButtonSuccess(btn_luu);
+            AppTheme.ApplyButtonSecondary(btn_huy);
 
-            // Save button - Success variant
-            btn_luu.Variant = ModernButton.ButtonVariant.Success;
-            btn_luu.BorderRadius = AppTheme.BorderRadius;
-            btn_luu.EnableGlow = true;
-
-            // Cancel button - Secondary variant (subtle)
-            btn_huy.Variant = ModernButton.ButtonVariant.Secondary;
-            btn_huy.BorderRadius = AppTheme.BorderRadius;
-            btn_huy.EnableGlow = false;
-
-            // Important checkbox - Amber color
+            // Important checkbox
             chk_quan_trong.ForeColor = AppTheme.AccentAmber;
             chk_quan_trong.Font = new Font(AppTheme.FontFamily, 9F, FontStyle.Bold);
 
             // Deadline checkbox
             chkHasDeadline.ForeColor = AppTheme.TextSecondary;
 
-            // DateTimePicker styling
+            // DateTimePicker
             dtpDeadline.Font = AppTheme.FontBody;
         }
 
@@ -344,7 +309,46 @@ namespace study_document_manager
 
         private void AddEditForm_Load(object sender, EventArgs e)
         {
+            // Inherit app icon from parent form
+            if (this.Owner != null && this.Owner.Icon != null)
+                this.Icon = this.Owner.Icon;
+        }
 
+        /// <summary>
+        /// Recursively apply theme to all controls including those inside containers
+        /// </summary>
+        private void ApplyThemeToControls(Control.ControlCollection controls)
+        {
+            foreach (Control ctrl in controls)
+            {
+                if (ctrl is Label lbl)
+                {
+                    lbl.ForeColor = AppTheme.TextPrimary;
+                    lbl.Font = AppTheme.FontSmallBold;
+                }
+                else if (ctrl is TextBox txt)
+                {
+                    txt.BackColor = AppTheme.InputBackground;
+                    txt.ForeColor = AppTheme.TextPrimary;
+                    txt.Font = AppTheme.FontInput;
+                    txt.BorderStyle = BorderStyle.FixedSingle;
+                }
+                else if (ctrl is ComboBox cbo)
+                {
+                    AppTheme.ApplyComboBoxStyle(cbo);
+                }
+                else if (ctrl is CheckBox chk)
+                {
+                    chk.ForeColor = AppTheme.TextPrimary;
+                    chk.Font = AppTheme.FontSmall;
+                }
+
+                // Recurse into containers
+                if (ctrl.HasChildren)
+                {
+                    ApplyThemeToControls(ctrl.Controls);
+                }
+            }
         }
     }
 }

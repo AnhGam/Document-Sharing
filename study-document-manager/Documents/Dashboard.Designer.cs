@@ -47,6 +47,8 @@
             this.toolBtnExport = new System.Windows.Forms.ToolStripButton();
             this.toolSeparator2 = new System.Windows.Forms.ToolStripSeparator();
             this.toolBtnRefresh = new System.Windows.Forms.ToolStripButton();
+            this.toolSeparator3 = new System.Windows.Forms.ToolStripSeparator();
+            this.toolBtnUpdate = new System.Windows.Forms.ToolStripButton();
             this.pnlSearch = new study_document_manager.UI.Controls.ModernPanel();
             this.lblSearch = new System.Windows.Forms.Label();
             this.txtSearch = new System.Windows.Forms.TextBox();
@@ -111,7 +113,7 @@
             this.menuHelp});
             this.menuStrip.Location = new System.Drawing.Point(0, 0);
             this.menuStrip.Name = "menuStrip";
-            this.menuStrip.Size = new System.Drawing.Size(1200, 36);
+            this.menuStrip.Size = new System.Drawing.Size(1200, 33);
             this.menuStrip.TabIndex = 0;
             // 
             // menuFile
@@ -124,7 +126,7 @@
             this.menuFileSeparator2,
             this.menuFileExit});
             this.menuFile.Name = "menuFile";
-            this.menuFile.Size = new System.Drawing.Size(82, 32);
+            this.menuFile.Size = new System.Drawing.Size(82, 29);
             this.menuFile.Text = "Tệp tin";
             // 
             // menuFileNew
@@ -177,7 +179,7 @@
             this.menuEditSeparator,
             this.menuEditRefresh});
             this.menuEdit.Name = "menuEdit";
-            this.menuEdit.Size = new System.Drawing.Size(106, 32);
+            this.menuEdit.Size = new System.Drawing.Size(106, 29);
             this.menuEdit.Text = "Chỉnh sửa";
             // 
             // menuEditUpdate
@@ -216,7 +218,7 @@
             this.menuViewSeparator,
             this.menuViewCategories});
             this.menuView.Name = "menuView";
-            this.menuView.Size = new System.Drawing.Size(94, 32);
+            this.menuView.Size = new System.Drawing.Size(94, 29);
             this.menuView.Text = "Công cụ";
             this.menuView.Click += new System.EventHandler(this.menuView_Click);
             // 
@@ -246,13 +248,13 @@
             this.menuHelp.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.menuHelpAbout});
             this.menuHelp.Name = "menuHelp";
-            this.menuHelp.Size = new System.Drawing.Size(93, 32);
+            this.menuHelp.Size = new System.Drawing.Size(93, 29);
             this.menuHelp.Text = "Trợ giúp";
             // 
             // menuHelpAbout
             // 
             this.menuHelpAbout.Name = "menuHelpAbout";
-            this.menuHelpAbout.Size = new System.Drawing.Size(189, 34);
+            this.menuHelpAbout.Size = new System.Drawing.Size(270, 34);
             this.menuHelpAbout.Text = "Giới thiệu";
             this.menuHelpAbout.Click += new System.EventHandler(this.menuHelpAbout_Click);
             // 
@@ -269,8 +271,10 @@
             this.toolBtnOpen,
             this.toolBtnExport,
             this.toolSeparator2,
-            this.toolBtnRefresh});
-            this.toolStrip.Location = new System.Drawing.Point(0, 36);
+            this.toolBtnRefresh,
+            this.toolSeparator3,
+            this.toolBtnUpdate});
+            this.toolStrip.Location = new System.Drawing.Point(0, 33);
             this.toolStrip.Name = "toolStrip";
             this.toolStrip.Padding = new System.Windows.Forms.Padding(8, 4, 1, 4);
             this.toolStrip.Size = new System.Drawing.Size(1200, 42);
@@ -329,6 +333,24 @@
             this.toolBtnRefresh.Text = "Làm mới";
             this.toolBtnRefresh.Click += new System.EventHandler(this.btn_lam_moi_Click);
             // 
+            // toolSeparator3
+            // 
+            this.toolSeparator3.Name = "toolSeparator3";
+            this.toolSeparator3.Size = new System.Drawing.Size(6, 34);
+            this.toolSeparator3.Visible = false;
+            // 
+            // toolBtnUpdate
+            // 
+            this.toolBtnUpdate.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
+            this.toolBtnUpdate.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(22)))), ((int)(((byte)(163)))), ((int)(((byte)(74)))));
+            this.toolBtnUpdate.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+            this.toolBtnUpdate.ForeColor = System.Drawing.Color.White;
+            this.toolBtnUpdate.Name = "toolBtnUpdate";
+            this.toolBtnUpdate.Size = new System.Drawing.Size(92, 29);
+            this.toolBtnUpdate.Text = "Cập nhật";
+            this.toolBtnUpdate.Visible = false;
+            this.toolBtnUpdate.Click += new System.EventHandler(this.toolBtnUpdate_Click);
+            // 
             // pnlSearch
             // 
             this.pnlSearch.BackColor = System.Drawing.Color.White;
@@ -349,7 +371,7 @@
             this.pnlSearch.GradientBottomColor = System.Drawing.Color.WhiteSmoke;
             this.pnlSearch.GradientTopColor = System.Drawing.Color.White;
             this.pnlSearch.HoverEffect = false;
-            this.pnlSearch.Location = new System.Drawing.Point(0, 78);
+            this.pnlSearch.Location = new System.Drawing.Point(0, 75);
             this.pnlSearch.Name = "pnlSearch";
             this.pnlSearch.Padding = new System.Windows.Forms.Padding(12, 8, 12, 8);
             this.pnlSearch.ShowBorder = false;
@@ -379,25 +401,22 @@
             // 
             // btnSearch
             // 
-            this.btnSearch.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(33)))), ((int)(((byte)(150)))), ((int)(((byte)(243)))));
-            this.btnSearch.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(33)))), ((int)(((byte)(150)))), ((int)(((byte)(243)))));
+            this.btnSearch.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(51)))), ((int)(((byte)(65)))), ((int)(((byte)(85)))));
+            this.btnSearch.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(51)))), ((int)(((byte)(65)))), ((int)(((byte)(85)))));
             this.btnSearch.BorderColor = System.Drawing.Color.PaleVioletRed;
             this.btnSearch.BorderRadius = 15;
             this.btnSearch.BorderSize = 0;
             this.btnSearch.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.btnSearch.EnableAnimation = true;
-            this.btnSearch.EnableGlow = true;
             this.btnSearch.FlatAppearance.BorderSize = 0;
             this.btnSearch.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnSearch.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
-            this.btnSearch.ForeColor = System.Drawing.Color.White;
-            this.btnSearch.IsLoading = false;
+            this.btnSearch.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
             this.btnSearch.Location = new System.Drawing.Point(470, 14);
             this.btnSearch.Name = "btnSearch";
             this.btnSearch.Size = new System.Drawing.Size(100, 27);
             this.btnSearch.TabIndex = 2;
             this.btnSearch.Text = "Tìm kiếm";
-            this.btnSearch.TextColor = System.Drawing.Color.White;
+            this.btnSearch.TextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
             this.btnSearch.UseVisualStyleBackColor = false;
             this.btnSearch.Variant = study_document_manager.UI.Controls.ModernButton.ButtonVariant.Primary;
             this.btnSearch.Click += new System.EventHandler(this.btnSearch_Click);
@@ -458,12 +477,12 @@
             this.pnlContent.GradientBottomColor = System.Drawing.Color.WhiteSmoke;
             this.pnlContent.GradientTopColor = System.Drawing.Color.White;
             this.pnlContent.HoverEffect = false;
-            this.pnlContent.Location = new System.Drawing.Point(0, 299);
+            this.pnlContent.Location = new System.Drawing.Point(0, 296);
             this.pnlContent.Name = "pnlContent";
             this.pnlContent.Padding = new System.Windows.Forms.Padding(12, 8, 12, 8);
             this.pnlContent.ShowBorder = false;
             this.pnlContent.ShowShadow = false;
-            this.pnlContent.Size = new System.Drawing.Size(1200, 373);
+            this.pnlContent.Size = new System.Drawing.Size(1200, 376);
             this.pnlContent.TabIndex = 3;
             this.pnlContent.UseGradient = false;
             // 
@@ -483,7 +502,7 @@
             this.dgvDocuments.ReadOnly = true;
             this.dgvDocuments.RowHeadersWidth = 25;
             this.dgvDocuments.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this.dgvDocuments.Size = new System.Drawing.Size(1176, 357);
+            this.dgvDocuments.Size = new System.Drawing.Size(1176, 360);
             this.dgvDocuments.TabIndex = 0;
             this.dgvDocuments.CellDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgv_tai_lieu_CellDoubleClick);
             // 
@@ -601,7 +620,7 @@
             this.grpAdvancedFilter.Controls.Add(this.chkEnableDateFilter);
             this.grpAdvancedFilter.Dock = System.Windows.Forms.DockStyle.Top;
             this.grpAdvancedFilter.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.grpAdvancedFilter.Location = new System.Drawing.Point(0, 134);
+            this.grpAdvancedFilter.Location = new System.Drawing.Point(0, 131);
             this.grpAdvancedFilter.Name = "grpAdvancedFilter";
             this.grpAdvancedFilter.Padding = new System.Windows.Forms.Padding(12, 8, 12, 8);
             this.grpAdvancedFilter.Size = new System.Drawing.Size(1200, 165);
@@ -611,50 +630,44 @@
             // 
             // btnClearAdvancedFilter
             // 
-            this.btnClearAdvancedFilter.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(158)))), ((int)(((byte)(158)))), ((int)(((byte)(158)))));
-            this.btnClearAdvancedFilter.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(158)))), ((int)(((byte)(158)))), ((int)(((byte)(158)))));
+            this.btnClearAdvancedFilter.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(51)))), ((int)(((byte)(65)))), ((int)(((byte)(85)))));
+            this.btnClearAdvancedFilter.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(51)))), ((int)(((byte)(65)))), ((int)(((byte)(85)))));
             this.btnClearAdvancedFilter.BorderColor = System.Drawing.Color.PaleVioletRed;
             this.btnClearAdvancedFilter.BorderRadius = 15;
             this.btnClearAdvancedFilter.BorderSize = 0;
             this.btnClearAdvancedFilter.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.btnClearAdvancedFilter.EnableAnimation = true;
-            this.btnClearAdvancedFilter.EnableGlow = true;
             this.btnClearAdvancedFilter.FlatAppearance.BorderSize = 0;
             this.btnClearAdvancedFilter.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnClearAdvancedFilter.Font = new System.Drawing.Font("Segoe UI Semibold", 10F);
-            this.btnClearAdvancedFilter.ForeColor = System.Drawing.Color.White;
-            this.btnClearAdvancedFilter.IsLoading = false;
+            this.btnClearAdvancedFilter.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
             this.btnClearAdvancedFilter.Location = new System.Drawing.Point(580, 70);
             this.btnClearAdvancedFilter.Name = "btnClearAdvancedFilter";
             this.btnClearAdvancedFilter.Size = new System.Drawing.Size(180, 35);
             this.btnClearAdvancedFilter.TabIndex = 15;
             this.btnClearAdvancedFilter.Text = "Xóa Filter";
-            this.btnClearAdvancedFilter.TextColor = System.Drawing.Color.White;
+            this.btnClearAdvancedFilter.TextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
             this.btnClearAdvancedFilter.UseVisualStyleBackColor = false;
             this.btnClearAdvancedFilter.Variant = study_document_manager.UI.Controls.ModernButton.ButtonVariant.Primary;
             this.btnClearAdvancedFilter.Click += new System.EventHandler(this.btnClearAdvancedFilter_Click);
             // 
             // btnApplyAdvancedFilter
             // 
-            this.btnApplyAdvancedFilter.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(33)))), ((int)(((byte)(150)))), ((int)(((byte)(243)))));
-            this.btnApplyAdvancedFilter.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(33)))), ((int)(((byte)(150)))), ((int)(((byte)(243)))));
+            this.btnApplyAdvancedFilter.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(51)))), ((int)(((byte)(65)))), ((int)(((byte)(85)))));
+            this.btnApplyAdvancedFilter.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(51)))), ((int)(((byte)(65)))), ((int)(((byte)(85)))));
             this.btnApplyAdvancedFilter.BorderColor = System.Drawing.Color.PaleVioletRed;
             this.btnApplyAdvancedFilter.BorderRadius = 15;
             this.btnApplyAdvancedFilter.BorderSize = 0;
             this.btnApplyAdvancedFilter.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.btnApplyAdvancedFilter.EnableAnimation = true;
-            this.btnApplyAdvancedFilter.EnableGlow = true;
             this.btnApplyAdvancedFilter.FlatAppearance.BorderSize = 0;
             this.btnApplyAdvancedFilter.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnApplyAdvancedFilter.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold);
-            this.btnApplyAdvancedFilter.ForeColor = System.Drawing.Color.White;
-            this.btnApplyAdvancedFilter.IsLoading = false;
+            this.btnApplyAdvancedFilter.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
             this.btnApplyAdvancedFilter.Location = new System.Drawing.Point(580, 25);
             this.btnApplyAdvancedFilter.Name = "btnApplyAdvancedFilter";
             this.btnApplyAdvancedFilter.Size = new System.Drawing.Size(180, 35);
             this.btnApplyAdvancedFilter.TabIndex = 14;
             this.btnApplyAdvancedFilter.Text = "Áp dụng Filter";
-            this.btnApplyAdvancedFilter.TextColor = System.Drawing.Color.White;
+            this.btnApplyAdvancedFilter.TextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
             this.btnApplyAdvancedFilter.UseVisualStyleBackColor = false;
             this.btnApplyAdvancedFilter.Variant = study_document_manager.UI.Controls.ModernButton.ButtonVariant.Primary;
             this.btnApplyAdvancedFilter.Click += new System.EventHandler(this.btnApplyAdvancedFilter_Click);
@@ -874,6 +887,8 @@
         private System.Windows.Forms.ToolStripButton toolBtnExport;
         private System.Windows.Forms.ToolStripSeparator toolSeparator2;
         private System.Windows.Forms.ToolStripButton toolBtnRefresh;
+        private System.Windows.Forms.ToolStripSeparator toolSeparator3;
+        private System.Windows.Forms.ToolStripButton toolBtnUpdate;
         private study_document_manager.UI.Controls.ModernPanel pnlSearch;
         private System.Windows.Forms.Label lblSearch;
         private System.Windows.Forms.TextBox txtSearch;
