@@ -7,7 +7,7 @@
 [![.NET Framework](https://img.shields.io/badge/.NET%20Framework-4.8-512BD4?logo=.net)](https://dotnet.microsoft.com/)
 [![SQLite](https://img.shields.io/badge/SQLite-Local%20DB-003B57?logo=sqlite)](https://www.sqlite.org/)
 [![Windows Forms](https://img.shields.io/badge/Windows%20Forms-C%23-239120?logo=c-sharp)](https://docs.microsoft.com/dotnet/desktop/winforms/)
-[![Version](https://img.shields.io/badge/Version-2.2.0-blue.svg)](https://github.com/hayato-shino05/study-document-manager/releases)
+[![Version](https://img.shields.io/badge/Version-3.0.0-blue.svg)](https://github.com/hayato-shino05/study-document-manager/releases)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 </div>
@@ -43,6 +43,7 @@
 - 💾 **Backup & Restore Database**: Sao lưu toàn bộ database ra file `.db` và khôi phục khi cần. Bảo vệ dữ liệu trước rủi ro mất mát.
 - 🔗 **Liên kết tài liệu liên quan**: Tạo liên kết giữa các tài liệu có nội dung liên quan. Dễ dàng tìm thấy tài liệu tham khảo từ tài liệu hiện tại.
 - 🔍 **Phát hiện file trùng lặp**: Quét và phát hiện các tài liệu có cùng tên hoặc đường dẫn file trùng nhau. Hỗ trợ xử lý nhanh (xóa, giữ lại).
+- 📎 **Drag & Drop**: Kéo thả file trực tiếp vào bảng danh sách để thêm tài liệu nhanh chóng.
 
 ---
 
@@ -50,7 +51,7 @@
 
 ![Dashboard chính](study-document-manager/assets/example/1.png)
 
-![HIển thị Preview](study-document-manager/assets/example/2.png)
+![Hiển thị Preview](study-document-manager/assets/example/2.png)
 
 ### Dashboard chính
 - Menu bar và Toolbar truy cập nhanh (Thêm, Sửa, Xóa, Mở file, Import, Thùng rác).

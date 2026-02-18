@@ -12,7 +12,7 @@ Stores the main document information.
 - `loai`: TEXT (Type)
 - `duong_dan`: TEXT (File Path)
 - `ghi_chu`: TEXT (Notes)
-- `ngay_them`: DATETIME DEFAULT CURRENT_TIMESTAMP (Date Added)
+- `ngay_them`: DATETIME DEFAULT (datetime('now', 'localtime')) (Date Added)
 - `kich_thuoc`: REAL (File Size in MB)
 - `tac_gia`: TEXT (Author)
 - `quan_trong`: INTEGER DEFAULT 0 (Is Important flag)

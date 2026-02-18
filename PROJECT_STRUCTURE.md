@@ -139,20 +139,29 @@ study-document-manager/
 │   │       ├── ModernInputBox.cs       # Thay thế VB InputBox
 │   │       └── DocumentPreviewPanel.cs # Panel xem trước tài liệu
 │   │
-│   ├── assets/                         # Static assets (logo, icons)
+│   ├── assets/                         # Static assets (logo, icons, screenshots)
+│   │   ├── example/                    # Ảnh chụp giao diện (screenshots)
+│   │   │   ├── 1.png
+│   │   │   └── 2.png
 │   │   └── logo/
 │   │       ├── logo.ico
 │   │       ├── logo.png
 │   │       ├── hero-banner.png
-│   │       └── icon/                   # Icon theo loại file
-│   │           ├── word.png
-│   │           ├── excel.png
-│   │           ├── pdf.png
-│   │           ├── powerpoint.png
-│   │           ├── jpg.png
-│   │           ├── png.png
-│   │           ├── svg.png
-│   │           └── mp4.png
+│   │       ├── icon/                   # Icon theo loại file
+│   │       │   ├── word.png
+│   │       │   ├── excel.png
+│   │       │   ├── pdf.png
+│   │       │   ├── powerpoint.png
+│   │       │   ├── jpg.png
+│   │       │   ├── png.png
+│   │       │   ├── svg.png
+│   │       │   └── mp4.png
+│   │       └── icons/                  # App icons (multi-size)
+│   │           ├── icon-16.png
+│   │           ├── icon-32.png
+│   │           ├── icon-48.png
+│   │           ├── icon-128.png
+│   │           └── logo.png
 │   │
 │   ├── packages.config                 # NuGet packages (System.Data.SQLite)
 │   └── study-document-manager.csproj   # Project file
@@ -166,7 +175,7 @@ study-document-manager/
 ### 2.2. Database Schema (SQLite)
 
 Database gồm 7 bảng:
-- `tai_lieu`: Lưu thông tin tài liệu (id, ten, duong_dan, loai, mon_hoc, ghi_chu, kich_thuoc, ngay_them, quan_trong, tags, deadline, is_deleted, deleted_at).
+- `tai_lieu`: Lưu thông tin tài liệu (id, ten, mon_hoc, loai, duong_dan, ghi_chu, ngay_them, kich_thuoc, tac_gia, quan_trong, tags, deadline, is_deleted, deleted_at).
 - `categories`: Danh mục (môn học) và loại tài liệu.
 - `collections`: Tên bộ sưu tập.
 - `collection_items`: Liên kết n-n giữa bộ sưu tập và tài liệu.
