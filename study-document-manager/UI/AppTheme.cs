@@ -522,9 +522,24 @@ namespace study_document_manager.UI
 
             protected override void OnRenderButtonBackground(ToolStripItemRenderEventArgs e)
             {
+                var btn = e.Item as ToolStripButton;
+                if (btn != null && btn.BackColor != Color.Empty && btn.BackColor != Color.Transparent && btn.BackColor != BackgroundCard)
+                {
+                    using (SolidBrush brush = new SolidBrush(btn.BackColor))
+                    {
+                        e.Graphics.FillRectangle(brush, e.Item.ContentRectangle);
+                    }
+                }
+
                 if (e.Item.Selected || e.Item.Pressed)
                 {
-                    using (SolidBrush brush = new SolidBrush(PrimaryLighter))
+                    Color hoverColor = PrimaryLighter;
+                    if (btn != null && btn.BackColor != Color.Empty && btn.BackColor != Color.Transparent && btn.BackColor != BackgroundCard)
+                    {
+                        hoverColor = Color.FromArgb(40, 255, 255, 255); // White overlay for colored buttons
+                    }
+
+                    using (SolidBrush brush = new SolidBrush(hoverColor))
                     {
                         e.Graphics.FillRectangle(brush, e.Item.ContentRectangle);
                     }

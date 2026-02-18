@@ -5,7 +5,7 @@ namespace study_document_manager.Services
     /// </summary>
     public static class AppVersion
     {
-        public const string Current = "3.0.0";
+        public const string Current = "3.0.2";
 
         /// <summary>
         /// Compare two semantic version strings (e.g. "2.0.1" vs "2.1.0")

@@ -487,6 +487,31 @@ namespace study_document_manager
             return bmp;
         }
 
+        public static Bitmap CreateUpdateIcon(int size = 20, Color? color = null)
+        {
+            Color c = color ?? Color.White;
+            Bitmap bmp = new Bitmap(size, size);
+            using (Graphics g = Graphics.FromImage(bmp))
+            {
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                g.Clear(Color.Transparent);
+                using (Pen pen = new Pen(c, 2f) { StartCap = LineCap.Round, EndCap = LineCap.Round })
+                {
+                    // Arrow pointing UP
+                    float m = size * 0.2f;
+                    float cx = size / 2f;
+                    
+                    // Vertical line
+                    g.DrawLine(pen, cx, size - m, cx, m);
+                    
+                    // Arrow head
+                    g.DrawLine(pen, cx, m, cx - size * 0.25f, m + size * 0.25f);
+                    g.DrawLine(pen, cx, m, cx + size * 0.25f, m + size * 0.25f);
+                }
+            }
+            return bmp;
+        }
+
         #endregion
     }
 }
