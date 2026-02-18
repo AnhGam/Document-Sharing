@@ -357,3 +357,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Redistributable installers (binary, do not commit)
+redist/
