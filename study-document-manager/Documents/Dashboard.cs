@@ -280,8 +280,9 @@ namespace study_document_manager
                 var updateInfo = await UpdateChecker.CheckForUpdateAsync();
                 if (updateInfo != null && updateInfo.HasUpdate)
                 {
-                    toolBtnUpdate.Text = $"⬆ Cập nhật {updateInfo.NewVersion}";
+                    toolBtnUpdate.Text = $"Cập nhật {updateInfo.NewVersion}";
                     toolBtnUpdate.ToolTipText = $"Phiên bản mới {updateInfo.NewVersion} đã có sẵn. Nhấn để cập nhật.";
+                    toolBtnUpdate.Image = IconHelper.CreateUpdateIcon(16, Color.White);
                     toolBtnUpdate.Tag = updateInfo;
                     toolBtnUpdate.Visible = true;
                     toolSeparator3.Visible = true;
