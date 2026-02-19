@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.IO;
 using System.Windows.Forms;
 
@@ -40,8 +41,10 @@ namespace study_document_manager
 
         private study_document_manager.UI.Controls.DocumentPreviewPanel previewPanel;
         private SplitContainer splitPreview;
-        private TreeView treeCategory;
+        private DoubleBufferedTreeView treeCategory;
         private SplitContainer splitCategory;
+        private TreeNode _hoveredNode;
+        private Dictionary<string, Bitmap> _treeIconCache = new Dictionary<string, Bitmap>();
 
         public Dashboard()
         {
@@ -1245,86 +1248,142 @@ namespace study_document_manager
 
         private void SetupCategoryTree()
         {
-            // TreeView
-            treeCategory = new TreeView
+            // TreeView with full custom drawing
+            treeCategory = new DoubleBufferedTreeView
             {
                 Dock = DockStyle.Fill,
-                Font = new System.Drawing.Font("Segoe UI", 9F),
+                Font = new Font("Segoe UI", 9F),
                 BorderStyle = BorderStyle.None,
-                ShowLines = true,
-                ShowRootLines = true,
-                ShowPlusMinus = true,
+                DrawMode = TreeViewDrawMode.OwnerDrawAll,
+                ShowLines = false,
+                ShowRootLines = false,
+                ShowPlusMinus = false,
                 FullRowSelect = true,
                 HideSelection = false,
-                ItemHeight = 26,
+                ItemHeight = 32,
                 Indent = 18,
                 BackColor = Color.White,
                 ForeColor = AppTheme.TextPrimary
             };
 
-            // Wrap existing content in a horizontal SplitContainer
+            // Custom drawing
+            treeCategory.DrawNode += TreeCategory_DrawNode;
+
+            // Hover tracking
+            treeCategory.MouseMove += (s, ev) =>
+            {
+                var node = treeCategory.GetNodeAt(ev.Location);
+                if (node != _hoveredNode)
+                {
+                    _hoveredNode = node;
+                    treeCategory.Invalidate();
+                }
+            };
+            treeCategory.MouseLeave += (s, ev) =>
+            {
+                if (_hoveredNode != null)
+                {
+                    _hoveredNode = null;
+                    treeCategory.Invalidate();
+                }
+            };
+
+            // Double-click to expand/collapse
+            treeCategory.NodeMouseDoubleClick += (s, ev) =>
+            {
+                if (ev.Node.Nodes.Count > 0)
+                    ev.Node.Toggle();
+            };
+
+            // Click on header nodes to toggle expand/collapse
+            treeCategory.NodeMouseClick += (s, ev) =>
+            {
+                var filter = ev.Node.Tag as TreeFilterInfo;
+                if (filter?.FilterType == "header")
+                {
+                    ev.Node.Toggle();
+                    treeCategory.Invalidate();
+                }
+            };
+
+            // Wrap existing content in SplitContainer
             splitCategory = new SplitContainer
             {
                 Dock = DockStyle.Fill,
                 Orientation = Orientation.Vertical,
-                SplitterWidth = 4,
+                SplitterWidth = 2,
                 BorderStyle = BorderStyle.None,
                 FixedPanel = FixedPanel.Panel1
             };
 
-            // Move existing content from pnlContent to Panel2
             var existingControls = new Control[pnlContent.Controls.Count];
             pnlContent.Controls.CopyTo(existingControls, 0);
             pnlContent.Controls.Clear();
-
             foreach (var ctrl in existingControls)
                 splitCategory.Panel2.Controls.Add(ctrl);
 
-            // Add TreeView to Panel1 with header
+            // Header panel with bottom border
+            var headerPanel = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 40,
+                BackColor = Color.White,
+                Padding = new Padding(14, 0, 8, 0)
+            };
             var lblTreeHeader = new Label
             {
                 Text = "Phân loại",
-                Dock = DockStyle.Top,
-                Font = new System.Drawing.Font("Segoe UI Semibold", 10F),
+                Dock = DockStyle.Fill,
+                Font = new Font("Segoe UI Semibold", 10F),
                 ForeColor = AppTheme.Primary,
-                BackColor = Color.White,
-                Padding = new Padding(10, 8, 8, 6),
-                Height = 32,
                 TextAlign = ContentAlignment.MiddleLeft
             };
+            headerPanel.Paint += (s, ev) =>
+            {
+                using (var pen = new Pen(AppTheme.BorderLight))
+                    ev.Graphics.DrawLine(pen, 0, headerPanel.Height - 1, headerPanel.Width, headerPanel.Height - 1);
+            };
+            headerPanel.Controls.Add(lblTreeHeader);
 
+            // Tree container panel
             var pnlTree = new Panel
             {
                 Dock = DockStyle.Fill,
                 BackColor = Color.White,
-                Padding = new Padding(0)
+                Padding = new Padding(0, 4, 0, 0)
             };
             pnlTree.Controls.Add(treeCategory);
-            pnlTree.Controls.Add(lblTreeHeader);
+            pnlTree.Controls.Add(headerPanel);
+
+            // Right border for tree panel
+            splitCategory.Panel1.Paint += (s, ev) =>
+            {
+                using (var pen = new Pen(AppTheme.BorderLight))
+                    ev.Graphics.DrawLine(pen,
+                        splitCategory.Panel1.Width - 1, 0,
+                        splitCategory.Panel1.Width - 1, splitCategory.Panel1.Height);
+            };
 
             splitCategory.Panel1.Controls.Add(pnlTree);
             splitCategory.Panel1.BackColor = Color.White;
 
             pnlContent.Controls.Add(splitCategory);
 
-            // Set splitter distance sau khi layout xong
+            // Set splitter distance after layout
             splitCategory.SplitterDistance = 145;
             splitCategory.Panel1MinSize = 120;
 
-            // Responsive: ẩn/hiện tree khi form quá nhỏ
+            // Responsive: hide tree when form too narrow
             this.Resize += (s, ev) =>
             {
                 if (splitCategory == null) return;
-                if (this.Width < 700)
-                    splitCategory.Panel1Collapsed = true;
-                else
-                    splitCategory.Panel1Collapsed = false;
+                splitCategory.Panel1Collapsed = this.Width < 700;
             };
 
-            // Handle node selection
+            // Node selection
             treeCategory.AfterSelect += TreeCategory_AfterSelect;
 
-            // Populate tree
+            // Populate
             PopulateCategoryTree();
         }
 
@@ -1335,49 +1394,66 @@ namespace study_document_manager
             treeCategory.AfterSelect -= TreeCategory_AfterSelect;
             treeCategory.BeginUpdate();
             treeCategory.Nodes.Clear();
+            ClearTreeIconCache();
+
+            int totalCount = 0;
+            int importantCount = 0;
+
+            try
+            {
+                var dtTotal = DatabaseHelper.ExecuteQuery(
+                    "SELECT COUNT(*) as cnt FROM tai_lieu WHERE (is_deleted IS NULL OR is_deleted = 0)");
+                if (dtTotal.Rows.Count > 0) totalCount = Convert.ToInt32(dtTotal.Rows[0]["cnt"]);
+
+                var dtImportant = DatabaseHelper.ExecuteQuery(
+                    "SELECT COUNT(*) as cnt FROM tai_lieu WHERE quan_trong = 1 AND (is_deleted IS NULL OR is_deleted = 0)");
+                if (dtImportant.Rows.Count > 0) importantCount = Convert.ToInt32(dtImportant.Rows[0]["cnt"]);
+            }
+            catch { }
 
             // Root: All Documents
             var nodeAll = treeCategory.Nodes.Add("all", "Tất cả tài liệu");
-            nodeAll.Tag = new TreeFilterInfo("all", null);
-            nodeAll.NodeFont = new System.Drawing.Font(treeCategory.Font, FontStyle.Bold);
+            nodeAll.Tag = new TreeFilterInfo("all", null) { Count = totalCount };
 
-            // By Subject
+            // By Subject (header)
             var nodeSubject = treeCategory.Nodes.Add("subjects", "Danh mục");
             nodeSubject.Tag = new TreeFilterInfo("header", null);
             try
             {
                 var dt = DatabaseHelper.ExecuteQuery(
-                    "SELECT DISTINCT mon_hoc FROM tai_lieu WHERE mon_hoc IS NOT NULL AND mon_hoc != '' AND (is_deleted IS NULL OR is_deleted = 0) ORDER BY mon_hoc");
+                    "SELECT mon_hoc, COUNT(*) as cnt FROM tai_lieu WHERE mon_hoc IS NOT NULL AND mon_hoc != '' AND (is_deleted IS NULL OR is_deleted = 0) GROUP BY mon_hoc ORDER BY mon_hoc");
                 foreach (DataRow row in dt.Rows)
                 {
                     string name = row["mon_hoc"].ToString();
+                    int count = Convert.ToInt32(row["cnt"]);
                     var child = nodeSubject.Nodes.Add("sub_" + name, name);
-                    child.Tag = new TreeFilterInfo("subject", name);
+                    child.Tag = new TreeFilterInfo("subject", name) { Count = count };
                 }
             }
             catch { }
 
-            // By Type
+            // By Type (header)
             var nodeType = treeCategory.Nodes.Add("types", "Loại tài liệu");
             nodeType.Tag = new TreeFilterInfo("header", null);
             try
             {
                 var dt = DatabaseHelper.ExecuteQuery(
-                    "SELECT DISTINCT loai FROM tai_lieu WHERE loai IS NOT NULL AND loai != '' AND (is_deleted IS NULL OR is_deleted = 0) ORDER BY loai");
+                    "SELECT loai, COUNT(*) as cnt FROM tai_lieu WHERE loai IS NOT NULL AND loai != '' AND (is_deleted IS NULL OR is_deleted = 0) GROUP BY loai ORDER BY loai");
                 foreach (DataRow row in dt.Rows)
                 {
                     string name = row["loai"].ToString();
+                    int count = Convert.ToInt32(row["cnt"]);
                     var child = nodeType.Nodes.Add("type_" + name, name);
-                    child.Tag = new TreeFilterInfo("type", name);
+                    child.Tag = new TreeFilterInfo("type", name) { Count = count };
                 }
             }
             catch { }
 
             // Important
             var nodeImportant = treeCategory.Nodes.Add("important", "Quan trọng");
-            nodeImportant.Tag = new TreeFilterInfo("important", null);
+            nodeImportant.Tag = new TreeFilterInfo("important", null) { Count = importantCount };
 
-            // Collections
+            // Collections (header)
             var nodeCollections = treeCategory.Nodes.Add("collections", "Bộ sưu tập");
             nodeCollections.Tag = new TreeFilterInfo("header", null);
             try
@@ -1387,9 +1463,9 @@ namespace study_document_manager
                 {
                     string name = row["name"].ToString();
                     string id = row["id"].ToString();
-                    string count = row["item_count"].ToString();
-                    var child = nodeCollections.Nodes.Add("col_" + id, $"{name} ({count})");
-                    child.Tag = new TreeFilterInfo("collection", id);
+                    int count = Convert.ToInt32(row["item_count"]);
+                    var child = nodeCollections.Nodes.Add("col_" + id, name);
+                    child.Tag = new TreeFilterInfo("collection", id) { Count = count };
                 }
             }
             catch { }
@@ -1402,11 +1478,201 @@ namespace study_document_manager
             treeCategory.AfterSelect += TreeCategory_AfterSelect;
         }
 
+        private void TreeCategory_DrawNode(object sender, DrawTreeNodeEventArgs e)
+        {
+            if (e.Bounds.Height <= 0) return;
+
+            var g = e.Graphics;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+
+            var node = e.Node;
+            var filter = node.Tag as TreeFilterInfo;
+            bool isSelected = node == treeCategory.SelectedNode;
+            bool isHovered = node == _hoveredNode && !isSelected;
+            int treeWidth = treeCategory.ClientSize.Width;
+
+            // Full row background (clear)
+            var rowBounds = new Rectangle(0, e.Bounds.Y, treeWidth, e.Bounds.Height);
+            using (var bgBrush = new SolidBrush(treeCategory.BackColor))
+                g.FillRectangle(bgBrush, rowBounds);
+
+            // Section headers (special rendering)
+            if (filter?.FilterType == "header")
+            {
+                DrawSectionHeader(g, e, node, filter, treeWidth);
+                return;
+            }
+
+            // Selection background (rounded)
+            if (isSelected)
+            {
+                var selRect = new Rectangle(4, e.Bounds.Y + 2, treeWidth - 8, e.Bounds.Height - 4);
+                using (var path = AppTheme.CreateRoundedRectangle(selRect, 6))
+                using (var brush = new SolidBrush(AppTheme.PrimaryLighter))
+                    g.FillPath(brush, path);
+
+                // Left accent bar
+                using (var brush = new SolidBrush(AppTheme.Primary))
+                    g.FillRectangle(brush, 0, e.Bounds.Y + 5, 3, e.Bounds.Height - 10);
+            }
+            else if (isHovered)
+            {
+                var hoverRect = new Rectangle(4, e.Bounds.Y + 2, treeWidth - 8, e.Bounds.Height - 4);
+                using (var path = AppTheme.CreateRoundedRectangle(hoverRect, 6))
+                using (var brush = new SolidBrush(Color.FromArgb(248, 248, 247)))
+                    g.FillPath(brush, path);
+            }
+
+            // Layout
+            int baseIndent = 14 + node.Level * 18;
+            int iconX = baseIndent;
+            int textX = iconX + 20;
+            int centerY = e.Bounds.Y + e.Bounds.Height / 2;
+
+            // Draw icon (16x16)
+            var icon = GetCachedTreeIcon(filter, 16);
+            if (icon != null)
+                g.DrawImage(icon, iconX, centerY - 8, 16, 16);
+
+            // Draw text
+            bool isBold = filter?.FilterType == "all";
+            using (var textFont = isBold ? new Font(treeCategory.Font, FontStyle.Bold) : new Font(treeCategory.Font, FontStyle.Regular))
+            {
+                var textColor = isSelected ? AppTheme.PrimaryDark : AppTheme.TextPrimary;
+                TextRenderer.DrawText(g, node.Text, textFont,
+                    new Point(textX, centerY - textFont.Height / 2), textColor);
+            }
+
+            // Count badge
+            if (filter != null && filter.Count > 0)
+            {
+                DrawCountBadge(g, filter.Count, treeWidth, centerY, isSelected);
+            }
+        }
+
+        private void DrawSectionHeader(Graphics g, DrawTreeNodeEventArgs e, TreeNode node, TreeFilterInfo filter, int treeWidth)
+        {
+            int centerY = e.Bounds.Y + e.Bounds.Height / 2;
+
+            // Separator line above (if not first node)
+            if (node.PrevNode != null)
+            {
+                using (var pen = new Pen(AppTheme.BorderLight))
+                    g.DrawLine(pen, 12, e.Bounds.Y + 2, treeWidth - 12, e.Bounds.Y + 2);
+            }
+
+            // Header text (uppercase, small, muted)
+            using (var headerFont = new Font("Segoe UI", 7.5f, FontStyle.Bold))
+            {
+                int indent = 14 + node.Level * 18;
+                TextRenderer.DrawText(g, node.Text.ToUpper(), headerFont,
+                    new Point(indent, centerY - headerFont.Height / 2 + 2), AppTheme.TextMuted);
+            }
+
+            // Chevron on the right for expand/collapse
+            if (node.Nodes.Count > 0)
+            {
+                DrawChevron(g, node.IsExpanded, treeWidth - 18, centerY, AppTheme.TextMuted);
+            }
+        }
+
+        private void DrawCountBadge(Graphics g, int count, int treeWidth, int centerY, bool isSelected)
+        {
+            string countText = count.ToString();
+            using (var countFont = new Font("Segoe UI", 7.5f))
+            {
+                var countSize = TextRenderer.MeasureText(countText, countFont);
+                int badgeW = Math.Max(countSize.Width + 2, 22);
+                int badgeX = treeWidth - badgeW - 10;
+                int badgeY = centerY - 9;
+
+                using (var path = AppTheme.CreateRoundedRectangle(new Rectangle(badgeX, badgeY, badgeW, 18), 9))
+                {
+                    var badgeBg = isSelected ? AppTheme.Primary : Color.FromArgb(240, 240, 238);
+                    var badgeFg = isSelected ? Color.White : AppTheme.TextMuted;
+
+                    using (var brush = new SolidBrush(badgeBg))
+                        g.FillPath(brush, path);
+
+                    TextRenderer.DrawText(g, countText, countFont,
+                        new Rectangle(badgeX, badgeY, badgeW, 18), badgeFg,
+                        TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+                }
+            }
+        }
+
+        private void DrawChevron(Graphics g, bool expanded, int x, int y, Color color)
+        {
+            using (var pen = new Pen(color, 1.5f))
+            {
+                pen.StartCap = LineCap.Round;
+                pen.EndCap = LineCap.Round;
+                if (expanded)
+                {
+                    g.DrawLine(pen, x - 3, y - 2, x, y + 1);
+                    g.DrawLine(pen, x, y + 1, x + 3, y - 2);
+                }
+                else
+                {
+                    g.DrawLine(pen, x - 1, y - 3, x + 2, y);
+                    g.DrawLine(pen, x + 2, y, x - 1, y + 3);
+                }
+            }
+        }
+
+        private Bitmap GetCachedTreeIcon(TreeFilterInfo filter, int size)
+        {
+            if (filter == null) return null;
+
+            string key = $"{filter.FilterType}_{filter.FilterValue}_{size}";
+            if (_treeIconCache.TryGetValue(key, out Bitmap cached))
+                return cached;
+
+            Bitmap icon = null;
+            switch (filter.FilterType)
+            {
+                case "all":
+                    icon = IconHelper.CreateHomeIcon(size, AppTheme.AccentSky);
+                    break;
+                case "subject":
+                    icon = IconHelper.CreateFolderIcon(size, AppTheme.AccentOrange);
+                    break;
+                case "type":
+                    icon = IconHelper.GetDocumentIcon(filter.FilterValue, size);
+                    break;
+                case "important":
+                    icon = IconHelper.CreateStarIcon(size);
+                    break;
+                case "collection":
+                    icon = IconHelper.CreateBookmarkIcon(size, AppTheme.Primary);
+                    break;
+            }
+
+            if (icon != null)
+                _treeIconCache[key] = icon;
+
+            return icon;
+        }
+
+        private void ClearTreeIconCache()
+        {
+            foreach (var icon in _treeIconCache.Values)
+                icon?.Dispose();
+            _treeIconCache.Clear();
+        }
+
         private void TreeCategory_AfterSelect(object sender, TreeViewEventArgs e)
         {
             if (e.Node?.Tag == null) return;
             var filter = e.Node.Tag as TreeFilterInfo;
-            if (filter == null || filter.FilterType == "header") return;
+            if (filter == null) return;
+
+            if (filter.FilterType == "header")
+            {
+                // Handled by NodeMouseClick
+                return;
+            }
 
             // Reset existing UI filters first
             ClearUIFilters();
@@ -1510,6 +1776,7 @@ namespace study_document_manager
         {
             public string FilterType { get; }
             public string FilterValue { get; }
+            public int Count { get; set; }
 
             public TreeFilterInfo(string filterType, string filterValue)
             {

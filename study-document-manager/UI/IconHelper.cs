@@ -688,6 +688,90 @@ namespace study_document_manager
             return bmp;
         }
 
+        /// <summary>
+        /// Icon thư mục cho tree category
+        /// </summary>
+        public static Bitmap CreateFolderIcon(int size = 16, Color? color = null)
+        {
+            Color c = color ?? Color.FromArgb(202, 138, 4);
+            Bitmap bmp = new Bitmap(size, size);
+            using (Graphics g = Graphics.FromImage(bmp))
+            {
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                g.Clear(Color.Transparent);
+                float s = size / 16f;
+                // Tab
+                var tab = new PointF[] {
+                    new PointF(1*s, 5*s), new PointF(1*s, 3*s),
+                    new PointF(6*s, 3*s), new PointF(8*s, 5*s)
+                };
+                using (var brush = new SolidBrush(c))
+                    g.FillPolygon(brush, tab);
+                // Body
+                using (var brush = new SolidBrush(c))
+                    g.FillRectangle(brush, 1*s, 5*s, 14*s, 9*s);
+                // Front face (lighter)
+                Color lighter = Color.FromArgb(
+                    Math.Min(255, c.R + 30),
+                    Math.Min(255, c.G + 30),
+                    Math.Min(255, c.B + 30));
+                using (var brush = new SolidBrush(lighter))
+                    g.FillRectangle(brush, 1*s, 7*s, 14*s, 7*s);
+            }
+            return bmp;
+        }
+
+        /// <summary>
+        /// Icon home cho node "Tat ca tai lieu"
+        /// </summary>
+        public static Bitmap CreateHomeIcon(int size = 16, Color? color = null)
+        {
+            Color c = color ?? Color.FromArgb(37, 99, 235);
+            Bitmap bmp = new Bitmap(size, size);
+            using (Graphics g = Graphics.FromImage(bmp))
+            {
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                g.Clear(Color.Transparent);
+                float s = size / 16f;
+                // Roof
+                var roof = new PointF[] {
+                    new PointF(8*s, 1*s), new PointF(15*s, 7*s), new PointF(1*s, 7*s)
+                };
+                using (var brush = new SolidBrush(c))
+                    g.FillPolygon(brush, roof);
+                // Body
+                using (var brush = new SolidBrush(c))
+                    g.FillRectangle(brush, 3*s, 7*s, 10*s, 8*s);
+                // Door cutout
+                using (var brush = new SolidBrush(Color.White))
+                    g.FillRectangle(brush, 6*s, 10*s, 4*s, 5*s);
+            }
+            return bmp;
+        }
+
+        /// <summary>
+        /// Icon bookmark cho bo suu tap
+        /// </summary>
+        public static Bitmap CreateBookmarkIcon(int size = 16, Color? color = null)
+        {
+            Color c = color ?? Color.FromArgb(51, 65, 85);
+            Bitmap bmp = new Bitmap(size, size);
+            using (Graphics g = Graphics.FromImage(bmp))
+            {
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                g.Clear(Color.Transparent);
+                float s = size / 16f;
+                var points = new PointF[] {
+                    new PointF(3*s, 1*s), new PointF(13*s, 1*s),
+                    new PointF(13*s, 14*s), new PointF(8*s, 10*s),
+                    new PointF(3*s, 14*s)
+                };
+                using (var brush = new SolidBrush(c))
+                    g.FillPolygon(brush, points);
+            }
+            return bmp;
+        }
+
         #endregion
     }
 }
