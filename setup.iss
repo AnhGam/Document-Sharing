@@ -1,7 +1,7 @@
-; Inno Setup Script for Study Document Manager v3.0.2
+; Inno Setup Script for Study Document Manager v3.1.2
 
 #define MyAppName "Study Document Manager"
-#define MyAppVersion "3.1.0"
+#define MyAppVersion "3.1.2"
 #define MyAppPublisher "hayato-shino05"
 #define MyAppURL "https://github.com/hayato-shino05/study-document-manager"
 #define MyAppExeName "study-document-manager.exe"

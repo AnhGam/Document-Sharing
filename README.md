@@ -9,7 +9,7 @@
 [![C#](https://img.shields.io/badge/C%23-Windows_Forms-239120?style=for-the-badge&logo=csharp&logoColor=white)](https://docs.microsoft.com/dotnet/desktop/winforms/)
 [![Windows](https://img.shields.io/badge/Platform-Windows-0078D4?style=for-the-badge&logo=windows&logoColor=white)](https://www.microsoft.com/windows)
 
-[![Version](https://img.shields.io/badge/Version-3.1.0-14B8A6?style=for-the-badge&logo=semver&logoColor=white)](https://github.com/hayato-shino05/study-document-manager/releases)
+[![Version](https://img.shields.io/badge/Version-3.1.2-14B8A6?style=for-the-badge&logo=semver&logoColor=white)](https://github.com/hayato-shino05/study-document-manager/releases)
 [![Downloads](https://img.shields.io/github/downloads/hayato-shino05/study-document-manager/total?style=for-the-badge&color=10B981&logo=github&logoColor=white&label=Downloads)](https://github.com/hayato-shino05/study-document-manager/releases)
 [![License](https://img.shields.io/badge/License-MIT-F59E0B?style=for-the-badge&logo=opensourceinitiative&logoColor=white)](LICENSE)
 [![Stars](https://img.shields.io/github/stars/hayato-shino05/study-document-manager?style=for-the-badge&color=EF4444&logo=github&logoColor=white)](https://github.com/hayato-shino05/study-document-manager)

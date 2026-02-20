@@ -26,7 +26,7 @@ namespace study_document_manager.UI.Controls
         private Color borderHoverColor = AppTheme.InputBorderHover;
         private int borderSize = 1;
         private bool underlinedStyle = false;
-        private int borderRadius = 6;
+        private int borderRadius = 8;
 
         // State
         private bool isFocused = false;
@@ -251,8 +251,8 @@ namespace study_document_manager.UI.Controls
 
             // Default styling
             this.AutoScaleMode = AutoScaleMode.None;
-            this.Padding = new Padding(10, 7, 10, 7);
-            this.Size = new Size(250, 30);
+            this.Padding = new Padding(12, 8, 12, 8); // Tăng padding để trông rộng rãi hiện đại hơn
+            this.Size = new Size(250, 36);
             this.BackColor = AppTheme.InputBackground;
             this.ForeColor = AppTheme.TextPrimary;
             this.Font = AppTheme.FontInput;
@@ -539,8 +539,8 @@ namespace study_document_manager.UI.Controls
                 // Draw focus ring when focused
                 if (isFocused && _validationState == ValidationState.None)
                 {
-                    using (var focusPath = GetFigurePath(Rectangle.Inflate(rectBorderSmooth, 2, 2), borderRadius + 2))
-                    using (var focusPen = new Pen(Color.FromArgb(40, AppTheme.Primary), 3))
+                    using (var focusPath = GetFigurePath(Rectangle.Inflate(rectBorderSmooth, 1, 1), borderRadius + 1))
+                    using (var focusPen = new Pen(Color.FromArgb(60, AppTheme.Primary), 2))
                     {
                         g.DrawPath(focusPen, focusPath);
                     }

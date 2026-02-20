@@ -22,7 +22,7 @@ namespace study_document_manager.UI.Controls
         #endregion
 
         #region === FIELDS ===
-        private int _borderRadius = 6;
+        private int _borderRadius = 8;
         private Color _borderColor = Color.Transparent;
         private int _borderSize = 0;
         private ButtonVariant _variant = ButtonVariant.Primary;

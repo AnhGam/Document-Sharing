@@ -20,7 +20,7 @@ namespace study_document_manager.UI.Controls
 
         #region === FIELDS ===
         // Appearance
-        private int _borderRadius = 0;
+        private int _borderRadius = 8;
         private float _gradientAngle = 90F;
         private Color _gradientTopColor = Color.White;
         private Color _gradientBottomColor = Color.WhiteSmoke;
@@ -298,43 +298,44 @@ namespace study_document_manager.UI.Controls
             int layers;
             int baseAlpha;
             int offsetY;
+            float spread = 1.0f;
 
             switch (level)
             {
                 case ElevationLevel.Low:
-                    layers = 3;
-                    baseAlpha = 8;
+                    layers = 4;
+                    baseAlpha = 4; // Mềm hơn
                     offsetY = 1;
+                    spread = 0.5f;
                     break;
                 case ElevationLevel.Medium:
-                    layers = 5;
-                    baseAlpha = 10;
+                    layers = 6;
+                    baseAlpha = 6;
                     offsetY = 2;
+                    spread = 1.0f;
                     break;
                 case ElevationLevel.High:
-                    layers = 8;
-                    baseAlpha = 12;
+                    layers = 10;
+                    baseAlpha = 8;
                     offsetY = 4;
+                    spread = 1.5f;
                     break;
                 default:
-                    layers = 0;
-                    baseAlpha = 0;
-                    offsetY = 0;
-                    break;
+                    return; // None => skip
             }
 
-            // Draw shadow layers (from outer to inner)
+            // Draw shadow layers (from outer to inner) - soft edge technique
             for (int i = layers; i >= 1; i--)
             {
                 var shadowRect = new RectangleF(
-                    contentRect.X - i + 1,
-                    contentRect.Y - i + 1 + offsetY,
-                    contentRect.Width + (i - 1) * 2,
-                    contentRect.Height + (i - 1) * 2
+                    contentRect.X - (i * spread) + 1,
+                    contentRect.Y - (i * spread) + 1 + offsetY,
+                    contentRect.Width + (i * spread - 1) * 2,
+                    contentRect.Height + (i * spread - 1) * 2
                 );
 
-                int alpha = baseAlpha + (layers - i) * 2;
-                float radius = _borderRadius > 0 ? _borderRadius + i : i * 2;
+                int alpha = Math.Max(1, baseAlpha + (layers - i)); // Độ sáng shadow giảm mượt từ trong ra
+                float radius = _borderRadius > 0 ? _borderRadius + i * spread : i * spread * 2;
 
                 using (var path = GetFigurePath(shadowRect, radius))
                 using (var brush = new SolidBrush(Color.FromArgb(alpha, 0, 0, 0)))
