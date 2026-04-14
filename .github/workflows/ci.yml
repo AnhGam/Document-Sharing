@@ -85,7 +85,7 @@ jobs:
       - name: PR Review (GitHub Models)
         if: github.event_name == 'pull_request'
         env:
-          GH_MODELS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_MODELS_TOKEN: ${{ secrets.GH_MODELS_TOKEN }}
         run: |
           git diff origin/${{ github.base_ref }} HEAD > pr_diff.txt
           powershell ./scripts/pr-reviewer-github.ps1 -DiffFile pr_diff.txt -Token "${{ env.GH_MODELS_TOKEN }}"
