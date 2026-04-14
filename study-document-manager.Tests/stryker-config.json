@@ -1,0 +1,15 @@
+{
+  "stryker-config": {
+    "solution": "../study-document-manager.sln",
+    "project": "study-document-manager.csproj",
+    "reporters": [
+      "html",
+      "progress"
+    ],
+    "thresholds": {
+      "break": 0,
+      "low": 60,
+      "high": 80
+    }
+  }
+}
