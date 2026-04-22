@@ -17,13 +17,7 @@
     <ApplicationIcon>assets\logo\logo.ico</ApplicationIcon>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
-    <MinVerTagPrefix>v</MinVerTagPrefix>
   </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="MinVer" Version="5.0.0">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
