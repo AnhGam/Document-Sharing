@@ -1,5 +1,5 @@
 using NUnit.Framework;
-using JetBrains.DotMemoryUnit;
+using JetBrains.dotMemoryUnit;
 using System.Windows.Forms;
 using study_document_manager;
 
@@ -9,7 +9,7 @@ namespace study_document_manager.Tests
     public class PerformanceTests
     {
         [Test]
-        [DotMemoryUnit(FailIfMemoryPresenceGreaterThan = 0)]
+        [DotMemoryUnit]
         public void Dashboard_Should_Not_Leak_Memory_After_Closing()
         {
             // Bài test này dùng dotMemory Unit để kiểm tra rò rỉ bộ nhớ.

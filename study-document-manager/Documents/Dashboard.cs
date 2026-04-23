@@ -105,6 +105,24 @@ namespace study_document_manager
                 ClearUIFilters();
                 TriggerRefresh();
             };
+
+            // Raise interface events for Add, Edit, Open, Export (required by IDashboardView contract)
+            toolBtnNew.Click += (s, e) => AddRequested?.Invoke(this, EventArgs.Empty);
+            toolBtnEdit.Click += (s, e) =>
+            {
+                var doc = dgvDocuments.SelectedRows.Count > 0
+                    ? dgvDocuments.SelectedRows[0].DataBoundItem as Core.Entities.StudyDocument
+                    : null;
+                EditRequested?.Invoke(this, doc?.Id ?? -1);
+            };
+            toolBtnOpen.Click += (s, e) =>
+            {
+                var doc = dgvDocuments.SelectedRows.Count > 0
+                    ? dgvDocuments.SelectedRows[0].DataBoundItem as Core.Entities.StudyDocument
+                    : null;
+                OpenFileRequested?.Invoke(this, doc?.DuongDan ?? string.Empty);
+            };
+            toolBtnExport.Click += (s, e) => ExportRequested?.Invoke(this, EventArgs.Empty);
         }
 
         private void TriggerRefresh()
