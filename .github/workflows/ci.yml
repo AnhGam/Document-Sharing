@@ -84,13 +84,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: powershell ./scripts/ai-log-analyzer.ps1 -ApiKey "${{ env.GEMINI_API_KEY }}"
 
-      - name: PR Review (GitHub Models)
-        if: github.event_name == 'pull_request'
-        env:
-          GH_MODELS_TOKEN: ${{ secrets.GH_MODELS_TOKEN }}
-        run: |
-          git diff origin/${{ github.base_ref }} HEAD > pr_diff.txt
-          powershell ./scripts/pr-reviewer-github.ps1 -DiffFile pr_diff.txt -Token "${{ env.GH_MODELS_TOKEN }}"
+
 
       - name: Archive Build Reports (GitOps)
         if: always()

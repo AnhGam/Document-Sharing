@@ -13,6 +13,7 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
     <TargetFrameworkProfile />
+    <RuntimeIdentifier>win</RuntimeIdentifier>
     <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
     <ApplicationIcon>assets\logo\logo.ico</ApplicationIcon>
     <NuGetPackageImportStamp>
@@ -270,7 +271,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft-WindowsAPICodePack-Core" Version="1.1.5" />
     <PackageReference Include="Microsoft-WindowsAPICodePack-Shell" Version="1.1.5" />
-    <PackageReference Include="System.Data.SQLite">
+    <PackageReference Include="Stub.System.Data.SQLite.Core.NetFramework">
       <Version>1.0.118</Version>
     </PackageReference>
     <PackageReference Include="System.Resources.Extensions">
