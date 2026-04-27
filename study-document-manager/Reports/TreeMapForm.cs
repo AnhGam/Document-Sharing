@@ -133,7 +133,7 @@ namespace study_document_manager
             btnBySubject = CreateToolButton("Danh mục", 110, true);
             btnBySubject.Click += (s, e) => LoadData("subject");
 
-            btnByType = CreateToolButton("Loại file", 200, false);
+            btnByType = CreateToolButton("Định dạng", 200, false);
             btnByType.Click += (s, e) => LoadData("type");
 
             pnlToolbar.Controls.AddRange(new Control[] { lblMode, btnBySubject, btnByType });
@@ -226,15 +226,15 @@ namespace study_document_manager
                 if (mode == "subject")
                 {
                     dt = DatabaseHelper.GetStatisticsBySubject();
-                    categoryColumn = "mon_hoc";
+                    categoryColumn = "danh_muc";
                     lblSubtitle.Text = "Phân bố tài liệu theo danh mục";
                     SetActiveButton(btnBySubject);
                 }
                 else
                 {
                     dt = DatabaseHelper.GetStatisticsByType();
-                    categoryColumn = "loai";
-                    lblSubtitle.Text = "Phân bố tài liệu theo loại file";
+                    categoryColumn = "dinh_dang";
+                    lblSubtitle.Text = "Phân bố tài liệu theo định dạng";
                     SetActiveButton(btnByType);
                 }
 

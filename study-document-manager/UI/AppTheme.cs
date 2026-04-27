@@ -162,10 +162,10 @@ namespace study_document_manager.UI
         #endregion
 
         #region === BORDER RADIUS (Win11 style) ===
-        public static readonly int BorderRadius = 8;
-        public static readonly int ButtonRadius = 4;        // Win11 uses small radius for buttons
-        public static readonly int InputRadius = 4;
-        public static readonly int RadiusSmall = 4;
+        public static readonly int BorderRadius = 12;
+        public static readonly int ButtonRadius = 8;        // Increased from 4 for more modern look
+        public static readonly int InputRadius = 6;
+        public static readonly int RadiusSmall = 6;
         public static readonly int RadiusFull = 9999;
         #endregion
 

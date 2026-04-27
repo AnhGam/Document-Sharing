@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
@@ -9,7 +9,7 @@ namespace study_document_manager
 {
     public partial class AddEditForm : Form
     {
-        private int? document_id = null;
+        private int? _documentId = null;
 
         public AddEditForm()
         {
@@ -17,8 +17,6 @@ namespace study_document_manager
             this.Text = "Thêm tài liệu mới";
             LoadComboBoxData();
             ApplyTheme();
-
-            chkHasDeadline.CheckedChanged += ChkHasDeadline_CheckedChanged;
         }
 
         private void ApplyTheme()
@@ -32,28 +30,13 @@ namespace study_document_manager
             ApplyThemeToControls(this.Controls);
 
             // Buttons
-            AppTheme.ApplyButtonPrimary(btn_chon_file);
-            AppTheme.ApplyButtonSuccess(btn_luu);
-            AppTheme.ApplyButtonSecondary(btn_huy);
+            AppTheme.ApplyButtonPrimary(btnChonFile);
+            AppTheme.ApplyButtonSuccess(btnLuu);
+            AppTheme.ApplyButtonSecondary(btnHuy);
 
             // Important checkbox
-            chk_quan_trong.ForeColor = AppTheme.AccentAmber;
-            chk_quan_trong.Font = new Font(AppTheme.FontFamily, 9F, FontStyle.Bold);
-
-            // Deadline checkbox
-            chkHasDeadline.ForeColor = AppTheme.TextSecondary;
-
-            // DateTimePicker
-            dtpDeadline.Font = AppTheme.FontBody;
-        }
-
-        private void ChkHasDeadline_CheckedChanged(object sender, EventArgs e)
-        {
-            dtpDeadline.Enabled = chkHasDeadline.Checked;
-            if (chkHasDeadline.Checked && dtpDeadline.Value < DateTime.Now.Date)
-            {
-                dtpDeadline.Value = DateTime.Now.AddDays(7); // Mặc định 1 tuần
-            }
+            chkQuanTrong.ForeColor = AppTheme.AccentAmber;
+            chkQuanTrong.Font = new Font(AppTheme.FontFamily, 9F, FontStyle.Bold);
         }
 
         /// <summary>
@@ -62,7 +45,7 @@ namespace study_document_manager
         /// <param name="id">ID của tài liệu cần sửa</param>
         public AddEditForm(int id) : this()
         {
-            document_id = id;
+            _documentId = id;
             this.Text = "Sửa tài liệu";
             LoadDocumentData();
         }
@@ -73,25 +56,25 @@ namespace study_document_manager
         private void LoadComboBoxData()
         {
             // Danh mục - Phù hợp cho mọi đối tượng người dùng
-            cbo_mon_hoc.Items.Clear();
-            cbo_mon_hoc.Items.Add("Công việc");
-            cbo_mon_hoc.Items.Add("Cá nhân");
-            cbo_mon_hoc.Items.Add("Học tập");
-            cbo_mon_hoc.Items.Add("Dự án");
-            cbo_mon_hoc.Items.Add("Tài chính");
-            cbo_mon_hoc.Items.Add("Hợp đồng");
-            cbo_mon_hoc.Items.Add("Tham khảo");
-            cbo_mon_hoc.Items.Add("Khác");
+            cboDanhMuc.Items.Clear();
+            cboDanhMuc.Items.Add("Công việc");
+            cboDanhMuc.Items.Add("Cá nhân");
+            cboDanhMuc.Items.Add("Học tập");
+            cboDanhMuc.Items.Add("Dự án");
+            cboDanhMuc.Items.Add("Tài chính");
+            cboDanhMuc.Items.Add("Hợp đồng");
+            cboDanhMuc.Items.Add("Tham khảo");
+            cboDanhMuc.Items.Add("Khác");
 
-            // Loại tài liệu
-            cbo_loai.Items.Clear();
-            cbo_loai.Items.Add("Tài liệu");
-            cbo_loai.Items.Add("Báo cáo");
-            cbo_loai.Items.Add("Hướng dẫn");
-            cbo_loai.Items.Add("Biểu mẫu");
-            cbo_loai.Items.Add("Hình ảnh");
-            cbo_loai.Items.Add("Video");
-            cbo_loai.Items.Add("Khác");
+            // Định dạng tài liệu
+            cboDinhDang.Items.Clear();
+            cboDinhDang.Items.Add("Tài liệu");
+            cboDinhDang.Items.Add("Báo cáo");
+            cboDinhDang.Items.Add("Hướng dẫn");
+            cboDinhDang.Items.Add("Biểu mẫu");
+            cboDinhDang.Items.Add("Hình ảnh");
+            cboDinhDang.Items.Add("Video");
+            cboDinhDang.Items.Add("Khác");
         }
 
         /// <summary>
@@ -99,7 +82,7 @@ namespace study_document_manager
         /// </summary>
         private void LoadDocumentData()
         {
-            if (!document_id.HasValue) return;
+            if (!_documentId.HasValue) return;
 
             try
             {
@@ -107,42 +90,30 @@ namespace study_document_manager
                     "SELECT * FROM tai_lieu WHERE id = @id",
                     new System.Data.SQLite.SQLiteParameter[]
                     {
-                        new System.Data.SQLite.SQLiteParameter("@id", document_id.Value)
+                        new System.Data.SQLite.SQLiteParameter("@id", _documentId.Value)
                     });
 
                 if (dt.Rows.Count > 0)
                 {
                     var row = dt.Rows[0];
-                    txt_ten.Text = row["ten"].ToString();
-                    cbo_mon_hoc.Text = row["mon_hoc"].ToString();
-                    cbo_loai.Text = row["loai"].ToString();
-                    txt_duong_dan.Text = row["duong_dan"].ToString();
-                    txt_ghi_chu.Text = row["ghi_chu"].ToString();
-                    txt_tac_gia.Text = row["tac_gia"].ToString();
+                    txtTen.Text = row["ten"].ToString();
+                    cboDanhMuc.Text = row["danh_muc"].ToString();
+                    cboDinhDang.Text = row["dinh_dang"].ToString();
+                    txtDuongDan.Text = row["duong_dan"].ToString();
+                    txtGhiChu.Text = row["ghi_chu"].ToString();
                     
                     if (row["kich_thuoc"] != DBNull.Value)
                     {
                         double size = Convert.ToDouble(row["kich_thuoc"]);
-                        txt_kich_thuoc.Text = size.ToString("F2");
+                        txtKichThuoc.Text = size.ToString("F2");
                     }
                     
-                    chk_quan_trong.Checked = Convert.ToBoolean(row["quan_trong"]);
+                    chkQuanTrong.Checked = Convert.ToBoolean(row["quan_trong"]);
 
                     // Load Tags (Phase 2)
                     if (row["tags"] != DBNull.Value)
                     {
                         txtTags.Text = row["tags"].ToString();
-                    }
-
-                    // Load Deadline (Phase 2)
-                    if (row["deadline"] != DBNull.Value)
-                    {
-                        chkHasDeadline.Checked = true;
-                        dtpDeadline.Value = Convert.ToDateTime(row["deadline"]);
-                    }
-                    else
-                    {
-                        chkHasDeadline.Checked = false;
                     }
                 }
             }
@@ -155,10 +126,10 @@ namespace study_document_manager
         /// <summary>
         /// Button chọn file
         /// </summary>
-        private void btn_chon_file_Click(object sender, EventArgs e)
+        private void BtnChonFileClick(object sender, EventArgs e)
         {
-            OpenFileDialog open_file_dialog = new OpenFileDialog();
-            open_file_dialog.Filter = "Tất cả file hỗ trợ|*.pdf;*.doc;*.docx;*.ppt;*.pptx;*.txt;*.xlsx;*.xls;*.jpg;*.jpeg;*.png;*.gif;*.bmp;*.ico;*.tiff;*.webp;*.mp4;*.avi;*.mkv;*.mov;*.wmv;*.webm;*.flv;*.m4v|" +
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            openFileDialog.Filter = "Tất cả file hỗ trợ|*.pdf;*.doc;*.docx;*.ppt;*.pptx;*.txt;*.xlsx;*.xls;*.jpg;*.jpeg;*.png;*.gif;*.bmp;*.ico;*.tiff;*.webp;*.mp4;*.avi;*.mkv;*.mov;*.wmv;*.webm;*.flv;*.m4v|" +
                                       "Tài liệu|*.pdf;*.doc;*.docx;*.ppt;*.pptx;*.txt;*.xlsx;*.xls|" +
                                       "Hình ảnh|*.jpg;*.jpeg;*.png;*.gif;*.bmp;*.ico;*.tiff;*.webp|" +
                                       "Video|*.mp4;*.avi;*.mkv;*.mov;*.wmv;*.webm;*.flv;*.m4v|" +
@@ -166,63 +137,64 @@ namespace study_document_manager
                                       "Word (*.doc;*.docx)|*.doc;*.docx|" +
                                       "Excel (*.xlsx;*.xls)|*.xlsx;*.xls|" +
                                       "PowerPoint (*.ppt;*.pptx)|*.ppt;*.pptx";
-            open_file_dialog.Title = "Chọn file";
+            openFileDialog.Title = "Chọn file";
 
-            if (open_file_dialog.ShowDialog() == DialogResult.OK)
+            if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
-                string duong_dan = open_file_dialog.FileName;
-                txt_duong_dan.Text = duong_dan;
+                string duongDan = openFileDialog.FileName;
+                txtDuongDan.Text = duongDan;
 
                 // Tự động điền tên file nếu chưa có tên
-                if (string.IsNullOrWhiteSpace(txt_ten.Text))
+                if (string.IsNullOrWhiteSpace(txtTen.Text))
                 {
-                    txt_ten.Text = Path.GetFileNameWithoutExtension(duong_dan);
+                    txtTen.Text = Path.GetFileNameWithoutExtension(duongDan);
                 }
 
                 // Tự động nhận diện loại file
-                string ext = Path.GetExtension(duong_dan).ToLowerInvariant();
+                string ext = Path.GetExtension(duongDan).ToLowerInvariant();
                 string detectedType = DetectFileType(ext);
                 if (!string.IsNullOrEmpty(detectedType))
                 {
-                    cbo_loai.SelectedItem = detectedType;
+                    cboDinhDang.SelectedItem = detectedType;
                 }
 
                 // Tính kích thước file
                 try
                 {
-                    FileInfo file_info = new FileInfo(duong_dan);
-                    double kich_thuoc = file_info.Length / (1024.0 * 1024.0); // Convert to MB
-                    txt_kich_thuoc.Text = kich_thuoc.ToString("F2");
+                    FileInfo fileInfo = new FileInfo(duongDan);
+                    double kichThuoc = fileInfo.Length / (1024.0 * 1024.0); // Convert to MB
+                    txtKichThuoc.Text = kichThuoc.ToString("F2");
                 }
                 catch
                 {
-                    txt_kich_thuoc.Text = "0.00";
+                    txtKichThuoc.Text = "0.00";
                 }
             }
         }
 
+
         /// <summary>
         /// Button lưu
         /// </summary>
-        private void btn_luu_Click(object sender, EventArgs e)
+        private void BtnLuuClick(object sender, EventArgs e)
         {
             // Validate dữ liệu
-            if (string.IsNullOrWhiteSpace(txt_ten.Text))
+            if (string.IsNullOrWhiteSpace(txtTen.Text))
             {
                 ToastNotification.Warning("Vui lòng nhập tên tài liệu!");
-                txt_ten.Focus();
+                txtTen.Focus();
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(txt_duong_dan.Text))
+            if (string.IsNullOrWhiteSpace(txtDuongDan.Text))
             {
                 ToastNotification.Warning("Vui lòng chọn file tài liệu!");
-                btn_chon_file.Focus();
+                btnChonFile.Focus();
                 return;
             }
 
             // Kiểm tra file có tồn tại không
-            if (!File.Exists(txt_duong_dan.Text))
+            if (!File.Exists(txtDuongDan.Text))
             {
                 ToastNotification.Error("File không tồn tại! Vui lòng chọn file khác.");
                 return;
@@ -230,33 +202,30 @@ namespace study_document_manager
 
             try
             {
-                double? kich_thuoc = null;
-                if (!string.IsNullOrWhiteSpace(txt_kich_thuoc.Text))
+                double? kichThuoc = null;
+                if (!string.IsNullOrWhiteSpace(txtKichThuoc.Text))
                 {
-                    kich_thuoc = Convert.ToDouble(txt_kich_thuoc.Text);
+                    kichThuoc = Convert.ToDouble(txtKichThuoc.Text);
                 }
 
                 bool success = false;
 
-                // Lấy giá trị tags và deadline
+                // Lấy giá trị tags
                 string tags = txtTags.Text.Trim();
-                DateTime? deadline = chkHasDeadline.Checked ? (DateTime?)dtpDeadline.Value.Date : null;
 
-                if (document_id.HasValue)
+                if (_documentId.HasValue)
                 {
                     // Sửa tài liệu
                     success = DatabaseHelper.UpdateDocument(
-                        document_id.Value,
-                        txt_ten.Text.Trim(),
-                        cbo_mon_hoc.Text.Trim(),
-                        cbo_loai.Text.Trim(),
-                        txt_duong_dan.Text.Trim(),
-                        txt_ghi_chu.Text.Trim(),
-                        kich_thuoc,
-                        txt_tac_gia.Text.Trim(),
-                        chk_quan_trong.Checked,
-                        tags,
-                        deadline
+                        _documentId.Value,
+                        txtTen.Text.Trim(),
+                        cboDanhMuc.Text.Trim(),
+                        cboDinhDang.Text.Trim(),
+                        txtDuongDan.Text.Trim(),
+                        txtGhiChu.Text.Trim(),
+                        kichThuoc,
+                        chkQuanTrong.Checked,
+                        tags
                     );
 
                     if (success)
@@ -270,16 +239,14 @@ namespace study_document_manager
                 {
                     // Thêm tài liệu mới
                     success = DatabaseHelper.InsertDocument(
-                        txt_ten.Text.Trim(),
-                        cbo_mon_hoc.Text.Trim(),
-                        cbo_loai.Text.Trim(),
-                        txt_duong_dan.Text.Trim(),
-                        txt_ghi_chu.Text.Trim(),
-                        kich_thuoc,
-                        txt_tac_gia.Text.Trim(),
-                        chk_quan_trong.Checked,
-                        tags,
-                        deadline
+                        txtTen.Text.Trim(),
+                        cboDanhMuc.Text.Trim(),
+                        cboDinhDang.Text.Trim(),
+                        txtDuongDan.Text.Trim(),
+                        txtGhiChu.Text.Trim(),
+                        kichThuoc,
+                        chkQuanTrong.Checked,
+                        tags
                     );
 
                     if (success)
@@ -299,7 +266,7 @@ namespace study_document_manager
         /// <summary>
         /// Button hủy
         /// </summary>
-        private void btn_huy_Click(object sender, EventArgs e)
+        private void BtnHuyClick(object sender, EventArgs e)
         {
             this.DialogResult = DialogResult.Cancel;
             this.Close();
@@ -308,16 +275,16 @@ namespace study_document_manager
         /// <summary>
         /// Nhấn Enter ở TextBox tên -> chuyển focus
         /// </summary>
-        private void txt_ten_KeyPress(object sender, KeyPressEventArgs e)
+        private void TxtTenKeyPress(object sender, KeyPressEventArgs e)
         {
             if (e.KeyChar == (char)Keys.Enter)
             {
                 e.Handled = true;
-                cbo_mon_hoc.Focus();
+                cboDanhMuc.Focus();
             }
         }
 
-        private void AddEditForm_Load(object sender, EventArgs e)
+        private void AddEditFormLoad(object sender, EventArgs e)
         {
             // Inherit app icon from parent form
             if (this.Owner != null && this.Owner.Icon != null)

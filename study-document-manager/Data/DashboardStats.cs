@@ -5,9 +5,8 @@ namespace study_document_manager
         public int TotalDocuments { get; set; }
         public int ImportantDocuments { get; set; }
         public int NoFileDocuments { get; set; }
-        public int NearDeadlineDocuments { get; set; }
-        public int OverdueDocuments { get; set; }
         public int TotalCategories { get; set; }
         public int TotalCollections { get; set; }
+        public int DeletedDocuments { get; set; }
     }
 }

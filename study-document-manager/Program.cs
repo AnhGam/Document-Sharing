@@ -14,9 +14,6 @@ namespace study_document_manager
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            // Khởi tạo SQLite native library
-            SQLitePCL.Batteries_V2.Init();
-
             // Khởi tạo database SQLite (tạo file và bảng nếu chưa có)
             DatabaseHelper.InitializeDatabase();
 

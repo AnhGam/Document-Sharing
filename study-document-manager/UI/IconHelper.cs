@@ -8,7 +8,7 @@ using study_document_manager.UI;
 namespace study_document_manager
 {
     /// <summary>
-    /// Helper class để tạo icon cho các loại tài liệu
+    /// Helper class để tạo icon cho các định dạng tài liệu
     /// </summary>
     public static class IconHelper
     {
@@ -75,7 +75,7 @@ namespace study_document_manager
         /// <summary>
         /// Lấy icon dựa vào đường dẫn file (ưu tiên extension)
         /// </summary>
-        public static Bitmap GetDocumentIcon(string loai, int size = 24, string filePath = null)
+        public static Bitmap GetDocumentIcon(string dinhDang, int size = 24, string filePath = null)
         {
             // Đảm bảo size hợp lệ
             if (size <= 0) size = 24;
@@ -150,8 +150,8 @@ namespace study_document_manager
             // Nếu load được icon thì trả về
             if (icon != null) return icon;
 
-            // Fallback: dùng loại tài liệu
-            string type = (loai ?? "").ToLower();
+            // Fallback: dùng định dạng tài liệu
+            string type = (dinhDang ?? "").ToLower();
             if (type.Contains("word") || type.Contains("tài liệu") || type.Contains("báo cáo"))
             {
                 icon = LoadIcon("word.png", size);
@@ -230,8 +230,7 @@ namespace study_document_manager
                     new PointF(size - m, size - m),
                     new PointF(m, size - m)
                 };
-                using (Brush fill = Brushes.White)
-                    g.FillPolygon(fill, doc);
+                g.FillPolygon(Brushes.White, doc);
             }
             return bmp;
         }
@@ -795,6 +794,30 @@ namespace study_document_manager
                     Math.Min(255, c.R + 30), Math.Min(255, c.G + 30),
                     Math.Min(255, c.B + 30))),
                     9 * s, 10 * s, 6 * s, 5 * s);
+            }
+            return bmp;
+        }
+
+        public static Bitmap CreateHelpIcon(int size = 16, Color? color = null)
+        {
+            Color c = color ?? Color.FromArgb(59, 130, 246);
+            Bitmap bmp = new Bitmap(size, size);
+            using (Graphics g = Graphics.FromImage(bmp))
+            {
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                g.Clear(Color.Transparent);
+                using (Pen pen = new Pen(c, 1.5f))
+                {
+                    // Circle
+                    g.DrawEllipse(pen, 1, 1, size - 3, size - 3);
+                    // Question mark shape (simplified)
+                    float cx = size / 2f;
+                    float cy = size / 2f;
+                    g.DrawArc(pen, cx - size*0.2f, cy - size*0.3f, size*0.4f, size*0.4f, 180, 180);
+                    g.DrawLine(pen, cx + size*0.2f, cy - size*0.1f, cx, cy + size*0.1f);
+                    // Dot
+                    g.FillEllipse(new SolidBrush(c), cx - 1, cy + size*0.25f, 2, 2);
+                }
             }
             return bmp;
         }
