@@ -29,8 +29,10 @@ WORKFLOWS.md
 [Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/
-x64/
-x86/
+# x64/ and x86/ are NOT ignored because study-document-manager/x64 and x86
+# contain SQLite.Interop.dll which must be tracked for CI/CD builds.
+# x64/
+# x86/
 [Ww][Ii][Nn]32/
 [Aa][Rr][Mm]/
 [Aa][Rr][Mm]64/

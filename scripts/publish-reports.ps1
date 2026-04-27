@@ -12,9 +12,9 @@ $ErrorActionPreference = "Continue" # Change to continue to manage errors manual
 
 Write-Host "--- Initializing GitOps Reporting System ---"
 
-# 1. Setup Identity
-git config user.name "github-actions[bot]"
-git config user.email "github-actions[bot]@users.noreply.github.com"
+# 1. Setup Identity (global so it applies to temp repos too)
+git config --global user.name "github-actions[bot]"
+git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
 # 2. Preparation
 $logsDir = "logs-branch-temp"
