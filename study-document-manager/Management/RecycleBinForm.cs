@@ -120,11 +120,6 @@ namespace study_document_manager.Management
                 HeaderText = "Tên tài liệu", Width = 280
             });
 
-            dgvDeleted.Columns.Add(new DataGridViewTextBoxColumn
-            {
-                Name = "danh_muc", DataPropertyName = "danh_muc",
-                HeaderText = "Danh mục", Width = 130
-            });
 
             dgvDeleted.Columns.Add(new DataGridViewTextBoxColumn
             {

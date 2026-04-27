@@ -102,8 +102,7 @@ namespace study_document_manager.Documents
             };
 
             dgvRelated.Columns.Add(new DataGridViewTextBoxColumn { Name = "DocName", HeaderText = "Tên tài liệu", Width = 250 });
-            dgvRelated.Columns.Add(new DataGridViewTextBoxColumn { Name = "Subject", HeaderText = "Danh mục", Width = 120 });
-            dgvRelated.Columns.Add(new DataGridViewTextBoxColumn { Name = "Type", HeaderText = "Định dạng", Width = 80 });
+            dgvRelated.Columns.Add(new DataGridViewTextBoxColumn { Name = "Type", HeaderText = "Định dạng", Width = 100 });
             dgvRelated.Columns.Add(new DataGridViewTextBoxColumn { Name = "RelationType", HeaderText = "Quan hệ", Width = 100 });
             dgvRelated.Columns.Add(new DataGridViewTextBoxColumn { Name = "RelationId", Visible = false });
             dgvRelated.Columns.Add(new DataGridViewTextBoxColumn { Name = "DocId", Visible = false });
@@ -121,7 +120,7 @@ namespace study_document_manager.Documents
             };
             lblSuggestTitle = new Label
             {
-                Text = "Gợi ý tài liệu cùng danh mục/tag:",
+                Text = "Gợi ý tài liệu cùng tag:",
                 Dock = DockStyle.Bottom,
                 Height = 25,
                 Font = new Font(AppTheme.FontFamily, 9f, FontStyle.Italic),
@@ -169,7 +168,6 @@ namespace study_document_manager.Documents
                 {
                     dgvRelated.Rows.Add(
                         row["ten"]?.ToString(),
-                        row["danh_muc"]?.ToString(),
                         row["dinh_dang"]?.ToString(),
                         row["relation_type"]?.ToString(),
                         row["relation_id"]?.ToString(),

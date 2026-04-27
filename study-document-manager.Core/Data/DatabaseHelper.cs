@@ -89,7 +89,6 @@ namespace study_document_manager.Core.Data
                 CREATE TABLE IF NOT EXISTS tai_lieu (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     ten TEXT NOT NULL,
-                    danh_muc TEXT,
                     dinh_dang TEXT,
                     duong_dan TEXT,
                     ghi_chu TEXT,
@@ -132,7 +131,7 @@ namespace study_document_manager.Core.Data
                 );
 
                 -- Index để tối ưu tìm kiếm
-                CREATE INDEX IF NOT EXISTS idx_tai_lieu_danh_muc ON tai_lieu(danh_muc);
+                -- Indexes removed for danh_muc
                 CREATE INDEX IF NOT EXISTS idx_tai_lieu_dinh_dang ON tai_lieu(dinh_dang);
                 CREATE INDEX IF NOT EXISTS idx_tai_lieu_ngay_them ON tai_lieu(ngay_them);
                 CREATE INDEX IF NOT EXISTS idx_collection_items_collection ON collection_items(collection_id);
@@ -347,7 +346,6 @@ namespace study_document_manager.Core.Data
             string query = @"SELECT * FROM tai_lieu
                            WHERE (is_deleted IS NULL OR is_deleted = 0)
                            AND (ten LIKE @keyword
-                           OR danh_muc LIKE @keyword
                            OR ghi_chu LIKE @keyword)
                            ORDER BY ngay_them DESC";
 
@@ -366,10 +364,7 @@ namespace study_document_manager.Core.Data
         {
             string query = "SELECT * FROM tai_lieu WHERE 1=1";
 
-            if (!string.IsNullOrEmpty(danhMuc) && danhMuc != "Tất cả")
-            {
-                query += " AND danh_muc = @danh_muc";
-            }
+            // danhMuc filter removed
 
             if (!string.IsNullOrEmpty(dinhDang) && dinhDang != "Tất cả")
             {
@@ -380,7 +375,6 @@ namespace study_document_manager.Core.Data
 
             System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
             {
-                new System.Data.SQLite.SQLiteParameter("@danh_muc", string.IsNullOrEmpty(danhMuc) ? DBNull.Value : (object)danhMuc),
                 new System.Data.SQLite.SQLiteParameter("@dinh_dang", string.IsNullOrEmpty(dinhDang) ? DBNull.Value : (object)dinhDang)
             };
 
@@ -407,16 +401,11 @@ namespace study_document_manager.Core.Data
             // Keyword search
             if (!string.IsNullOrWhiteSpace(keyword))
             {
-                baseQuery += " AND (ten LIKE @keyword OR danh_muc LIKE @keyword OR ghi_chu LIKE @keyword OR tags LIKE @keyword)";
+                baseQuery += " AND (ten LIKE @keyword OR ghi_chu LIKE @keyword OR tags LIKE @keyword)";
                 parameterList.Add(new System.Data.SQLite.SQLiteParameter("@keyword", "%" + keyword + "%"));
             }
 
-            // Danh mục
-            if (!string.IsNullOrEmpty(danhMuc) && danhMuc != "Tất cả")
-            {
-                baseQuery += " AND danh_muc = @danh_muc";
-                parameterList.Add(new System.Data.SQLite.SQLiteParameter("@danh_muc", danhMuc));
-            }
+            // Danh mục removed
 
             // Định dạng
             if (!string.IsNullOrEmpty(dinhDang) && dinhDang != "Tất cả")
@@ -464,19 +453,42 @@ namespace study_document_manager.Core.Data
             return ExecuteQuery(baseQuery, parameterList.ToArray());
         }
 
+        /// <summary>
+        /// Kiểm tra xem tài liệu đã tồn tại trong database dựa trên đường dẫn chưa
+        /// </summary>
+        public static bool CheckDocumentExists(string duongDan)
+        {
+            if (string.IsNullOrEmpty(duongDan)) return false;
+            
+            try
+            {
+                using (var conn = new SQLiteConnection(ConnectionString))
+                {
+                    conn.Open();
+                    string query = "SELECT COUNT(*) FROM tai_lieu WHERE duong_dan = @path AND (is_deleted IS NULL OR is_deleted = 0)";
+                    using (var cmd = new SQLiteCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@path", duongDan);
+                        int count = Convert.ToInt32(cmd.ExecuteScalar());
+                        return count > 0;
+                    }
+                }
+            }
+            catch { return false; }
+        }
+
         public static bool InsertDocument(string ten, string danhMuc, string dinhDang,
             string duongDan, string ghiChu, double? kichThuoc, bool quanTrong,
             string tags = null)
         {
             string query = @"INSERT INTO tai_lieu
-                (ten, danh_muc, dinh_dang, duong_dan, ghi_chu, kich_thuoc, quan_trong, tags)
+                (ten, dinh_dang, duong_dan, ghi_chu, kich_thuoc, quan_trong, tags)
                 VALUES
-                (@ten, @danh_muc, @dinh_dang, @duong_dan, @ghi_chu, @kich_thuoc, @quan_trong, @tags)";
+                (@ten, @dinh_dang, @duong_dan, @ghi_chu, @kich_thuoc, @quan_trong, @tags)";
 
             System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
             {
                 new System.Data.SQLite.SQLiteParameter("@ten", ten),
-                new System.Data.SQLite.SQLiteParameter("@danh_muc", string.IsNullOrEmpty(danhMuc) ? DBNull.Value : (object)danhMuc),
                 new System.Data.SQLite.SQLiteParameter("@dinh_dang", string.IsNullOrEmpty(dinhDang) ? DBNull.Value : (object)dinhDang),
                 new System.Data.SQLite.SQLiteParameter("@duong_dan", duongDan ?? (object)DBNull.Value),
                 new System.Data.SQLite.SQLiteParameter("@ghi_chu", string.IsNullOrEmpty(ghiChu) ? DBNull.Value : (object)ghiChu),
@@ -498,7 +510,6 @@ namespace study_document_manager.Core.Data
         {
             string query = @"UPDATE tai_lieu SET
                 ten = @ten,
-                danh_muc = @danh_muc,
                 dinh_dang = @dinh_dang,
                 duong_dan = @duong_dan,
                 ghi_chu = @ghi_chu,
@@ -511,7 +522,6 @@ namespace study_document_manager.Core.Data
             {
                 new System.Data.SQLite.SQLiteParameter("@id", id),
                 new System.Data.SQLite.SQLiteParameter("@ten", ten),
-                new System.Data.SQLite.SQLiteParameter("@danh_muc", string.IsNullOrEmpty(danhMuc) ? DBNull.Value : (object)danhMuc),
                 new System.Data.SQLite.SQLiteParameter("@dinh_dang", string.IsNullOrEmpty(dinhDang) ? DBNull.Value : (object)dinhDang),
                 new System.Data.SQLite.SQLiteParameter("@duong_dan", duongDan ?? (object)DBNull.Value),
                 new System.Data.SQLite.SQLiteParameter("@ghi_chu", string.IsNullOrEmpty(ghiChu) ? DBNull.Value : (object)ghiChu),
@@ -713,19 +723,6 @@ namespace study_document_manager.Core.Data
 
         #endregion
 
-        /// <summary>
-        /// Lấy thống kê số lượng tài liệu theo danh mục
-        /// </summary>
-        public static DataTable GetStatisticsBySubject()
-        {
-            string query = @"SELECT COALESCE(NULLIF(danh_muc, ''), 'Chưa phân loại') as danh_muc, COUNT(*) as so_luong
-                           FROM tai_lieu
-                           WHERE (is_deleted IS NULL OR is_deleted = 0)
-                           GROUP BY COALESCE(NULLIF(danh_muc, ''), 'Chưa phân loại')
-                           ORDER BY so_luong DESC";
-
-            return ExecuteQuery(query);
-        }
 
         /// <summary>
         /// Lấy thống kê số lượng tài liệu theo loại
@@ -775,10 +772,6 @@ namespace study_document_manager.Core.Data
             object noFileResult = ExecuteScalar(noFileQuery);
             stats.NoFileDocuments = noFileResult != null ? Convert.ToInt32(noFileResult) : 0;
 
-            // Số danh mục
-            string categoryQuery = "SELECT COUNT(DISTINCT danh_muc) FROM tai_lieu WHERE danh_muc IS NOT NULL AND danh_muc != '' AND (is_deleted IS NULL OR is_deleted = 0)";
-            object categoryResult = ExecuteScalar(categoryQuery);
-            stats.TotalCategories = categoryResult != null ? Convert.ToInt32(categoryResult) : 0;
 
             // Số collections
             string collectionQuery = "SELECT COUNT(*) FROM collections";

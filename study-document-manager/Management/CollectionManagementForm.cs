@@ -93,7 +93,6 @@ namespace study_document_manager.Management
                 // Format grid
                 if (dgvDocuments.Columns.Contains("id")) dgvDocuments.Columns["id"].Visible = false;
                 if (dgvDocuments.Columns.Contains("ten")) dgvDocuments.Columns["ten"].HeaderText = "Tên tài liệu";
-                if (dgvDocuments.Columns.Contains("danh_muc")) dgvDocuments.Columns["danh_muc"].HeaderText = "Danh mục";
                 if (dgvDocuments.Columns.Contains("dinh_dang")) dgvDocuments.Columns["dinh_dang"].HeaderText = "Định dạng";
                 if (dgvDocuments.Columns.Contains("added_at")) dgvDocuments.Columns["added_at"].HeaderText = "Ngày thêm vào bộ";
 

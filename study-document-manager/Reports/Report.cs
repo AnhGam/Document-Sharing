@@ -11,7 +11,7 @@ namespace study_document_manager.Reports
 {
     public partial class Report : Form
     {
-        private string _currentStatType = "subject";
+        private string _currentStatType = "type";
         private int _currentTimelineDays = 7;
 
         public Report()
@@ -46,8 +46,6 @@ namespace study_document_manager.Reports
             lblChartType.ForeColor = AppTheme.TextSecondary;
             lblChartType.Font = AppTheme.FontSmall;
             
-            AppTheme.ApplyButtonSuccess(btnBySubject);
-            btnBySubject.Height = 32;
             AppTheme.ApplyButtonPrimary(btnByType);
             btnByType.Height = 32;
             
@@ -97,9 +95,11 @@ namespace study_document_manager.Reports
 
         private void Report_Load(object sender, EventArgs e)
         {
+            this.pnlStatCard4.ResumeLayout(false);
+            this.pnlStatCard5.ResumeLayout(false);
             InitializeChartTypes();
             LoadDashboardStats();
-            LoadStatisticsBySubject();
+            LoadStatisticsByType();
             LoadTimelineChart(7);
         }
 
@@ -123,7 +123,8 @@ namespace study_document_manager.Reports
                 lblStatValue1.Text = stats.TotalDocuments.ToString();
                 lblStatValue2.Text = stats.ImportantDocuments.ToString();
                 lblStatValue3.Text = stats.DeletedDocuments.ToString();
-                lblStatValue4.Text = stats.TotalCategories.ToString();
+                this.lblStatLabel4.Text = "Bộ sưu tập";
+                lblStatValue4.Text = stats.TotalCollections.ToString();
                 lblStatValue5.Text = stats.NoFileDocuments.ToString();
                 lblStatValue6.Text = stats.TotalCollections.ToString();
                 
@@ -135,10 +136,6 @@ namespace study_document_manager.Reports
             }
         }
 
-        private void BtnBySubjectClick(object sender, EventArgs e)
-        {
-            LoadStatisticsBySubject();
-        }
 
         private void BtnByTypeClick(object sender, EventArgs e)
         {
@@ -159,50 +156,12 @@ namespace study_document_manager.Reports
 
         private void CboChartTypeSelectedIndexChanged(object sender, EventArgs e)
         {
-            if (_currentStatType == "subject")
-            {
-                LoadStatisticsBySubject();
-            }
-            else if (_currentStatType == "type")
+            if (_currentStatType == "type")
             {
                 LoadStatisticsByType();
             }
         }
 
-        private void LoadStatisticsBySubject()
-        {
-            try
-            {
-                _currentStatType = "subject";
-                
-                DataTable dt = DatabaseHelper.GetStatisticsBySubject();
-
-                if (dt.Rows.Count == 0)
-                {
-                    chart.Series.Clear();
-                    chart.ChartAreas.Clear();
-                    chart.Titles.Clear();
-                    chart.Legends.Clear();
-                    ToastNotification.Info("Không có dữ liệu để hiển thị thống kê!");
-                    return;
-                }
-
-                int total = 0;
-                foreach (DataRow row in dt.Rows)
-                {
-                    total += Convert.ToInt32(row["so_luong"]);
-                }
-                lblTotal.Text = $"Tổng: {total} tài liệu";
-
-                DrawChart(dt, "Danh mục", "Số lượng tài liệu theo danh mục");
-
-                lblStatus.Text = "Đã tải thống kê theo danh mục";
-            }
-            catch (Exception ex)
-            {
-                ToastNotification.Error("Lỗi: " + ex.Message);
-            }
-        }
 
         private void LoadStatisticsByType()
         {

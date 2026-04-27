@@ -34,8 +34,6 @@ namespace study_document_manager.Documents
             this.mainTableLayout = new System.Windows.Forms.TableLayoutPanel();
             this.label1 = new System.Windows.Forms.Label();
             this.txtTen = new System.Windows.Forms.TextBox();
-            this.label2 = new System.Windows.Forms.Label();
-            this.cboDanhMuc = new System.Windows.Forms.ComboBox();
             this.label3 = new System.Windows.Forms.Label();
             this.cboDinhDang = new System.Windows.Forms.ComboBox();
             this.label4 = new System.Windows.Forms.Label();
@@ -67,28 +65,24 @@ namespace study_document_manager.Documents
             this.mainTableLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.mainTableLayout.Controls.Add(this.label1, 0, 0);
             this.mainTableLayout.Controls.Add(this.txtTen, 0, 1);
-            this.mainTableLayout.Controls.Add(this.label2, 0, 2);
-            this.mainTableLayout.Controls.Add(this.cboDanhMuc, 0, 3);
-            this.mainTableLayout.Controls.Add(this.label3, 0, 4);
-            this.mainTableLayout.Controls.Add(this.cboDinhDang, 0, 5);
-            this.mainTableLayout.Controls.Add(this.label4, 0, 6);
-            this.mainTableLayout.Controls.Add(this.filePanel, 0, 7);
-            this.mainTableLayout.Controls.Add(this.label5, 0, 8);
-            this.mainTableLayout.Controls.Add(this.txtGhiChu, 0, 9);
-            this.mainTableLayout.Controls.Add(this.sizePanel, 0, 10);
-            this.mainTableLayout.Controls.Add(this.lblTags, 0, 11);
-            this.mainTableLayout.Controls.Add(this.txtTags, 0, 12);
-            this.mainTableLayout.Controls.Add(this.chkQuanTrong, 0, 14);
-            this.mainTableLayout.Controls.Add(this.buttonPanel, 0, 15);
-            this.mainTableLayout.Controls.Add(this.label8, 0, 16);
+            this.mainTableLayout.Controls.Add(this.label3, 0, 2);
+            this.mainTableLayout.Controls.Add(this.cboDinhDang, 0, 3);
+            this.mainTableLayout.Controls.Add(this.label4, 0, 4);
+            this.mainTableLayout.Controls.Add(this.filePanel, 0, 5);
+            this.mainTableLayout.Controls.Add(this.label5, 0, 6);
+            this.mainTableLayout.Controls.Add(this.txtGhiChu, 0, 7);
+            this.mainTableLayout.Controls.Add(this.sizePanel, 0, 8);
+            this.mainTableLayout.Controls.Add(this.lblTags, 0, 9);
+            this.mainTableLayout.Controls.Add(this.txtTags, 0, 10);
+            this.mainTableLayout.Controls.Add(this.chkQuanTrong, 0, 11);
+            this.mainTableLayout.Controls.Add(this.buttonPanel, 0, 12);
+            this.mainTableLayout.Controls.Add(this.label8, 0, 13);
             this.mainTableLayout.Dock = System.Windows.Forms.DockStyle.Fill;
             this.mainTableLayout.Location = new System.Drawing.Point(0, 0);
             this.mainTableLayout.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.mainTableLayout.Name = "mainTableLayout";
             this.mainTableLayout.Padding = new System.Windows.Forms.Padding(30, 24, 30, 24);
-            this.mainTableLayout.RowCount = 17;
-            this.mainTableLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.mainTableLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.mainTableLayout.RowCount = 14;
             this.mainTableLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.mainTableLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.mainTableLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
@@ -97,7 +91,6 @@ namespace study_document_manager.Documents
             this.mainTableLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.mainTableLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.mainTableLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 150F));
-            this.mainTableLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.mainTableLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.mainTableLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.mainTableLayout.RowStyles.Add(new System.Windows.Forms.RowStyle());
@@ -118,7 +111,7 @@ namespace study_document_manager.Documents
             this.label1.TabIndex = 0;
             this.label1.Text = "Tên tài liệu: *";
             // 
-            // txt_ten
+            // txtTen
             // 
             this.txtTen.Dock = System.Windows.Forms.DockStyle.Fill;
             this.txtTen.Font = new System.Drawing.Font("Segoe UI", 10F);
@@ -127,40 +120,16 @@ namespace study_document_manager.Documents
             this.txtTen.Name = "txtTen";
             this.txtTen.Size = new System.Drawing.Size(607, 34);
             this.txtTen.TabIndex = 1;
-            this.txtTen.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.TxtTenKeyPress);
-            // 
-            // label2
-            // 
-            this.label2.AutoSize = true;
-            this.label2.Font = new System.Drawing.Font("Segoe UI Semibold", 9F);
-            this.label2.Location = new System.Drawing.Point(34, 117);
-            this.label2.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(99, 25);
-            this.label2.TabIndex = 2;
-            this.label2.Text = "Danh mục:";
-            // 
-            // cboDanhMuc
-            // 
-            this.cboDanhMuc.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.cboDanhMuc.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cboDanhMuc.Font = new System.Drawing.Font("Segoe UI", 10F);
-            this.cboDanhMuc.FormattingEnabled = true;
-            this.cboDanhMuc.Location = new System.Drawing.Point(34, 152);
-            this.cboDanhMuc.Margin = new System.Windows.Forms.Padding(4, 4, 4, 12);
-            this.cboDanhMuc.Name = "cboDanhMuc";
-            this.cboDanhMuc.Size = new System.Drawing.Size(607, 36);
-            this.cboDanhMuc.TabIndex = 3;
             // 
             // label3
             // 
             this.label3.AutoSize = true;
             this.label3.Font = new System.Drawing.Font("Segoe UI Semibold", 9F);
-            this.label3.Location = new System.Drawing.Point(34, 206);
+            this.label3.Location = new System.Drawing.Point(34, 117);
             this.label3.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(112, 25);
-            this.label3.TabIndex = 4;
+            this.label3.TabIndex = 2;
             this.label3.Text = "Định dạng:";
             // 
             // cboDinhDang
@@ -169,21 +138,21 @@ namespace study_document_manager.Documents
             this.cboDinhDang.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cboDinhDang.Font = new System.Drawing.Font("Segoe UI", 10F);
             this.cboDinhDang.FormattingEnabled = true;
-            this.cboDinhDang.Location = new System.Drawing.Point(34, 241);
+            this.cboDinhDang.Location = new System.Drawing.Point(34, 152);
             this.cboDinhDang.Margin = new System.Windows.Forms.Padding(4, 4, 4, 12);
             this.cboDinhDang.Name = "cboDinhDang";
             this.cboDinhDang.Size = new System.Drawing.Size(607, 36);
-            this.cboDinhDang.TabIndex = 5;
+            this.cboDinhDang.TabIndex = 3;
             // 
             // label4
             // 
             this.label4.AutoSize = true;
             this.label4.Font = new System.Drawing.Font("Segoe UI Semibold", 9F);
-            this.label4.Location = new System.Drawing.Point(34, 295);
+            this.label4.Location = new System.Drawing.Point(34, 206);
             this.label4.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(135, 25);
-            this.label4.TabIndex = 6;
+            this.label4.TabIndex = 4;
             this.label4.Text = "Nội dung file *";
             // 
             // filePanel
@@ -191,13 +160,13 @@ namespace study_document_manager.Documents
             this.filePanel.Controls.Add(this.txtDuongDan);
             this.filePanel.Controls.Add(this.btnChonFile);
             this.filePanel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.filePanel.Location = new System.Drawing.Point(30, 326);
+            this.filePanel.Location = new System.Drawing.Point(30, 237);
             this.filePanel.Margin = new System.Windows.Forms.Padding(0, 0, 0, 12);
             this.filePanel.Name = "filePanel";
             this.filePanel.Size = new System.Drawing.Size(615, 48);
-            this.filePanel.TabIndex = 7;
+            this.filePanel.TabIndex = 5;
             // 
-            // txt_duong_dan
+            // txtDuongDan
             // 
             this.txtDuongDan.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
@@ -210,7 +179,7 @@ namespace study_document_manager.Documents
             this.txtDuongDan.Size = new System.Drawing.Size(442, 34);
             this.txtDuongDan.TabIndex = 0;
             // 
-            // btn_chon_file
+            // btnChonFile
             // 
             this.btnChonFile.Location = new System.Drawing.Point(453, 0);
             this.btnChonFile.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
@@ -227,24 +196,24 @@ namespace study_document_manager.Documents
             // 
             this.label5.AutoSize = true;
             this.label5.Font = new System.Drawing.Font("Segoe UI Semibold", 9F);
-            this.label5.Location = new System.Drawing.Point(34, 392);
+            this.label5.Location = new System.Drawing.Point(34, 303);
             this.label5.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(78, 25);
-            this.label5.TabIndex = 8;
+            this.label5.TabIndex = 6;
             this.label5.Text = "Ghi chú:";
             // 
-            // txt_ghi_chu
+            // txtGhiChu
             // 
             this.txtGhiChu.Dock = System.Windows.Forms.DockStyle.Fill;
             this.txtGhiChu.Font = new System.Drawing.Font("Segoe UI", 10F);
-            this.txtGhiChu.Location = new System.Drawing.Point(34, 427);
+            this.txtGhiChu.Location = new System.Drawing.Point(34, 338);
             this.txtGhiChu.Margin = new System.Windows.Forms.Padding(4, 4, 4, 12);
             this.txtGhiChu.Multiline = true;
             this.txtGhiChu.Name = "txtGhiChu";
             this.txtGhiChu.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.txtGhiChu.Size = new System.Drawing.Size(607, 134);
-            this.txtGhiChu.TabIndex = 9;
+            this.txtGhiChu.TabIndex = 7;
             // 
             // sizePanel
             // 
@@ -253,14 +222,13 @@ namespace study_document_manager.Documents
             this.sizePanel.Controls.Add(this.label7, 0, 0);
             this.sizePanel.Controls.Add(this.txtKichThuoc, 1, 0);
             this.sizePanel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.sizePanel.Location = new System.Drawing.Point(30, 573);
+            this.sizePanel.Location = new System.Drawing.Point(30, 484);
             this.sizePanel.Margin = new System.Windows.Forms.Padding(0, 0, 0, 12);
             this.sizePanel.Name = "sizePanel";
             this.sizePanel.RowCount = 1;
             this.sizePanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.sizePanel.Size = new System.Drawing.Size(615, 45);
-            this.sizePanel.TabIndex = 10;
-
+            this.sizePanel.TabIndex = 8;
             // 
             // label7
             // 
@@ -271,10 +239,10 @@ namespace study_document_manager.Documents
             this.label7.Margin = new System.Windows.Forms.Padding(9, 0, 9, 0);
             this.label7.Name = "label7";
             this.label7.Size = new System.Drawing.Size(147, 25);
-            this.label7.TabIndex = 2;
-            this.label7.Text = "Kích thước (MB):";
+            this.label7.TabIndex = 0;
+            this.label7.Text = "Kích thước:";
             // 
-            // txt_kich_thuoc
+            // txtKichThuoc
             // 
             this.txtKichThuoc.Dock = System.Windows.Forms.DockStyle.Fill;
             this.txtKichThuoc.Font = new System.Drawing.Font("Segoe UI", 10F);
@@ -283,41 +251,39 @@ namespace study_document_manager.Documents
             this.txtKichThuoc.Name = "txtKichThuoc";
             this.txtKichThuoc.ReadOnly = true;
             this.txtKichThuoc.Size = new System.Drawing.Size(112, 34);
-            this.txtKichThuoc.TabIndex = 3;
+            this.txtKichThuoc.TabIndex = 1;
             // 
             // lblTags
             // 
             this.lblTags.AutoSize = true;
             this.lblTags.Font = new System.Drawing.Font("Segoe UI Semibold", 9F);
-            this.lblTags.Location = new System.Drawing.Point(34, 636);
+            this.lblTags.Location = new System.Drawing.Point(34, 547);
             this.lblTags.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
             this.lblTags.Name = "lblTags";
             this.lblTags.Size = new System.Drawing.Size(82, 25);
-            this.lblTags.TabIndex = 11;
+            this.lblTags.TabIndex = 9;
             this.lblTags.Text = "Thẻ gắn:";
             // 
             // txtTags
             // 
             this.txtTags.Dock = System.Windows.Forms.DockStyle.Fill;
             this.txtTags.Font = new System.Drawing.Font("Segoe UI", 10F);
-            this.txtTags.Location = new System.Drawing.Point(34, 671);
+            this.txtTags.Location = new System.Drawing.Point(34, 582);
             this.txtTags.Margin = new System.Windows.Forms.Padding(4, 4, 4, 12);
             this.txtTags.Name = "txtTags";
             this.txtTags.Size = new System.Drawing.Size(607, 34);
-            this.txtTags.TabIndex = 12;
+            this.txtTags.TabIndex = 10;
             // 
-
-            // 
-            // chk_quan_trong
+            // chkQuanTrong
             // 
             this.chkQuanTrong.AutoSize = true;
             this.chkQuanTrong.Font = new System.Drawing.Font("Segoe UI Semibold", 9.5F, System.Drawing.FontStyle.Bold);
             this.chkQuanTrong.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(158)))), ((int)(((byte)(11)))));
-            this.chkQuanTrong.Location = new System.Drawing.Point(34, 780);
+            this.chkQuanTrong.Location = new System.Drawing.Point(34, 634);
             this.chkQuanTrong.Margin = new System.Windows.Forms.Padding(4, 6, 4, 12);
             this.chkQuanTrong.Name = "chkQuanTrong";
             this.chkQuanTrong.Size = new System.Drawing.Size(158, 29);
-            this.chkQuanTrong.TabIndex = 14;
+            this.chkQuanTrong.TabIndex = 11;
             this.chkQuanTrong.Text = "★ Quan trọng";
             this.chkQuanTrong.UseVisualStyleBackColor = true;
             // 
@@ -327,13 +293,13 @@ namespace study_document_manager.Documents
             this.buttonPanel.Controls.Add(this.btnHuy);
             this.buttonPanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.buttonPanel.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft;
-            this.buttonPanel.Location = new System.Drawing.Point(30, 821);
+            this.buttonPanel.Location = new System.Drawing.Point(30, 675);
             this.buttonPanel.Margin = new System.Windows.Forms.Padding(0, 0, 0, 12);
             this.buttonPanel.Name = "buttonPanel";
             this.buttonPanel.Size = new System.Drawing.Size(615, 66);
-            this.buttonPanel.TabIndex = 15;
+            this.buttonPanel.TabIndex = 12;
             // 
-            // btn_luu
+            // btnLuu
             // 
             this.btnLuu.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(34)))), ((int)(((byte)(197)))), ((int)(((byte)(94)))));
             this.btnLuu.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(51)))), ((int)(((byte)(65)))), ((int)(((byte)(85)))));
@@ -384,7 +350,7 @@ namespace study_document_manager.Documents
             this.label8.AutoSize = true;
             this.label8.Font = new System.Drawing.Font("Segoe UI", 8F, System.Drawing.FontStyle.Italic);
             this.label8.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(148)))), ((int)(((byte)(163)))), ((int)(((byte)(184)))));
-            this.label8.Location = new System.Drawing.Point(34, 899);
+            this.label8.Location = new System.Drawing.Point(34, 753);
             this.label8.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label8.Name = "label8";
             this.label8.Size = new System.Drawing.Size(176, 21);
@@ -420,10 +386,8 @@ namespace study_document_manager.Documents
         #endregion
 
         private System.Windows.Forms.TableLayoutPanel mainTableLayout;
-        internal System.Windows.Forms.Label label1;
+        private System.Windows.Forms.Label label1;
         internal System.Windows.Forms.TextBox txtTen;
-        private System.Windows.Forms.Label label2;
-        internal System.Windows.Forms.ComboBox cboDanhMuc;
         private System.Windows.Forms.Label label3;
         internal System.Windows.Forms.ComboBox cboDinhDang;
         private System.Windows.Forms.Label label4;

@@ -86,8 +86,7 @@ namespace study_document_manager.Documents
             this.btnSearch = new study_document_manager.UI.Controls.ModernButton();
             this.btnToggleFilter = new study_document_manager.UI.Controls.ModernButton();
 
-            this.lblSubject = new System.Windows.Forms.Label();
-            this.cboSubject = new System.Windows.Forms.ComboBox();
+            // lblSubject and cboSubject initialization removed
             this.lblType = new System.Windows.Forms.Label();
             this.cboType = new System.Windows.Forms.ComboBox();
             this.grpAdvancedFilter = new System.Windows.Forms.GroupBox();
@@ -701,8 +700,6 @@ namespace study_document_manager.Documents
         private System.Windows.Forms.TextBox txtSearch;
         private study_document_manager.UI.Controls.ModernButton btnSearch;
         private study_document_manager.UI.Controls.ModernButton btnToggleFilter;
-        private System.Windows.Forms.Label lblSubject;
-        private System.Windows.Forms.ComboBox cboSubject;
         private System.Windows.Forms.Label lblType;
         private System.Windows.Forms.ComboBox cboType;
         private study_document_manager.UI.Controls.ModernPanel pnlContent;

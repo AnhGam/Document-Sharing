@@ -76,6 +76,36 @@ namespace study_document_manager.Documents
 
             // Category tree (left sidebar)
             SetupCategoryTree();
+
+            // Clear selection when clicking on empty space
+            RegisterDeselectEvents(this);
+        }
+
+        private void RegisterDeselectEvents(Control parent)
+        {
+            foreach (Control ctrl in parent.Controls)
+            {
+                if (ctrl is Panel || ctrl is SplitContainer || ctrl is GroupBox || 
+                    ctrl is StatusStrip || ctrl is TreeView || ctrl is Label)
+                {
+                    ctrl.MouseDown += (s, e) => { 
+                        if (e.Button == MouseButtons.Left) {
+                            dgvDocuments.ClearSelection();
+                            dgvDocuments.CurrentCell = null;
+                        }
+                    };
+                    RegisterDeselectEvents(ctrl);
+                }
+            }
+            if (parent == this)
+            {
+                this.MouseDown += (s, e) => { 
+                    if (e.Button == MouseButtons.Left) {
+                        dgvDocuments.ClearSelection();
+                        dgvDocuments.CurrentCell = null;
+                    }
+                };
+            }
         }
 
         private void AddPersonalNoteContextMenu()
@@ -97,19 +127,20 @@ namespace study_document_manager.Documents
             btnSearch.Click += (s, e) => SearchRequested?.Invoke(this, EventArgs.Empty);
             txtSearch.KeyPress += (s, e) => { if (e.KeyChar == (char)Keys.Enter) { e.Handled = true; SearchRequested?.Invoke(this, EventArgs.Empty); } };
 
-            cboSubject.SelectedIndexChanged += (s, e) => FilterApplied?.Invoke(this, EventArgs.Empty);
             cboType.SelectedIndexChanged += (s, e) => FilterApplied?.Invoke(this, EventArgs.Empty);
             btnApplyAdvancedFilter.Click += (s, e) => FilterApplied?.Invoke(this, EventArgs.Empty);
 
             toolBtnRefresh.Click += (s, e) => TriggerRefresh();
-            
-            btnClearAdvancedFilter.Click += (s, e) => {
+
+            btnClearAdvancedFilter.Click += (s, e) =>
+            {
                 ClearUIFilters();
                 TriggerRefresh();
             };
 
 
-            toolBtnDelete.Click += (s, e) => {
+            toolBtnDelete.Click += (s, e) =>
+            {
                 var doc = dgvDocuments.SelectedRows.Count > 0
                     ? dgvDocuments.SelectedRows[0].DataBoundItem as Core.Entities.Document
                     : null;
@@ -142,8 +173,7 @@ namespace study_document_manager.Documents
         private void ClearUIFilters()
         {
             txtSearch.Clear();
-            if(cboSubject.Items.Count > 0) cboSubject.SelectedIndex = 0;
-            if(cboType.Items.Count > 0) cboType.SelectedIndex = 0;
+            if (cboType.Items.Count > 0) cboType.SelectedIndex = 0;
             chkEnableDateFilter.Checked = false;
             chkEnableSizeFilter.Checked = false;
             chkImportantOnly.Checked = false;
@@ -203,16 +233,16 @@ namespace study_document_manager.Documents
             // Icons
             toolBtnImport.Image = IconHelper.CreateImportIcon(16, AppTheme.StatusSuccess);
             toolBtnImport.ToolTipText = "Import tài liệu (Ctrl+N)";
-            
+
             toolBtnDelete.Image = IconHelper.CreateDeleteIcon(16, AppTheme.StatusError);
             toolBtnDelete.ToolTipText = "Xóa tài liệu (Del)";
-            
+
             toolBtnOpen.Image = IconHelper.CreateOpenIcon(16, AppTheme.AccentSky);
             toolBtnOpen.ToolTipText = "Mở file (Ctrl+O)";
-            
+
             toolBtnExport.Image = IconHelper.CreateExportIcon(16, AppTheme.AccentOrange);
             toolBtnExport.ToolTipText = "Xuất CSV (Ctrl+E)";
-            
+
             toolBtnRefresh.Image = IconHelper.CreateRefreshIcon(16, AppTheme.Secondary);
             toolBtnRefresh.ToolTipText = "Làm mới (F5)";
 
@@ -220,7 +250,7 @@ namespace study_document_manager.Documents
             btnToggleFilter.BackColor = Color.FromArgb(249, 250, 251);
             btnToggleFilter.ForeColor = Color.FromArgb(71, 85, 105);
             btnToggleFilter.BorderColor = Color.FromArgb(226, 232, 240);
-            
+
 
             // Add Import & Recycle Bin buttons to toolbar
 
@@ -273,45 +303,12 @@ namespace study_document_manager.Documents
 
         public void SetDocumentList(List<Document> documents)
         {
-            // Convert List<Document> to DataTable or BindingList for Grid
-            // For compatibility with existing Grid setup, we can use a BindingList or map to DataTable
-            // Ideally, we should bind directly to List<Document>, but the grid column names need to match properties.
-
-            // The existing Grid expects columns: "id", "ten", "danh_muc", etc.
-            // Entity has: "Id", "Ten", "MonHoc".
-            // We need to map or configure AutoGenerateColumns = true and hide unnecessary ones.
-            // OR create a helper to convert List<Entity> to DataTable with legacy column names to minimize Grid changes.
-
-            // Let's try binding directly list and see if we can map columns via DataPropertyName in Designer or Code.
-            // To be safe and quick without breaking the Designer-generated columns too much:
-
-            var bindingList = new System.ComponentModel.BindingList<Document>(documents);
-            dgvDocuments.DataSource = bindingList;
-
-            // Re-setup grid to map columns if needed, or rely on AutoGenerate if columns are not manually defined.
-            // Since existing grid has columns defined, we need to ensure DataPropertyName matches.
-            // Current Grid columns likely have DataPropertyName = "ten", "danh_muc" (lowercase from DataTable).
-            // Entity properties are "Ten", "MonHoc" (PascalCase).
-            // WinForms DataBinding is case-insensitive usually, but let's check.
-
-            // Fix column mappings programmatically
-            if (dgvDocuments.Columns.Contains("id")) dgvDocuments.Columns["id"].DataPropertyName = "Id";
-            if (dgvDocuments.Columns.Contains("ten")) dgvDocuments.Columns["ten"].DataPropertyName = "Ten";
-            if (dgvDocuments.Columns.Contains("danh_muc")) dgvDocuments.Columns["danh_muc"].DataPropertyName = "DanhMuc";
-            if (dgvDocuments.Columns.Contains("dinh_dang")) dgvDocuments.Columns["dinh_dang"].DataPropertyName = "DinhDang";
-            if (dgvDocuments.Columns.Contains("duong_dan")) dgvDocuments.Columns["duong_dan"].DataPropertyName = "DuongDan";
-            if (dgvDocuments.Columns.Contains("ghi_chu")) dgvDocuments.Columns["ghi_chu"].DataPropertyName = "GhiChu";
-            if (dgvDocuments.Columns.Contains("ngay_them")) dgvDocuments.Columns["ngay_them"].DataPropertyName = "NgayThem";
-            if (dgvDocuments.Columns.Contains("kich_thuoc")) dgvDocuments.Columns["kich_thuoc"].DataPropertyName = "KichThuoc";
-            if (dgvDocuments.Columns.Contains("quan_trong")) dgvDocuments.Columns["quan_trong"].DataPropertyName = "QuanTrong";
-            if (dgvDocuments.Columns.Contains("tags")) dgvDocuments.Columns["tags"].DataPropertyName = "Tags";
+            dgvDocuments.AutoGenerateColumns = false;
+            dgvDocuments.DataSource = new System.ComponentModel.BindingList<Document>(documents);
 
             SetupDataGridView();
-        }
-
-        public void SetCategories(List<string> categories)
-        {
-            cboSubject.DataSource = categories;
+            dgvDocuments.Refresh();
+            UpdateStatusCount(documents.Count);
         }
 
         public void SetFormats(List<string> formats)
@@ -346,69 +343,60 @@ namespace study_document_manager.Documents
 
         private void SetupDataGridView()
         {
-             // Keep existing formatting logic but ensure it works with Objects
-             if (dgvDocuments.Columns.Count > 0)
+            // Ensure columns are defined explicitly
+            if (dgvDocuments.Columns.Contains("id")) dgvDocuments.Columns["id"].Visible = false;
+            if (dgvDocuments.Columns.Contains("Id")) dgvDocuments.Columns["Id"].Visible = false;
+
+            // Clear existing columns to re-add them explicitly if needed
+            // But for performance, we just check and add
+
+            // Add Icon column if missing
+            if (!dgvDocuments.Columns.Contains("Icon"))
             {
-                // Ensure ID is hidden
-                if (dgvDocuments.Columns.Contains("id")) dgvDocuments.Columns["id"].Visible = false;
-                if (dgvDocuments.Columns.Contains("Id")) dgvDocuments.Columns["Id"].Visible = false;
-
-                // Add Icon column if missing
-                if (!dgvDocuments.Columns.Contains("Icon"))
+                dgvDocuments.Columns.Insert(0, new DataGridViewImageColumn
                 {
-                    DataGridViewImageColumn iconColumn = new DataGridViewImageColumn
-                    {
-                        Name = "Icon",
-                        HeaderText = "",
-                        Width = 24,
-                        MinimumWidth = 24,
-                        AutoSizeMode = DataGridViewAutoSizeColumnMode.None,
-                        ImageLayout = DataGridViewImageCellLayout.Zoom,
-                        Resizable = DataGridViewTriState.False
-                    };
-                    dgvDocuments.Columns.Insert(0, iconColumn);
-                }
-
-                // Set Vietnamese HeaderText with diacritics
-                SetColumnHeader("ten", "Tên tài liệu");
-                SetColumnHeader("Ten", "Tên tài liệu");
-                SetColumnHeader("danh_muc", "Danh mục");
-                SetColumnHeader("dinh_dang", "Định dạng");
-                SetColumnHeader("duong_dan", "Đường dẫn");
-                SetColumnHeader("DuongDan", "Đường dẫn");
-                SetColumnHeader("ghi_chu", "Ghi chú");
-                SetColumnHeader("GhiChu", "Ghi chú");
-                SetColumnHeader("ngay_them", "Ngày thêm");
-                SetColumnHeader("NgayThem", "Ngày thêm");
-                SetColumnHeader("kich_thuoc", "Kích thước (MB)");
-                SetColumnHeader("KichThuoc", "Kích thước (MB)");
-                SetColumnHeader("quan_trong", "★");
-                SetColumnHeader("QuanTrong", "★");
-                SetColumnHeader("tags", "Tags");
-                SetColumnHeader("Tags", "Tags");
-
-                // Ẩn cột ít quan trọng, giữ cột cần thiết
-                HideColumn("duong_dan"); HideColumn("DuongDan");
-                HideColumn("ghi_chu"); HideColumn("GhiChu");
-                HideColumn("tags"); HideColumn("Tags");
-                HideColumn("danh_muc");
-
-                // Set FillWeight cho các cột hiển thị
-                SetColumnFillWeight("ten", 40); SetColumnFillWeight("Ten", 40);
-                SetColumnFillWeight("dinh_dang", 15);
-                SetColumnFillWeight("ngay_them", 20); SetColumnFillWeight("NgayThem", 20);
-                SetColumnFillWeight("kich_thuoc", 15); SetColumnFillWeight("KichThuoc", 15);
-                SetColumnFillWeight("quan_trong", 10); SetColumnFillWeight("QuanTrong", 10);
+                    Name = "Icon",
+                    HeaderText = "",
+                    Width = 32,
+                    MinimumWidth = 32,
+                    AutoSizeMode = DataGridViewAutoSizeColumnMode.None,
+                    ImageLayout = DataGridViewImageCellLayout.Zoom,
+                    Resizable = DataGridViewTriState.False
+                });
             }
+
+            // Add Data Columns
+            AddOrUpdateColumn("Ten", "Tên tài liệu", 300, 40, "Ten");
+            AddOrUpdateColumn("DinhDang", "Định Dạng", 105, 0, "DinhDang", true); // Width increased to 100
+            dgvDocuments.Columns["DinhDang"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            AddOrUpdateColumn("DuongDan", "Đường dẫn", 250, 25, "DuongDan");
+            AddOrUpdateColumn("NgayThem", "Ngày thêm", 160, 15, "NgayThem");
+
+            // Important Column (Star) - use TextColumn to avoid format errors
+            AddOrUpdateColumn("QuanTrong", "★", 45, 0, "QuanTrong", true);
+            dgvDocuments.Columns["QuanTrong"].HeaderCell.Style.ForeColor = Color.Gold;
+            dgvDocuments.Columns["QuanTrong"].HeaderCell.Style.SelectionForeColor = Color.Gold;
+            dgvDocuments.Columns["QuanTrong"].HeaderCell.Style.Font = new Font("Segoe UI", 12f, FontStyle.Bold);
+            dgvDocuments.Columns["QuanTrong"].HeaderCell.Style.Alignment = DataGridViewContentAlignment.MiddleCenter;
+
+            AddOrUpdateColumn("KichThuocFormatted", "Kích thước", 100, 12, "KichThuocFormatted");
+
+            // Hide technical columns
+            HideColumn("Id");
+            HideColumn("GhiChu");
+            HideColumn("Tags");
+            HideColumn("KichThuoc");
+            HideColumn("DanhMuc");
 
             // Styling
             AppTheme.ApplyDataGridViewStyle(dgvDocuments);
 
-            // Allow checkbox interaction for QuanTrong
-            dgvDocuments.ReadOnly = false;
+            // Grid behavior: ReadOnly to prevent accidental editing, but CellClick still works
+            dgvDocuments.ReadOnly = true;
+            dgvDocuments.EditMode = DataGridViewEditMode.EditProgrammatically;
             foreach (DataGridViewColumn col in dgvDocuments.Columns)
             {
-                col.ReadOnly = (col.Name != "QuanTrong");
+                col.ReadOnly = true;
             }
 
             // Fix QuanTrong padding for proper checkbox rendering
@@ -427,6 +415,50 @@ namespace study_document_manager.Documents
             // Register events (unsubscribe first to prevent duplicates)
             dgvDocuments.CellFormatting -= DgvDocumentsCellFormatting;
             dgvDocuments.CellFormatting += DgvDocumentsCellFormatting;
+
+            dgvDocuments.CellPainting -= DgvDocumentsCellPainting;
+            dgvDocuments.CellPainting += DgvDocumentsCellPainting;
+
+            dgvDocuments.DataError -= DgvDocumentsDataError;
+            dgvDocuments.DataError += DgvDocumentsDataError;
+
+            dgvDocuments.CellClick -= DgvDocumentsCellClick;
+            dgvDocuments.CellClick += DgvDocumentsCellClick;
+        }
+
+        private void AddOrUpdateColumn(string name, string header, int width, float fillWeight, string propertyName, bool fixedWidth = false)
+        {
+            DataGridViewColumn col;
+            if (dgvDocuments.Columns.Contains(name))
+            {
+                col = dgvDocuments.Columns[name];
+            }
+            else
+            {
+                col = new DataGridViewTextBoxColumn { Name = name };
+                dgvDocuments.Columns.Add(col);
+            }
+
+            col.HeaderText = header;
+            col.DataPropertyName = propertyName;
+
+            if (fixedWidth)
+            {
+                col.Width = width;
+                col.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
+                col.Resizable = DataGridViewTriState.False;
+            }
+            else
+            {
+                if (fillWeight > 0) col.FillWeight = fillWeight;
+                col.Width = width;
+            }
+        }
+
+        private void DgvDocumentsDataError(object sender, DataGridViewDataErrorEventArgs e)
+        {
+            // Silently handle and suppress format errors and other data binding issues
+            e.ThrowException = false;
         }
 
         private void SetColumnHeader(string columnName, string headerText)
@@ -498,8 +530,10 @@ namespace study_document_manager.Documents
         {
             using (var form = new study_document_manager.Documents.BatchImportForm())
             {
-                if (form.ShowDialog() == DialogResult.OK)
+                form.ImportCompleted += (s, ev) => TriggerRefresh();
+                if (form.ShowDialog(this) == DialogResult.OK)
                 {
+                    // Refresh if dialog returned OK (though ImportCompleted handles immediate updates)
                     TriggerRefresh();
                 }
             }
@@ -541,11 +575,13 @@ namespace study_document_manager.Documents
             {
                 if (File.Exists(doc.DuongDan))
                 {
-                    try {
+                    try
+                    {
                         System.Diagnostics.Process.Start(doc.DuongDan);
                         lblStatus.Text = "Đã mở file: " + doc.Ten;
                         try { DatabaseHelper.AddRecentFile(doc.Id); } catch { }
-                    } catch (Exception ex) { ShowError(ex.Message); }
+                    }
+                    catch (Exception ex) { ShowError(ex.Message); }
                 }
                 else
                 {
@@ -576,6 +612,12 @@ namespace study_document_manager.Documents
                         e.Value = IconHelper.GetDocumentIcon(doc.DinhDang, 24, doc.DuongDan);
                         e.FormattingApplied = true;
                     }
+                    else if (colName == "QuanTrong")
+                    {
+                        // We will handle Star drawing in CellPainting for better control
+                        e.Value = null;
+                        e.FormattingApplied = true;
+                    }
                 }
             }
             catch
@@ -584,25 +626,77 @@ namespace study_document_manager.Documents
             }
         }
 
-        private void DgvDocumentsCellContentClick(object sender, DataGridViewCellEventArgs e)
+        private void DgvDocumentsCellPainting(object sender, DataGridViewCellPaintingEventArgs e)
         {
-            if (e.RowIndex < 0) return;
+            if (e.RowIndex < 0 || e.ColumnIndex < 0) return;
+            string colName = dgvDocuments.Columns[e.ColumnIndex].Name;
+
+            if (colName == "QuanTrong" || colName == "quan_trong")
+            {
+                e.Paint(e.CellBounds, DataGridViewPaintParts.All & ~DataGridViewPaintParts.ContentForeground);
+
+                if (dgvDocuments.Rows[e.RowIndex].DataBoundItem is Document doc)
+                {
+                    bool isImportant = doc.QuanTrong;
+                    string star = "★";
+                    
+                    e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                    
+                    using (GraphicsPath path = new GraphicsPath())
+                    {
+                        // 12pt approx
+                        float emSize = e.Graphics.DpiY * 12 / 72; 
+                        path.AddString(star, e.CellStyle.Font.FontFamily, (int)FontStyle.Bold, emSize, 
+                            new Point(0, 0), StringFormat.GenericDefault);
+
+                        RectangleF bounds = path.GetBounds();
+                        float x = e.CellBounds.Left + (e.CellBounds.Width - bounds.Width) / 2 - bounds.Left;
+                        float y = e.CellBounds.Top + (e.CellBounds.Height - bounds.Height) / 2 - bounds.Top;
+
+                        Matrix m = new Matrix();
+                        m.Translate(x, y);
+                        path.Transform(m);
+
+                        if (isImportant)
+                        {
+                            using (Brush goldBrush = new SolidBrush(Color.Gold))
+                            using (Pen borderPen = new Pen(Color.FromArgb(160, 160, 160), 1f))
+                            {
+                                e.Graphics.FillPath(goldBrush, path);
+                                e.Graphics.DrawPath(borderPen, path);
+                            }
+                        }
+                        else
+                        {
+                            using (Pen grayPen = new Pen(Color.LightGray, 1.5f))
+                            {
+                                e.Graphics.DrawPath(grayPen, path);
+                            }
+                        }
+                    }
+                }
+                e.Handled = true;
+            }
+        }
+
+        private void DgvDocumentsCellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex < 0 || e.ColumnIndex < 0) return;
             string colName = dgvDocuments.Columns[e.ColumnIndex].Name;
             if (colName == "quan_trong" || colName == "QuanTrong")
             {
-                dgvDocuments.CommitEdit(DataGridViewDataErrorContexts.Commit);
                 if (dgvDocuments.Rows[e.RowIndex].DataBoundItem is Document doc)
                 {
-                    // doc.QuanTrong is already updated by CommitEdit
+                    // Manually toggle and save
+                    doc.QuanTrong = !doc.QuanTrong;
                     _repository.Update(doc);
-                    dgvDocuments.InvalidateRow(e.RowIndex);
-                    // Show message based on the new value
+                    dgvDocuments.InvalidateCell(e.ColumnIndex, e.RowIndex);
+                    
                     ShowMessage(doc.QuanTrong ? "Đã đánh dấu quan trọng" : "Đã bỏ đánh dấu quan trọng");
                 }
             }
         }
 
-        private void DgvDocumentsDataError(object sender, DataGridViewDataErrorEventArgs e) { e.ThrowException = false; }
 
         private void CtxMenuOpenClick(object sender, EventArgs e) => OpenSelectedFile();
         private void CtxMenuEditClick(object sender, EventArgs e) => BtnSuaClick(sender, e);
@@ -893,7 +987,6 @@ namespace study_document_manager.Documents
                 aboutForm.ShowDialog(this);
             }
         }
-        private void MenuViewCategoriesClick(object sender, EventArgs e) { new Management.CategoryManagementForm().ShowDialog(); TriggerRefresh(); }
         private void BtnThongKeClick(object sender, EventArgs e) { new Report().ShowDialog(); }
         private void BtnXuatClick(object sender, EventArgs e)
         {
@@ -917,7 +1010,7 @@ namespace study_document_manager.Documents
                         using (var writer = new System.IO.StreamWriter(sfd.FileName, false, System.Text.Encoding.UTF8))
                         {
                             // Header
-                            writer.WriteLine("Tên tài liệu,Danh mục,Định dạng,Ngày thêm,Kích thước (MB),Quan trọng,Tags,Đường dẫn");
+                            writer.WriteLine("Tên tài liệu,Định dạng,Ngày thêm,Kích thước,Quan trọng,Tags,Đường dẫn");
 
                             // Data from current binding
                             var docs = dgvDocuments.DataSource as System.ComponentModel.BindingList<Document>
@@ -928,10 +1021,9 @@ namespace study_document_manager.Documents
                                 {
                                     string line = string.Join(",",
                                         EscapeCsv(doc.Ten),
-                                        EscapeCsv(doc.DanhMuc),
                                         EscapeCsv(doc.DinhDang),
                                         doc.NgayThem.ToString("dd/MM/yyyy"),
-                                        doc.KichThuoc?.ToString("F2") ?? "",
+                                        doc.KichThuocFormatted,
                                         doc.QuanTrong ? "Có" : "Không",
                                         EscapeCsv(doc.Tags ?? ""),
                                         EscapeCsv(doc.DuongDan ?? "")
@@ -1445,46 +1537,37 @@ namespace study_document_manager.Documents
                     return;
                 }
 
-            // Reset existing UI filters first
-            ClearUIFilters();
+                // Reset existing UI filters first
+                ClearUIFilters();
 
-            switch (filter.FilterType)
-            {
-                case "all":
-                    RefreshRequested?.Invoke(this, EventArgs.Empty);
-                    break;
+                switch (filter.FilterType)
+                {
+                    case "all":
+                        RefreshRequested?.Invoke(this, EventArgs.Empty);
+                        break;
 
-                case "subject":
-                    for (int i = 0; i < cboSubject.Items.Count; i++)
-                    {
-                        if (cboSubject.Items[i].ToString() == filter.FilterValue)
+                    // subject filtering removed
+
+                    case "type":
+                        for (int i = 0; i < cboType.Items.Count; i++)
                         {
-                            cboSubject.SelectedIndex = i;
-                            break;
+                            if (cboType.Items[i].ToString() == filter.FilterValue)
+                            {
+                                cboType.SelectedIndex = i;
+                                break;
+                            }
                         }
-                    }
-                    break;
+                        break;
 
-                case "type":
-                    for (int i = 0; i < cboType.Items.Count; i++)
-                    {
-                        if (cboType.Items[i].ToString() == filter.FilterValue)
-                        {
-                            cboType.SelectedIndex = i;
-                            break;
-                        }
-                    }
-                    break;
+                    case "important":
+                        chkImportantOnly.Checked = true;
+                        FilterApplied?.Invoke(this, EventArgs.Empty);
+                        break;
 
-                case "important":
-                    chkImportantOnly.Checked = true;
-                    FilterApplied?.Invoke(this, EventArgs.Empty);
-                    break;
-
-                case "collection":
-                    FilterByCollection(int.Parse(filter.FilterValue));
-                    break;
-            }
+                    case "collection":
+                        FilterByCollection(int.Parse(filter.FilterValue));
+                        break;
+                }
             }
         }
 
@@ -1506,7 +1589,6 @@ namespace study_document_manager.Documents
                     {
                         Id = Convert.ToInt32(row["id"]),
                         Ten = row["ten"]?.ToString(),
-                        DanhMuc = row["danh_muc"]?.ToString(),
                         DinhDang = row["dinh_dang"]?.ToString(),
                         DuongDan = row["duong_dan"]?.ToString(),
                         GhiChu = row["ghi_chu"]?.ToString(),
@@ -1522,7 +1604,6 @@ namespace study_document_manager.Documents
 
                 if (dgvDocuments.Columns.Contains("id")) dgvDocuments.Columns["id"].DataPropertyName = "Id";
                 if (dgvDocuments.Columns.Contains("ten")) dgvDocuments.Columns["ten"].DataPropertyName = "Ten";
-                if (dgvDocuments.Columns.Contains("danh_muc")) dgvDocuments.Columns["danh_muc"].DataPropertyName = "DanhMuc";
                 if (dgvDocuments.Columns.Contains("dinh_dang")) dgvDocuments.Columns["dinh_dang"].DataPropertyName = "DinhDang";
                 if (dgvDocuments.Columns.Contains("duong_dan")) dgvDocuments.Columns["duong_dan"].DataPropertyName = "DuongDan";
                 if (dgvDocuments.Columns.Contains("ghi_chu")) dgvDocuments.Columns["ghi_chu"].DataPropertyName = "GhiChu";
@@ -1608,7 +1689,7 @@ namespace study_document_manager.Documents
             {
                 string ext = System.IO.Path.GetExtension(doc.DuongDan).ToLowerInvariant();
                 bool isMedia = Array.Exists(PreviewableExtensions, ev => ev == ext);
-    
+
                 if (isMedia)
                 {
                     splitPreview.Panel2Collapsed = false;

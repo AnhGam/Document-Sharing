@@ -18,11 +18,10 @@ namespace study_document_manager.Reports
         private Panel pnlToolbar;
         private Label lblTitle;
         private Label lblSubtitle;
-        private Button btnBySubject;
         private Button btnByType;
         private Button btnClose;
         private Panel pnlLegend;
-        private string _currentMode = "subject";
+        private string _currentMode = "type";
 
         private static readonly Color[] Palette = new Color[]
         {
@@ -47,7 +46,7 @@ namespace study_document_manager.Reports
         public TreeMapForm()
         {
             InitializeForm();
-            LoadData("subject");
+            LoadData("type");
         }
 
         private void InitializeForm()
@@ -81,7 +80,7 @@ namespace study_document_manager.Reports
 
             lblSubtitle = new Label
             {
-                Text = "Phân bố tài liệu theo danh mục",
+                Text = "Phân bố tài liệu theo định dạng",
                 Font = new Font(AppTheme.FontFamily, 9.5F),
                 ForeColor = Color.FromArgb(180, 226, 232, 240),
                 AutoSize = true,
@@ -132,13 +131,10 @@ namespace study_document_manager.Reports
                 Location = new Point(16, 16)
             };
 
-            btnBySubject = CreateToolButton("Danh mục", 110, true);
-            btnBySubject.Click += (s, e) => LoadData("subject");
-
-            btnByType = CreateToolButton("Định dạng", 200, false);
+            btnByType = CreateToolButton("Định dạng", 130, true);
             btnByType.Click += (s, e) => LoadData("type");
 
-            pnlToolbar.Controls.AddRange(new Control[] { lblMode, btnBySubject, btnByType });
+            pnlToolbar.Controls.AddRange(new Control[] { lblMode, btnByType });
 
             // Legend panel (bottom)
             pnlLegend = new Panel
@@ -199,7 +195,7 @@ namespace study_document_manager.Reports
 
         private void SetActiveButton(Button active)
         {
-            foreach (var btn in new[] { btnBySubject, btnByType })
+            foreach (var btn in new[] { btnByType })
             {
                 if (btn == active)
                 {
@@ -225,20 +221,10 @@ namespace study_document_manager.Reports
                 DataTable dt;
                 string categoryColumn;
 
-                if (mode == "subject")
-                {
-                    dt = DatabaseHelper.GetStatisticsBySubject();
-                    categoryColumn = "danh_muc";
-                    lblSubtitle.Text = "Phân bố tài liệu theo danh mục";
-                    SetActiveButton(btnBySubject);
-                }
-                else
-                {
-                    dt = DatabaseHelper.GetStatisticsByType();
-                    categoryColumn = "dinh_dang";
-                    lblSubtitle.Text = "Phân bố tài liệu theo định dạng";
-                    SetActiveButton(btnByType);
-                }
+                dt = DatabaseHelper.GetStatisticsByType();
+                categoryColumn = "dinh_dang";
+                lblSubtitle.Text = "Phân bố tài liệu theo định dạng";
+                SetActiveButton(btnByType);
 
                 var items = new List<TreeMapItem>();
                 int colorIndex = 0;

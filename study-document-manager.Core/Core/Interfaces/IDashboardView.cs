@@ -8,7 +8,6 @@ namespace study_document_manager.Core.Interfaces
     {
         // Properties
         string SearchKeyword { get; }
-        string SelectedCategory { get; }
         string SelectedFormat { get; }
         DateTime? FilterFromDate { get; }
         DateTime? FilterToDate { get; }
@@ -18,7 +17,6 @@ namespace study_document_manager.Core.Interfaces
 
         // Data Sources
         void SetDocumentList(List<Document> documents);
-        void SetCategories(List<string> categories);
         void SetFormats(List<string> formats);
         void UpdateStatusCount(int count);
 

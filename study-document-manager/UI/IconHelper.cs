@@ -424,7 +424,21 @@ namespace study_document_manager.UI
                 g.Clear(Color.Transparent);
                 using (Pen pen = new Pen(c, 2) { StartCap = LineCap.Round, EndCap = LineCap.Round })
                 {
+                    // Draw the circular arc
                     g.DrawArc(pen, size * 0.15f, size * 0.15f, size * 0.7f, size * 0.7f, -60, 300);
+                    
+                    // Draw arrow head at the end
+                    float arrowSize = size * 0.25f;
+                    PointF endPt = new PointF(size * 0.85f, size * 0.35f);
+                    PointF[] arrowPts = new PointF[] {
+                        new PointF(endPt.X - arrowSize, endPt.Y),
+                        new PointF(endPt.X, endPt.Y),
+                        new PointF(endPt.X, endPt.Y + arrowSize)
+                    };
+                    using (Brush brush = new SolidBrush(c))
+                    {
+                        g.FillPolygon(brush, arrowPts);
+                    }
                 }
             }
             return bmp;

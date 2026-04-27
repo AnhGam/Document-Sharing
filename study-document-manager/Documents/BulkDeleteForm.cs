@@ -21,14 +21,12 @@ namespace study_document_manager.Documents
         private const int EM_SETCUEBANNER = 0x1501;
 
         private TextBox txtSearch;
-        private ComboBox cboSubject;
         private ComboBox cboType;
         private DataGridView dgvDocs;
         private Button btnSelectAll;
         private Button btnDeselectAll;
         private Button btnDelete;
         private Button btnStar;
-        private Button btnChangeSubject;
         private Label lblStatus;
         private Button btnClose;
 
@@ -75,43 +73,25 @@ namespace study_document_manager.Documents
             SendMessage(txtSearch.Handle, EM_SETCUEBANNER, IntPtr.Zero, "Tìm kiếm tên tài liệu...");
             txtSearch.TextChanged += (s, e) => ApplyFilter();
 
-            var lblSubject = new Label
+            var lblType = new Label
             {
-                Text = "Danh mục:",
+                Text = "Định dạng:",
                 AutoSize = true,
                 Location = new Point(280, 15),
                 ForeColor = AppTheme.TextSecondary,
                 Font = AppTheme.FontSmall
             };
 
-            cboSubject = new ComboBox
+            cboType = new ComboBox
             {
                 Size = new Size(160, 28),
                 Location = new Point(340, 12),
                 DropDownStyle = ComboBoxStyle.DropDownList,
                 Font = AppTheme.FontSmall
             };
-            cboSubject.SelectedIndexChanged += (s, e) => ApplyFilter();
-
-            var lblType = new Label
-            {
-                Text = "Định dạng:",
-                AutoSize = true,
-                Location = new Point(520, 15),
-                ForeColor = AppTheme.TextSecondary,
-                Font = AppTheme.FontSmall
-            };
-
-            cboType = new ComboBox
-            {
-                Size = new Size(120, 28),
-                Location = new Point(560, 12),
-                DropDownStyle = ComboBoxStyle.DropDownList,
-                Font = AppTheme.FontSmall
-            };
             cboType.SelectedIndexChanged += (s, e) => ApplyFilter();
 
-            pnlFilter.Controls.AddRange(new Control[] { txtSearch, lblSubject, cboSubject, lblType, cboType });
+            pnlFilter.Controls.AddRange(new Control[] { txtSearch, lblType, cboType });
 
             // === DataGridView ===
             dgvDocs = new DataGridView
@@ -148,16 +128,6 @@ namespace study_document_manager.Documents
                 ReadOnly = true
             };
 
-            var colSubject = new DataGridViewTextBoxColumn
-            {
-                Name = "DanhMuc",
-                HeaderText = "Danh mục",
-                DataPropertyName = "DanhMuc",
-                AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill,
-                FillWeight = 20,
-                ReadOnly = true
-            };
-
             var colType = new DataGridViewTextBoxColumn
             {
                 Name = "DinhDang",
@@ -188,7 +158,7 @@ namespace study_document_manager.Documents
                 ReadOnly = true
             };
 
-            dgvDocs.Columns.AddRange(new DataGridViewColumn[] { colSelect, colName, colSubject, colType, colDate, colImportant });
+            dgvDocs.Columns.AddRange(new DataGridViewColumn[] { colSelect, colName, colType, colDate, colImportant });
 
             // Style
             dgvDocs.BackgroundColor = AppTheme.BackgroundMain;
@@ -211,7 +181,6 @@ namespace study_document_manager.Documents
             dgvDocs.AlternatingRowsDefaultCellStyle.BackColor = AppTheme.GridRowAlt;
             dgvDocs.RowTemplate.Height = 36;
 
-            // Checkbox column needs no padding to render properly
             colSelect.DefaultCellStyle.Padding = new Padding(0);
             colSelect.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
 
@@ -283,19 +252,6 @@ namespace study_document_manager.Documents
             btnStar.FlatAppearance.BorderSize = 0;
             btnStar.Click += BtnStar_Click;
 
-            btnChangeSubject = new Button
-            {
-                Text = "Đổi danh mục",
-                Size = new Size(110, 35),
-                FlatStyle = FlatStyle.Flat,
-                BackColor = AppTheme.StatusInfo,
-                ForeColor = Color.White,
-                Font = new Font(AppTheme.FontFamily, 9f, FontStyle.Bold),
-                Cursor = Cursors.Hand
-            };
-            btnChangeSubject.FlatAppearance.BorderSize = 0;
-            btnChangeSubject.Click += BtnChangeSubject_Click;
-
             btnClose = new Button
             {
                 Text = "Đóng",
@@ -306,28 +262,23 @@ namespace study_document_manager.Documents
             AppTheme.ApplyButtonSecondary(btnClose);
             btnClose.Click += (s, e) => Close();
 
-            // Right-align action buttons
             pnlBottom.Resize += (s, e) =>
             {
                 int x = pnlBottom.ClientSize.Width - 12;
                 btnClose.Location = new Point(x - btnClose.Width, 10);
                 x -= btnClose.Width + 8;
-                btnChangeSubject.Location = new Point(x - btnChangeSubject.Width, 10);
-                x -= btnChangeSubject.Width + 8;
                 btnStar.Location = new Point(x - btnStar.Width, 10);
                 x -= btnStar.Width + 8;
                 btnDelete.Location = new Point(x - btnDelete.Width, 10);
             };
 
-            pnlBottom.Controls.AddRange(new Control[] { btnSelectAll, btnDeselectAll, lblStatus, btnDelete, btnStar, btnChangeSubject, btnClose });
+            pnlBottom.Controls.AddRange(new Control[] { btnSelectAll, btnDeselectAll, lblStatus, btnDelete, btnStar, btnClose });
 
-            // Add controls in correct order
             Controls.Add(dgvDocs);
             Controls.Add(pnlFilter);
             Controls.Add(pnlBottom);
 
             CancelButton = btnClose;
-
             Load += (s, e) => { if (Owner?.Icon != null) Icon = Owner.Icon; };
         }
 
@@ -338,19 +289,6 @@ namespace study_document_manager.Documents
                 docs.Select(d => new SelectableDocument(d)).ToList()
             );
 
-            // Load subjects
-            cboSubject.Items.Clear();
-            cboSubject.Items.Add("-- Tất cả --");
-            try
-            {
-                var subjects = DatabaseHelper.GetDistinctSubjects();
-                foreach (System.Data.DataRow row in subjects.Rows)
-                    cboSubject.Items.Add(row["danh_muc"].ToString());
-            }
-            catch { }
-            cboSubject.SelectedIndex = 0;
-
-            // Load types
             cboType.Items.Clear();
             cboType.Items.Add("-- Tất cả --");
             try
@@ -368,14 +306,11 @@ namespace study_document_manager.Documents
         private void ApplyFilter()
         {
             string keyword = txtSearch.Text.Trim().ToLower();
-            string subject = cboSubject.SelectedIndex > 0 ? cboSubject.SelectedItem.ToString() : null;
             string type = cboType.SelectedIndex > 0 ? cboType.SelectedItem.ToString() : null;
 
             var filtered = _allDocs.Where(d =>
             {
                 if (!string.IsNullOrEmpty(keyword) && !d.Ten.ToLower().Contains(keyword))
-                    return false;
-                if (subject != null && !string.Equals(d.DanhMuc, subject, StringComparison.OrdinalIgnoreCase))
                     return false;
                 if (type != null && !string.Equals(d.DinhDang, type, StringComparison.OrdinalIgnoreCase))
                     return false;
@@ -458,57 +393,6 @@ namespace study_document_manager.Documents
             LoadData();
         }
 
-        private void BtnChangeSubject_Click(object sender, EventArgs e)
-        {
-            var ids = GetSelectedIds();
-            if (ids.Count == 0)
-            {
-                MessageBox.Show("Chưa chọn tài liệu nào.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return;
-            }
-
-            using (var dialog = new Form())
-            {
-                dialog.Text = "Đổi danh mục hàng loạt";
-                dialog.Size = new Size(350, 160);
-                dialog.FormBorderStyle = FormBorderStyle.FixedDialog;
-                dialog.StartPosition = FormStartPosition.CenterParent;
-                dialog.MaximizeBox = false;
-                dialog.MinimizeBox = false;
-                dialog.BackColor = AppTheme.BackgroundMain;
-
-                var lbl = new Label { Text = $"Đổi danh mục cho {ids.Count} tài liệu:", Location = new Point(16, 16), AutoSize = true, ForeColor = AppTheme.TextPrimary };
-                var cbo = new ComboBox { Location = new Point(16, 45), Size = new Size(300, 28), DropDownStyle = ComboBoxStyle.DropDown };
-
-                try
-                {
-                    var subjects = DatabaseHelper.GetDistinctSubjects();
-                    foreach (System.Data.DataRow row in subjects.Rows)
-                        cbo.Items.Add(row["danh_muc"].ToString());
-                }
-                catch { }
-
-                var btnOk = new Button { Text = "Áp dụng", DialogResult = DialogResult.OK, Size = new Size(90, 32), Location = new Point(140, 80) };
-                AppTheme.ApplyButtonPrimary(btnOk);
-                var btnCancel = new Button { Text = "Hủy", DialogResult = DialogResult.Cancel, Size = new Size(80, 32), Location = new Point(236, 80) };
-
-                dialog.Controls.AddRange(new Control[] { lbl, cbo, btnOk, btnCancel });
-                dialog.AcceptButton = btnOk;
-                dialog.CancelButton = btnCancel;
-
-                if (dialog.ShowDialog(this) == DialogResult.OK && !string.IsNullOrWhiteSpace(cbo.Text))
-                {
-                    int result = DatabaseHelper.BulkUpdateSubject(ids, cbo.Text.Trim());
-                    ToastNotification.Success($"Đã đổi danh mục cho {result} tài liệu.");
-                    DataChanged = true;
-                    LoadData();
-                }
-            }
-        }
-
-        /// <summary>
-        /// Wrapper model cho Document kèm property Selected (checkbox bound).
-        /// </summary>
         public class SelectableDocument : INotifyPropertyChanged
         {
             private bool _selected;
@@ -534,7 +418,6 @@ namespace study_document_manager.Documents
 
             public int Id => _doc.Id;
             public string Ten => _doc.Ten ?? "";
-            public string DanhMuc => _doc.DanhMuc ?? "";
             public string DinhDang => _doc.DinhDang ?? "";
             public string NgayThemFormatted => _doc.NgayThem.ToString("dd/MM/yyyy");
             public string QuanTrongDisplay => _doc.QuanTrong ? "★" : "";
@@ -543,4 +426,3 @@ namespace study_document_manager.Documents
         }
     }
 }
-

@@ -57,16 +57,7 @@ namespace study_document_manager.Documents
         /// </summary>
         private void LoadComboBoxData()
         {
-            // Danh mục - Phù hợp cho mọi đối tượng người dùng
-            cboDanhMuc.Items.Clear();
-            cboDanhMuc.Items.Add("Công việc");
-            cboDanhMuc.Items.Add("Cá nhân");
-            cboDanhMuc.Items.Add("Học tập");
-            cboDanhMuc.Items.Add("Dự án");
-            cboDanhMuc.Items.Add("Tài chính");
-            cboDanhMuc.Items.Add("Hợp đồng");
-            cboDanhMuc.Items.Add("Tham khảo");
-            cboDanhMuc.Items.Add("Khác");
+            // cboDanhMuc logic removed
 
             // Định dạng tài liệu
             cboDinhDang.Items.Clear();
@@ -99,7 +90,6 @@ namespace study_document_manager.Documents
                 {
                     var row = dt.Rows[0];
                     txtTen.Text = row["ten"].ToString();
-                    cboDanhMuc.Text = row["danh_muc"].ToString();
                     cboDinhDang.Text = row["dinh_dang"].ToString();
                     txtDuongDan.Text = row["duong_dan"].ToString();
                     txtGhiChu.Text = row["ghi_chu"].ToString();
@@ -107,7 +97,7 @@ namespace study_document_manager.Documents
                     if (row["kich_thuoc"] != DBNull.Value)
                     {
                         double size = Convert.ToDouble(row["kich_thuoc"]);
-                        txtKichThuoc.Text = size.ToString("F2");
+                        txtKichThuoc.Text = FormatFileSize(size);
                     }
                     
                     chkQuanTrong.Checked = Convert.ToBoolean(row["quan_trong"]);
@@ -165,7 +155,7 @@ namespace study_document_manager.Documents
                 {
                     FileInfo fileInfo = new FileInfo(duongDan);
                     double kichThuoc = fileInfo.Length / (1024.0 * 1024.0); // Convert to MB
-                    txtKichThuoc.Text = kichThuoc.ToString("F2");
+                    txtKichThuoc.Text = FormatFileSize(kichThuoc);
                 }
                 catch
                 {
@@ -221,7 +211,7 @@ namespace study_document_manager.Documents
                     success = DatabaseHelper.UpdateDocument(
                         _documentId.Value,
                         txtTen.Text.Trim(),
-                        cboDanhMuc.Text.Trim(),
+                        "",
                         cboDinhDang.Text.Trim(),
                         txtDuongDan.Text.Trim(),
                         txtGhiChu.Text.Trim(),
@@ -242,7 +232,7 @@ namespace study_document_manager.Documents
                     // Thêm tài liệu mới
                     success = DatabaseHelper.InsertDocument(
                         txtTen.Text.Trim(),
-                        cboDanhMuc.Text.Trim(),
+                        "",
                         cboDinhDang.Text.Trim(),
                         txtDuongDan.Text.Trim(),
                         txtGhiChu.Text.Trim(),
@@ -282,8 +272,16 @@ namespace study_document_manager.Documents
             if (e.KeyChar == (char)Keys.Enter)
             {
                 e.Handled = true;
-                cboDanhMuc.Focus();
             }
+        }
+
+        private string FormatFileSize(double mb)
+        {
+            double bytes = mb * 1024 * 1024;
+            if (bytes < 1024) return $"{bytes:F0} B";
+            if (bytes < 1024 * 1024) return $"{bytes / 1024.0:F2} KB";
+            if (bytes < 1024L * 1024 * 1024) return $"{bytes / (1024.0 * 1024.0):F2} MB";
+            return $"{bytes / (1024.0 * 1024 * 1024.0):F2} GB";
         }
 
         private void AddEditFormLoad(object sender, EventArgs e)
@@ -304,13 +302,9 @@ namespace study_document_manager.Documents
                 case ".wmv": case ".webm": case ".flv": case ".m4v":
                     return "Video";
                 case ".pdf":
-                    return "Tài liệu";
                 case ".doc": case ".docx":
-                    return "Tài liệu";
                 case ".ppt": case ".pptx":
-                    return "Tài liệu";
                 case ".xls": case ".xlsx":
-                    return "Tài liệu";
                 case ".txt":
                     return "Tài liệu";
                 default:

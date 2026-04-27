@@ -23,7 +23,6 @@ namespace study_document_manager.Core.Infrastructure.Repositories
             {
                 Id = Convert.ToInt32(row["id"]),
                 Ten = row["ten"].ToString(),
-                DanhMuc = row["danh_muc"]?.ToString() ?? "",
                 DinhDang = row["dinh_dang"]?.ToString() ?? "",
                 DuongDan = row["duong_dan"].ToString(),
                 GhiChu = row["ghi_chu"].ToString(),
@@ -63,7 +62,6 @@ namespace study_document_manager.Core.Infrastructure.Repositories
              string query = @"SELECT * FROM tai_lieu
                            WHERE (is_deleted IS NULL OR is_deleted = 0)
                            AND (ten LIKE @keyword
-                           OR danh_muc LIKE @keyword
                            OR ghi_chu LIKE @keyword)
                            ORDER BY ngay_them DESC";
 
@@ -75,12 +73,6 @@ namespace study_document_manager.Core.Infrastructure.Repositories
         {
             string query = "SELECT * FROM tai_lieu WHERE (is_deleted IS NULL OR is_deleted = 0)";
             var parameters = new List<System.Data.SQLite.SQLiteParameter>();
-
-            if (!string.IsNullOrEmpty(category) && category != "Tất cả")
-            {
-                query += " AND danh_muc = @danh_muc";
-                parameters.Add(new System.Data.SQLite.SQLiteParameter("@danh_muc", category));
-            }
 
             if (!string.IsNullOrEmpty(format) && format != "Tất cả")
             {
@@ -99,14 +91,8 @@ namespace study_document_manager.Core.Infrastructure.Repositories
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {
-                baseQuery += " AND (ten LIKE @keyword OR danh_muc LIKE @keyword OR ghi_chu LIKE @keyword OR tags LIKE @keyword)";
+                baseQuery += " AND (ten LIKE @keyword OR ghi_chu LIKE @keyword OR tags LIKE @keyword)";
                 parameterList.Add(new System.Data.SQLite.SQLiteParameter("@keyword", "%" + keyword + "%"));
-            }
-
-            if (!string.IsNullOrEmpty(category) && category != "Tất cả")
-            {
-                baseQuery += " AND danh_muc = @danh_muc";
-                parameterList.Add(new System.Data.SQLite.SQLiteParameter("@danh_muc", category));
             }
 
             if (!string.IsNullOrEmpty(format) && format != "Tất cả")
@@ -151,12 +137,12 @@ namespace study_document_manager.Core.Infrastructure.Repositories
 
         public bool Add(Document doc)
         {
-            return DatabaseHelper.InsertDocument(doc.Ten, doc.DanhMuc, doc.DinhDang, doc.DuongDan, doc.GhiChu, doc.KichThuoc, doc.QuanTrong, doc.Tags);
+            return DatabaseHelper.InsertDocument(doc.Ten, "", doc.DinhDang, doc.DuongDan, doc.GhiChu, doc.KichThuoc, doc.QuanTrong, doc.Tags);
         }
 
         public bool Update(Document doc)
         {
-             return DatabaseHelper.UpdateDocument(doc.Id, doc.Ten, doc.DanhMuc, doc.DinhDang, doc.DuongDan, doc.GhiChu, doc.KichThuoc, doc.QuanTrong, doc.Tags);
+             return DatabaseHelper.UpdateDocument(doc.Id, doc.Ten, "", doc.DinhDang, doc.DuongDan, doc.GhiChu, doc.KichThuoc, doc.QuanTrong, doc.Tags);
         }
 
         public bool Delete(int id)
@@ -166,11 +152,7 @@ namespace study_document_manager.Core.Infrastructure.Repositories
 
         public List<string> GetDistinctCategories()
         {
-            var dt = DatabaseHelper.GetDistinctSubjects();
-            var list = new List<string>();
-            foreach(DataRow row in dt.Rows) 
-                list.Add(row["danh_muc"]?.ToString() ?? "");
-            return list;
+            return new List<string>();
         }
 
         public List<string> GetDistinctFormats()

@@ -268,7 +268,7 @@ namespace study_document_manager.Reports
             this.lblStatLabel4.Name = "lblStatLabel4";
             this.lblStatLabel4.Size = new System.Drawing.Size(156, 20);
             this.lblStatLabel4.TabIndex = 1;
-            this.lblStatLabel4.Text = "Danh mục";
+            this.lblStatLabel4.Text = "Bộ sưu tập";
             // 
             // pnlStatCard5
             // 
@@ -336,7 +336,6 @@ namespace study_document_manager.Reports
             this.pnlOptions.Controls.Add(this.lblChartType);
             this.pnlOptions.Controls.Add(this.cboChartType);
             this.pnlOptions.Controls.Add(this.lblStatType);
-            this.pnlOptions.Controls.Add(this.btnBySubject);
             this.pnlOptions.Controls.Add(this.btnByType);
             this.pnlOptions.Controls.Add(this.btnByTimeline);
             this.pnlOptions.Controls.Add(this.btnByMonth);
@@ -379,21 +378,6 @@ namespace study_document_manager.Reports
             this.lblStatType.Size = new System.Drawing.Size(100, 20);
             this.lblStatType.TabIndex = 3;
             this.lblStatType.Text = "Thống kê theo:";
-            // 
-            // btnBySubject
-            // 
-            this.btnBySubject.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(34)))), ((int)(((byte)(197)))), ((int)(((byte)(94)))));
-            this.btnBySubject.FlatAppearance.BorderSize = 0;
-            this.btnBySubject.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnBySubject.Font = new System.Drawing.Font("Segoe UI Semibold", 9F, System.Drawing.FontStyle.Bold);
-            this.btnBySubject.ForeColor = System.Drawing.Color.White;
-            this.btnBySubject.Location = new System.Drawing.Point(130, 12);
-            this.btnBySubject.Name = "btnBySubject";
-            this.btnBySubject.Size = new System.Drawing.Size(100, 32);
-            this.btnBySubject.TabIndex = 0;
-            this.btnBySubject.Text = "Danh mục";
-            this.btnBySubject.UseVisualStyleBackColor = false;
-            this.btnBySubject.Click += new System.EventHandler(this.BtnBySubjectClick);
             // 
             // btnByType
             // 

@@ -32,9 +32,7 @@ namespace study_document_manager.UI.Presenters
 
         private void LoadFilterOptions()
         {
-            var categories = _repository.GetDistinctCategories();
-            categories.Insert(0, "Tất cả");
-            _view.SetCategories(categories);
+            // var categories removed
 
             var formats = _repository.GetDistinctFormats();
             formats.Insert(0, "Tất cả");
@@ -65,7 +63,7 @@ namespace study_document_manager.UI.Presenters
         {
             var docs = _repository.SearchAdvanced(
                 _view.SearchKeyword,
-                _view.SelectedCategory,
+                "",
                 _view.SelectedFormat,
                 _view.FilterFromDate,
                 _view.FilterToDate,
