@@ -1,3 +1,5 @@
+using study_document_manager.Core.Data;
+using study_document_manager.Core;
 using System;
 using System.Data;
 using System.Data.SQLite;
@@ -6,7 +8,7 @@ using System.Windows.Forms;
 using study_document_manager.UI;
 using study_document_manager.UI.Controls;
 
-namespace study_document_manager
+namespace study_document_manager.Documents
 {
     public partial class PersonalNoteForm : Form
     {
@@ -78,9 +80,9 @@ namespace study_document_manager
                 string query = @"SELECT id, note_content, status FROM personal_notes
                                 WHERE document_id = @docId";
 
-                SQLiteParameter[] parameters = new SQLiteParameter[]
+                System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
                 {
-                    new SQLiteParameter("@docId", documentId)
+                    new System.Data.SQLite.SQLiteParameter("@docId", documentId)
                 };
 
                 DataTable dt = DatabaseHelper.ExecuteQuery(query, parameters);
@@ -117,11 +119,11 @@ namespace study_document_manager
                                     SET note_content = @content, status = @status, updated_at = datetime('now', 'localtime')
                                     WHERE id = @id";
 
-                    SQLiteParameter[] parameters = new SQLiteParameter[]
+                    System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
                     {
-                        new SQLiteParameter("@content", string.IsNullOrEmpty(noteContent) ? DBNull.Value : (object)noteContent),
-                        new SQLiteParameter("@status", status),
-                        new SQLiteParameter("@id", noteId.Value)
+                        new System.Data.SQLite.SQLiteParameter("@content", string.IsNullOrEmpty(noteContent) ? DBNull.Value : (object)noteContent),
+                        new System.Data.SQLite.SQLiteParameter("@status", status),
+                        new System.Data.SQLite.SQLiteParameter("@id", noteId.Value)
                     };
 
                     DatabaseHelper.ExecuteNonQuery(query, parameters);
@@ -132,11 +134,11 @@ namespace study_document_manager
                     string query = @"INSERT INTO personal_notes (document_id, note_content, status)
                                     VALUES (@docId, @content, @status)";
 
-                    SQLiteParameter[] parameters = new SQLiteParameter[]
+                    System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
                     {
-                        new SQLiteParameter("@docId", documentId),
-                        new SQLiteParameter("@content", string.IsNullOrEmpty(noteContent) ? DBNull.Value : (object)noteContent),
-                        new SQLiteParameter("@status", status)
+                        new System.Data.SQLite.SQLiteParameter("@docId", documentId),
+                        new System.Data.SQLite.SQLiteParameter("@content", string.IsNullOrEmpty(noteContent) ? DBNull.Value : (object)noteContent),
+                        new System.Data.SQLite.SQLiteParameter("@status", status)
                     };
 
                     DatabaseHelper.ExecuteNonQuery(query, parameters);
@@ -172,9 +174,9 @@ namespace study_document_manager
                 try
                 {
                     string query = "DELETE FROM personal_notes WHERE id = @id";
-                    SQLiteParameter[] parameters = new SQLiteParameter[]
+                    System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
                     {
-                        new SQLiteParameter("@id", noteId.Value)
+                        new System.Data.SQLite.SQLiteParameter("@id", noteId.Value)
                     };
 
                     DatabaseHelper.ExecuteNonQuery(query, parameters);
@@ -191,3 +193,5 @@ namespace study_document_manager
         }
     }
 }
+
+

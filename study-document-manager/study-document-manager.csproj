@@ -95,8 +95,6 @@
     <Compile Include="Management\CollectionManagementForm.Designer.cs">
       <DependentUpon>CollectionManagementForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Data\DatabaseHelper.cs" />
-    <Compile Include="Data\DashboardStats.cs" />
     <Compile Include="Documents\BatchImportForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -147,10 +145,6 @@
     <Compile Include="Reports\TreeMapForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Core\Entities\StudyDocument.cs" />
-    <Compile Include="Core\Interfaces\IDashboardView.cs" />
-    <Compile Include="Core\Interfaces\IDocumentRepository.cs" />
-    <Compile Include="Infrastructure\Repositories\DocumentRepository.cs" />
     <Compile Include="UI\Presenters\DashboardPresenter.cs" />
     <Compile Include="Services\AppVersion.cs" />
     <Compile Include="Services\UpdateChecker.cs" />
@@ -271,13 +265,14 @@
   <ItemGroup>
     <PackageReference Include="Microsoft-WindowsAPICodePack-Core" Version="1.1.5" />
     <PackageReference Include="Microsoft-WindowsAPICodePack-Shell" Version="1.1.5" />
-    <PackageReference Include="Stub.System.Data.SQLite.Core.NetFramework">
-      <Version>1.0.118</Version>
-    </PackageReference>
+    <PackageReference Include="System.Data.SQLite" Version="1.0.118" />
     <PackageReference Include="System.Resources.Extensions">
       <Version>8.0.0</Version>
       <GeneratePathProperty>true</GeneratePathProperty>
     </PackageReference>
-    </ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\study-document-manager.Core\study-document-manager.Core.csproj" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -1,6 +1,6 @@
-namespace study_document_manager
+namespace study_document_manager.Documents
 {
-    partial class Dashboard
+    public partial class Dashboard
     {
         private System.ComponentModel.IContainer components = null;
 
@@ -736,4 +736,5 @@ namespace study_document_manager
         private System.Windows.Forms.ToolStripMenuItem ctxMenuToggleImportant;
     }
 }
+
 

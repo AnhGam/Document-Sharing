@@ -1,6 +1,6 @@
-namespace study_document_manager
+namespace study_document_manager.Documents
 {
-    partial class PersonalNoteForm
+    public partial class PersonalNoteForm
     {
         private System.ComponentModel.IContainer components = null;
 
@@ -245,3 +245,4 @@ namespace study_document_manager
         private study_document_manager.UI.Controls.ModernButton btnDelete;
     }
 }
+

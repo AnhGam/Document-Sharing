@@ -45,11 +45,11 @@ namespace study_document_manager.Services
 
             string tempPath = Path.Combine(
                 Path.GetTempPath(),
-                $"StudyDocumentManager_{version}_Setup.exe");
+                $"DocumentManager_{version}_Setup.exe");
 
             using (var client = new WebClient())
             {
-                client.Headers.Add("User-Agent", $"StudyDocumentManager/{AppVersion.Current}");
+                client.Headers.Add("User-Agent", $"DocumentManager/{AppVersion.Current}");
 
                 client.DownloadProgressChanged += (s, e) =>
                 {
@@ -155,3 +155,4 @@ namespace study_document_manager.Services
         }
     }
 }
+

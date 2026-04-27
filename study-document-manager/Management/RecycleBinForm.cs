@@ -1,3 +1,5 @@
+using study_document_manager.Core.Data;
+using study_document_manager.Core;
 using System;
 using System.Data;
 using System.Drawing;
@@ -96,9 +98,9 @@ namespace study_document_manager.Management
             this.Controls.Add(pnlActions);
 
             // Events
-            btnRestore.Click += BtnRestore_Click;
-            btnPermanentDelete.Click += BtnPermanentDelete_Click;
-            btnEmptyBin.Click += BtnEmptyBin_Click;
+            btnRestore.Click += BtnRestoreClick;
+            btnPermanentDelete.Click += BtnPermanentDeleteClick;
+            btnEmptyBin.Click += BtnEmptyBinClick;
             btnClose.Click += (s, e) => this.Close();
 
             // Ensure correct z-order (DGV fills remaining space)
@@ -178,7 +180,7 @@ namespace study_document_manager.Management
             return null;
         }
 
-        private void BtnRestore_Click(object sender, EventArgs e)
+        private void BtnRestoreClick(object sender, EventArgs e)
         {
             int? id = GetSelectedId();
             if (!id.HasValue)
@@ -198,7 +200,7 @@ namespace study_document_manager.Management
             }
         }
 
-        private void BtnPermanentDelete_Click(object sender, EventArgs e)
+        private void BtnPermanentDeleteClick(object sender, EventArgs e)
         {
             int? id = GetSelectedId();
             if (!id.HasValue)
@@ -219,7 +221,7 @@ namespace study_document_manager.Management
             }
         }
 
-        private void BtnEmptyBin_Click(object sender, EventArgs e)
+        private void BtnEmptyBinClick(object sender, EventArgs e)
         {
             int count = DatabaseHelper.GetDeletedDocumentCount();
             if (count == 0)
@@ -238,3 +240,4 @@ namespace study_document_manager.Management
         }
     }
 }
+

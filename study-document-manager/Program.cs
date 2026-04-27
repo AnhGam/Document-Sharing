@@ -1,3 +1,6 @@
+using study_document_manager.Core.Data;
+using study_document_manager.Core;
+using study_document_manager.Documents;
 using System;
 using System.Windows.Forms;
 
@@ -22,3 +25,4 @@ namespace study_document_manager
         }
     }
 }
+

@@ -1,3 +1,5 @@
+using study_document_manager.Core.Data;
+using study_document_manager.Core.Entities;
 using System;
 using System.Drawing;
 using System.IO;
@@ -5,9 +7,9 @@ using System.Windows.Forms;
 using study_document_manager.UI;
 using study_document_manager.UI.Controls;
 
-namespace study_document_manager
+namespace study_document_manager.Documents
 {
-    public partial class AddEditForm : Form
+    public partial class AddEditForm : global::System.Windows.Forms.Form
     {
         private int? _documentId = null;
 

@@ -5,7 +5,7 @@ using System.IO;
 using System.Windows.Forms;
 using study_document_manager.UI;
 
-namespace study_document_manager
+namespace study_document_manager.UI
 {
     /// <summary>
     /// Helper class để tạo icon cho các định dạng tài liệu
@@ -825,3 +825,4 @@ namespace study_document_manager
         #endregion
     }
 }
+

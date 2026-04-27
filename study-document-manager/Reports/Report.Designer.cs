@@ -1,6 +1,6 @@
-namespace study_document_manager
+namespace study_document_manager.Reports
 {
-    partial class Report
+    public partial class Report
     {
         /// <summary>
         /// Required designer variable.
@@ -658,3 +658,4 @@ namespace study_document_manager
         private System.Windows.Forms.ComboBox cboChartType;
     }
 }
+

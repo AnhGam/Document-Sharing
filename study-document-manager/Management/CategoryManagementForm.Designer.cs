@@ -1,6 +1,6 @@
-namespace study_document_manager
+namespace study_document_manager.Management
 {
-    partial class CategoryManagementForm
+    public partial class CategoryManagementForm
     {
         private System.ComponentModel.IContainer components = null;
 
@@ -280,3 +280,5 @@ namespace study_document_manager
         private System.Windows.Forms.ToolStripStatusLabel lblStatus;
     }
 }
+
+

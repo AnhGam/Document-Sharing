@@ -2,7 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
-namespace study_document_manager
+namespace study_document_manager.UI.Controls
 {
     internal class DoubleBufferedTreeView : TreeView
     {
@@ -19,3 +19,4 @@ namespace study_document_manager
         private static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wp, IntPtr lp);
     }
 }
+

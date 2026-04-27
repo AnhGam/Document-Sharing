@@ -1,3 +1,5 @@
+using study_document_manager.Core.Data;
+using study_document_manager.Core;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -282,3 +284,4 @@ namespace study_document_manager.Documents
         }
     }
 }
+

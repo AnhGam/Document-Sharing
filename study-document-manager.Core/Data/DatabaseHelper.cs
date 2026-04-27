@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SQLite;
 using System.IO;
-using System.Windows.Forms;
+// using System.Windows.Forms; // Removed for Backend-Frontend Decoupling
 
-namespace study_document_manager
+namespace study_document_manager.Core.Data
 {
     /// <summary>
     /// Class quản lý kết nối và thao tác với SQLite Database (Local)
@@ -26,7 +26,7 @@ namespace study_document_manager
             {
                 if (string.IsNullOrEmpty(_databasePath))
                 {
-                    string appFolder = Path.GetDirectoryName(Application.ExecutablePath);
+                    string appFolder = AppDomain.CurrentDomain.BaseDirectory;
                     _databasePath = Path.Combine(appFolder, "data", "study_documents.db");
                 }
                 return _databasePath;
@@ -73,11 +73,9 @@ namespace study_document_manager
             }
             catch (Exception ex)
             {
-                if (!SuppressPopups)
-                {
-                    MessageBox.Show("Lỗi khởi tạo database: " + ex.Message,
-                        "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+                // Logic for server: Log the error or throw
+                // MessageBox removed for Backend decoupling
+                throw new InvalidOperationException("Lỗi khởi tạo database: " + ex.Message, ex);
             }
         }
 
@@ -231,13 +229,9 @@ namespace study_document_manager
                     return true;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                if (!SuppressPopups)
-                {
-                    MessageBox.Show("Lỗi kết nối database: " + ex.Message,
-                        "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+                // Removed MessageBox for Backend decoupling
                 return false;
             }
         }
@@ -245,7 +239,7 @@ namespace study_document_manager
         /// <summary>
         /// Thực hiện câu lệnh SELECT và trả về DataTable
         /// </summary>
-        public static DataTable ExecuteQuery(string query, SQLiteParameter[] parameters = null)
+        public static DataTable ExecuteQuery(string query, System.Data.SQLite.SQLiteParameter[] parameters = null)
         {
             DataTable dt = new DataTable();
             try
@@ -267,11 +261,7 @@ namespace study_document_manager
             }
             catch (Exception ex)
             {
-                if (!SuppressPopups)
-                {
-                    MessageBox.Show("Lỗi truy vấn: " + ex.Message,
-                        "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+                throw new InvalidOperationException("Lỗi truy vấn: " + ex.Message, ex);
             }
             return dt;
         }
@@ -279,7 +269,7 @@ namespace study_document_manager
         /// <summary>
         /// Thực hiện câu lệnh INSERT, UPDATE, DELETE
         /// </summary>
-        public static int ExecuteNonQuery(string query, SQLiteParameter[] parameters = null)
+        public static int ExecuteNonQuery(string query, System.Data.SQLite.SQLiteParameter[] parameters = null)
         {
             int affectedRows = 0;
             try
@@ -299,11 +289,7 @@ namespace study_document_manager
             }
             catch (Exception ex)
             {
-                if (!SuppressPopups)
-                {
-                    MessageBox.Show("Lỗi thực thi: " + ex.Message,
-                        "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+                throw new InvalidOperationException("Lỗi thực thi: " + ex.Message, ex);
             }
             return affectedRows;
         }
@@ -311,7 +297,7 @@ namespace study_document_manager
         /// <summary>
         /// Thực hiện câu lệnh trả về giá trị đơn (COUNT, SUM, v.v.)
         /// </summary>
-        public static object ExecuteScalar(string query, SQLiteParameter[] parameters = null)
+        public static object ExecuteScalar(string query, System.Data.SQLite.SQLiteParameter[] parameters = null)
         {
             object result = null;
             try
@@ -331,11 +317,7 @@ namespace study_document_manager
             }
             catch (Exception ex)
             {
-                if (!SuppressPopups)
-                {
-                    MessageBox.Show("Lỗi thực thi: " + ex.Message,
-                        "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+                throw new InvalidOperationException("Lỗi thực thi scalar: " + ex.Message, ex);
             }
             return result;
         }
@@ -369,9 +351,9 @@ namespace study_document_manager
                            OR ghi_chu LIKE @keyword)
                            ORDER BY ngay_them DESC";
 
-            SQLiteParameter[] parameters = new SQLiteParameter[]
+            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
             {
-                new SQLiteParameter("@keyword", "%" + keyword + "%")
+                new System.Data.SQLite.SQLiteParameter("@keyword", "%" + keyword + "%")
             };
 
             return ExecuteQuery(query, parameters);
@@ -396,10 +378,10 @@ namespace study_document_manager
 
             query += " ORDER BY ngay_them DESC";
 
-            SQLiteParameter[] parameters = new SQLiteParameter[]
+            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
             {
-                new SQLiteParameter("@danh_muc", string.IsNullOrEmpty(danhMuc) ? DBNull.Value : (object)danhMuc),
-                new SQLiteParameter("@dinh_dang", string.IsNullOrEmpty(dinhDang) ? DBNull.Value : (object)dinhDang)
+                new System.Data.SQLite.SQLiteParameter("@danh_muc", string.IsNullOrEmpty(danhMuc) ? DBNull.Value : (object)danhMuc),
+                new System.Data.SQLite.SQLiteParameter("@dinh_dang", string.IsNullOrEmpty(dinhDang) ? DBNull.Value : (object)dinhDang)
             };
 
             return ExecuteQuery(query, parameters);
@@ -420,55 +402,55 @@ namespace study_document_manager
         {
             string baseQuery = @"SELECT * FROM tai_lieu WHERE (is_deleted IS NULL OR is_deleted = 0)";
 
-            List<SQLiteParameter> parameterList = new List<SQLiteParameter>();
+            List<System.Data.SQLite.SQLiteParameter> parameterList = new List<System.Data.SQLite.SQLiteParameter>();
 
             // Keyword search
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 baseQuery += " AND (ten LIKE @keyword OR danh_muc LIKE @keyword OR ghi_chu LIKE @keyword OR tags LIKE @keyword)";
-                parameterList.Add(new SQLiteParameter("@keyword", "%" + keyword + "%"));
+                parameterList.Add(new System.Data.SQLite.SQLiteParameter("@keyword", "%" + keyword + "%"));
             }
 
             // Danh mục
             if (!string.IsNullOrEmpty(danhMuc) && danhMuc != "Tất cả")
             {
                 baseQuery += " AND danh_muc = @danh_muc";
-                parameterList.Add(new SQLiteParameter("@danh_muc", danhMuc));
+                parameterList.Add(new System.Data.SQLite.SQLiteParameter("@danh_muc", danhMuc));
             }
 
             // Định dạng
             if (!string.IsNullOrEmpty(dinhDang) && dinhDang != "Tất cả")
             {
                 baseQuery += " AND dinh_dang = @dinh_dang";
-                parameterList.Add(new SQLiteParameter("@dinh_dang", dinhDang));
+                parameterList.Add(new System.Data.SQLite.SQLiteParameter("@dinh_dang", dinhDang));
             }
 
             // Ngày từ
             if (fromDate.HasValue)
             {
                 baseQuery += " AND date(ngay_them) >= date(@fromDate)";
-                parameterList.Add(new SQLiteParameter("@fromDate", fromDate.Value.ToString("yyyy-MM-dd")));
+                parameterList.Add(new System.Data.SQLite.SQLiteParameter("@fromDate", fromDate.Value.ToString("yyyy-MM-dd")));
             }
 
             // Ngày đến
             if (toDate.HasValue)
             {
                 baseQuery += " AND date(ngay_them) <= date(@toDate)";
-                parameterList.Add(new SQLiteParameter("@toDate", toDate.Value.ToString("yyyy-MM-dd")));
+                parameterList.Add(new System.Data.SQLite.SQLiteParameter("@toDate", toDate.Value.ToString("yyyy-MM-dd")));
             }
 
             // Kích thước min
             if (minSize.HasValue)
             {
                 baseQuery += " AND kich_thuoc >= @minSize";
-                parameterList.Add(new SQLiteParameter("@minSize", minSize.Value));
+                parameterList.Add(new System.Data.SQLite.SQLiteParameter("@minSize", minSize.Value));
             }
 
             // Kích thước max
             if (maxSize.HasValue)
             {
                 baseQuery += " AND kich_thuoc <= @maxSize";
-                parameterList.Add(new SQLiteParameter("@maxSize", maxSize.Value));
+                parameterList.Add(new System.Data.SQLite.SQLiteParameter("@maxSize", maxSize.Value));
             }
 
             // Quan trọng
@@ -491,16 +473,16 @@ namespace study_document_manager
                 VALUES
                 (@ten, @danh_muc, @dinh_dang, @duong_dan, @ghi_chu, @kich_thuoc, @quan_trong, @tags)";
 
-            SQLiteParameter[] parameters = new SQLiteParameter[]
+            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
             {
-                new SQLiteParameter("@ten", ten),
-                new SQLiteParameter("@danh_muc", string.IsNullOrEmpty(danhMuc) ? DBNull.Value : (object)danhMuc),
-                new SQLiteParameter("@dinh_dang", string.IsNullOrEmpty(dinhDang) ? DBNull.Value : (object)dinhDang),
-                new SQLiteParameter("@duong_dan", duongDan ?? (object)DBNull.Value),
-                new SQLiteParameter("@ghi_chu", string.IsNullOrEmpty(ghiChu) ? DBNull.Value : (object)ghiChu),
-                new SQLiteParameter("@kich_thuoc", kichThuoc.HasValue ? (object)kichThuoc.Value : DBNull.Value),
-                new SQLiteParameter("@quan_trong", quanTrong ? 1 : 0),
-                new SQLiteParameter("@tags", string.IsNullOrEmpty(tags) ? DBNull.Value : (object)tags)
+                new System.Data.SQLite.SQLiteParameter("@ten", ten),
+                new System.Data.SQLite.SQLiteParameter("@danh_muc", string.IsNullOrEmpty(danhMuc) ? DBNull.Value : (object)danhMuc),
+                new System.Data.SQLite.SQLiteParameter("@dinh_dang", string.IsNullOrEmpty(dinhDang) ? DBNull.Value : (object)dinhDang),
+                new System.Data.SQLite.SQLiteParameter("@duong_dan", duongDan ?? (object)DBNull.Value),
+                new System.Data.SQLite.SQLiteParameter("@ghi_chu", string.IsNullOrEmpty(ghiChu) ? DBNull.Value : (object)ghiChu),
+                new System.Data.SQLite.SQLiteParameter("@kich_thuoc", kichThuoc.HasValue ? (object)kichThuoc.Value : DBNull.Value),
+                new System.Data.SQLite.SQLiteParameter("@quan_trong", quanTrong ? 1 : 0),
+                new System.Data.SQLite.SQLiteParameter("@tags", string.IsNullOrEmpty(tags) ? DBNull.Value : (object)tags)
             };
 
             int result = ExecuteNonQuery(query, parameters);
@@ -525,17 +507,17 @@ namespace study_document_manager
                 tags = @tags
                 WHERE id = @id";
 
-            SQLiteParameter[] parameters = new SQLiteParameter[]
+            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
             {
-                new SQLiteParameter("@id", id),
-                new SQLiteParameter("@ten", ten),
-                new SQLiteParameter("@danh_muc", string.IsNullOrEmpty(danhMuc) ? DBNull.Value : (object)danhMuc),
-                new SQLiteParameter("@dinh_dang", string.IsNullOrEmpty(dinhDang) ? DBNull.Value : (object)dinhDang),
-                new SQLiteParameter("@duong_dan", duongDan ?? (object)DBNull.Value),
-                new SQLiteParameter("@ghi_chu", string.IsNullOrEmpty(ghiChu) ? DBNull.Value : (object)ghiChu),
-                new SQLiteParameter("@kich_thuoc", kichThuoc.HasValue ? (object)kichThuoc.Value : DBNull.Value),
-                new SQLiteParameter("@quan_trong", quanTrong ? 1 : 0),
-                new SQLiteParameter("@tags", string.IsNullOrEmpty(tags) ? DBNull.Value : (object)tags)
+                new System.Data.SQLite.SQLiteParameter("@id", id),
+                new System.Data.SQLite.SQLiteParameter("@ten", ten),
+                new System.Data.SQLite.SQLiteParameter("@danh_muc", string.IsNullOrEmpty(danhMuc) ? DBNull.Value : (object)danhMuc),
+                new System.Data.SQLite.SQLiteParameter("@dinh_dang", string.IsNullOrEmpty(dinhDang) ? DBNull.Value : (object)dinhDang),
+                new System.Data.SQLite.SQLiteParameter("@duong_dan", duongDan ?? (object)DBNull.Value),
+                new System.Data.SQLite.SQLiteParameter("@ghi_chu", string.IsNullOrEmpty(ghiChu) ? DBNull.Value : (object)ghiChu),
+                new System.Data.SQLite.SQLiteParameter("@kich_thuoc", kichThuoc.HasValue ? (object)kichThuoc.Value : DBNull.Value),
+                new System.Data.SQLite.SQLiteParameter("@quan_trong", quanTrong ? 1 : 0),
+                new System.Data.SQLite.SQLiteParameter("@tags", string.IsNullOrEmpty(tags) ? DBNull.Value : (object)tags)
             };
 
             int result = ExecuteNonQuery(query, parameters);
@@ -549,9 +531,9 @@ namespace study_document_manager
         {
             string query = "UPDATE tai_lieu SET is_deleted = 1, deleted_at = datetime('now','localtime') WHERE id = @id";
 
-            SQLiteParameter[] parameters = new SQLiteParameter[]
+            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
             {
-                new SQLiteParameter("@id", id)
+                new System.Data.SQLite.SQLiteParameter("@id", id)
             };
 
             int result = ExecuteNonQuery(query, parameters);
@@ -619,10 +601,10 @@ namespace study_document_manager
                             VALUES (@name, @description);
                             SELECT last_insert_rowid();";
 
-            SQLiteParameter[] parameters = new SQLiteParameter[]
+            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
             {
-                new SQLiteParameter("@name", name),
-                new SQLiteParameter("@description", string.IsNullOrEmpty(description) ? DBNull.Value : (object)description)
+                new System.Data.SQLite.SQLiteParameter("@name", name),
+                new System.Data.SQLite.SQLiteParameter("@description", string.IsNullOrEmpty(description) ? DBNull.Value : (object)description)
             };
 
             object result = ExecuteScalar(query, parameters);
@@ -637,11 +619,11 @@ namespace study_document_manager
             string query = @"UPDATE collections SET name = @name, description = @description
                             WHERE id = @id";
 
-            SQLiteParameter[] parameters = new SQLiteParameter[]
+            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
             {
-                new SQLiteParameter("@id", collectionId),
-                new SQLiteParameter("@name", name),
-                new SQLiteParameter("@description", string.IsNullOrEmpty(description) ? DBNull.Value : (object)description)
+                new System.Data.SQLite.SQLiteParameter("@id", collectionId),
+                new System.Data.SQLite.SQLiteParameter("@name", name),
+                new System.Data.SQLite.SQLiteParameter("@description", string.IsNullOrEmpty(description) ? DBNull.Value : (object)description)
             };
 
             return ExecuteNonQuery(query, parameters) > 0;
@@ -654,13 +636,13 @@ namespace study_document_manager
         {
             // Xóa items trước
             string deleteItems = "DELETE FROM collection_items WHERE collection_id = @id";
-            ExecuteNonQuery(deleteItems, new SQLiteParameter[] { new SQLiteParameter("@id", collectionId) });
+            ExecuteNonQuery(deleteItems, new System.Data.SQLite.SQLiteParameter[] { new System.Data.SQLite.SQLiteParameter("@id", collectionId) });
 
             // Xóa collection
             string query = "DELETE FROM collections WHERE id = @id";
-            SQLiteParameter[] parameters = new SQLiteParameter[]
+            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
             {
-                new SQLiteParameter("@id", collectionId)
+                new System.Data.SQLite.SQLiteParameter("@id", collectionId)
             };
 
             return ExecuteNonQuery(query, parameters) > 0;
@@ -677,9 +659,9 @@ namespace study_document_manager
                             WHERE ci.collection_id = @collectionId
                             ORDER BY ci.added_at DESC";
 
-            SQLiteParameter[] parameters = new SQLiteParameter[]
+            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
             {
-                new SQLiteParameter("@collectionId", collectionId)
+                new System.Data.SQLite.SQLiteParameter("@collectionId", collectionId)
             };
 
             return ExecuteQuery(query, parameters);
@@ -692,10 +674,10 @@ namespace study_document_manager
         {
             // Kiểm tra đã tồn tại chưa
             string checkQuery = "SELECT COUNT(*) FROM collection_items WHERE collection_id = @colId AND document_id = @docId";
-            SQLiteParameter[] checkParams = new SQLiteParameter[]
+            System.Data.SQLite.SQLiteParameter[] checkParams = new System.Data.SQLite.SQLiteParameter[]
             {
-                new SQLiteParameter("@colId", collectionId),
-                new SQLiteParameter("@docId", documentId)
+                new System.Data.SQLite.SQLiteParameter("@colId", collectionId),
+                new System.Data.SQLite.SQLiteParameter("@docId", documentId)
             };
 
             object exists = ExecuteScalar(checkQuery, checkParams);
@@ -705,10 +687,10 @@ namespace study_document_manager
             }
 
             string query = "INSERT INTO collection_items (collection_id, document_id) VALUES (@colId, @docId)";
-            SQLiteParameter[] parameters = new SQLiteParameter[]
+            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
             {
-                new SQLiteParameter("@colId", collectionId),
-                new SQLiteParameter("@docId", documentId)
+                new System.Data.SQLite.SQLiteParameter("@colId", collectionId),
+                new System.Data.SQLite.SQLiteParameter("@docId", documentId)
             };
 
             return ExecuteNonQuery(query, parameters) > 0;
@@ -720,10 +702,10 @@ namespace study_document_manager
         public static bool RemoveDocumentFromCollection(int collectionId, int documentId)
         {
             string query = "DELETE FROM collection_items WHERE collection_id = @colId AND document_id = @docId";
-            SQLiteParameter[] parameters = new SQLiteParameter[]
+            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
             {
-                new SQLiteParameter("@colId", collectionId),
-                new SQLiteParameter("@docId", documentId)
+                new System.Data.SQLite.SQLiteParameter("@colId", collectionId),
+                new System.Data.SQLite.SQLiteParameter("@docId", documentId)
             };
 
             return ExecuteNonQuery(query, parameters) > 0;
@@ -830,9 +812,9 @@ namespace study_document_manager
                 GROUP BY ds.ngay
                 ORDER BY ds.ngay ASC";
 
-            SQLiteParameter[] parameters = new SQLiteParameter[]
+            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
             {
-                new SQLiteParameter("@days", days)
+                new System.Data.SQLite.SQLiteParameter("@days", days)
             };
 
             return ExecuteQuery(query, parameters);
@@ -861,9 +843,9 @@ namespace study_document_manager
                 GROUP BY ms.thang
                 ORDER BY ms.thang ASC";
 
-            SQLiteParameter[] parameters = new SQLiteParameter[]
+            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
             {
-                new SQLiteParameter("@months", months)
+                new System.Data.SQLite.SQLiteParameter("@months", months)
             };
 
             return ExecuteQuery(query, parameters);
@@ -908,10 +890,10 @@ namespace study_document_manager
         {
             string query = "UPDATE tai_lieu SET danh_muc = @newName WHERE danh_muc = @oldName";
 
-            SQLiteParameter[] parameters = new SQLiteParameter[]
+            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
             {
-                new SQLiteParameter("@oldName", oldName),
-                new SQLiteParameter("@newName", newName)
+                new System.Data.SQLite.SQLiteParameter("@oldName", oldName),
+                new System.Data.SQLite.SQLiteParameter("@newName", newName)
             };
 
             int result = ExecuteNonQuery(query, parameters);
@@ -925,10 +907,10 @@ namespace study_document_manager
         {
             string query = "UPDATE tai_lieu SET dinh_dang = @newName WHERE dinh_dang = @oldName";
 
-            SQLiteParameter[] parameters = new SQLiteParameter[]
+            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
             {
-                new SQLiteParameter("@oldName", oldName),
-                new SQLiteParameter("@newName", newName)
+                new System.Data.SQLite.SQLiteParameter("@oldName", oldName),
+                new System.Data.SQLite.SQLiteParameter("@newName", newName)
             };
 
             int result = ExecuteNonQuery(query, parameters);
@@ -942,9 +924,9 @@ namespace study_document_manager
         {
             string query = "DELETE FROM tai_lieu WHERE danh_muc = @subjectName";
 
-            SQLiteParameter[] parameters = new SQLiteParameter[]
+            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
             {
-                new SQLiteParameter("@subjectName", subjectName)
+                new System.Data.SQLite.SQLiteParameter("@subjectName", subjectName)
             };
 
             int result = ExecuteNonQuery(query, parameters);
@@ -958,9 +940,9 @@ namespace study_document_manager
         {
             string query = "DELETE FROM tai_lieu WHERE dinh_dang = @typeName";
 
-            SQLiteParameter[] parameters = new SQLiteParameter[]
+            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
             {
-                new SQLiteParameter("@typeName", typeName)
+                new System.Data.SQLite.SQLiteParameter("@typeName", typeName)
             };
 
             int result = ExecuteNonQuery(query, parameters);
@@ -978,9 +960,9 @@ namespace study_document_manager
         {
             string query = "SELECT * FROM personal_notes WHERE document_id = @documentId";
 
-            SQLiteParameter[] parameters = new SQLiteParameter[]
+            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
             {
-                new SQLiteParameter("@documentId", documentId)
+                new System.Data.SQLite.SQLiteParameter("@documentId", documentId)
             };
 
             return ExecuteQuery(query, parameters);
@@ -993,9 +975,9 @@ namespace study_document_manager
         {
             // Kiểm tra đã có note chưa
             string checkQuery = "SELECT COUNT(*) FROM personal_notes WHERE document_id = @documentId";
-            SQLiteParameter[] checkParams = new SQLiteParameter[]
+            System.Data.SQLite.SQLiteParameter[] checkParams = new System.Data.SQLite.SQLiteParameter[]
             {
-                new SQLiteParameter("@documentId", documentId)
+                new System.Data.SQLite.SQLiteParameter("@documentId", documentId)
             };
 
             object exists = ExecuteScalar(checkQuery, checkParams);
@@ -1007,10 +989,10 @@ namespace study_document_manager
                 string updateQuery = @"UPDATE personal_notes
                                       SET content = @content, updated_at = datetime('now', 'localtime')
                                       WHERE document_id = @documentId";
-                SQLiteParameter[] updateParams = new SQLiteParameter[]
+                System.Data.SQLite.SQLiteParameter[] updateParams = new System.Data.SQLite.SQLiteParameter[]
                 {
-                    new SQLiteParameter("@documentId", documentId),
-                    new SQLiteParameter("@content", string.IsNullOrEmpty(content) ? DBNull.Value : (object)content)
+                    new System.Data.SQLite.SQLiteParameter("@documentId", documentId),
+                    new System.Data.SQLite.SQLiteParameter("@content", string.IsNullOrEmpty(content) ? DBNull.Value : (object)content)
                 };
                 return ExecuteNonQuery(updateQuery, updateParams) > 0;
             }
@@ -1019,10 +1001,10 @@ namespace study_document_manager
                 // Insert
                 string insertQuery = @"INSERT INTO personal_notes (document_id, content)
                                       VALUES (@documentId, @content)";
-                SQLiteParameter[] insertParams = new SQLiteParameter[]
+                System.Data.SQLite.SQLiteParameter[] insertParams = new System.Data.SQLite.SQLiteParameter[]
                 {
-                    new SQLiteParameter("@documentId", documentId),
-                    new SQLiteParameter("@content", string.IsNullOrEmpty(content) ? DBNull.Value : (object)content)
+                    new System.Data.SQLite.SQLiteParameter("@documentId", documentId),
+                    new System.Data.SQLite.SQLiteParameter("@content", string.IsNullOrEmpty(content) ? DBNull.Value : (object)content)
                 };
                 return ExecuteNonQuery(insertQuery, insertParams) > 0;
             }
@@ -1035,9 +1017,9 @@ namespace study_document_manager
         {
             string query = "DELETE FROM personal_notes WHERE document_id = @documentId";
 
-            SQLiteParameter[] parameters = new SQLiteParameter[]
+            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
             {
-                new SQLiteParameter("@documentId", documentId)
+                new System.Data.SQLite.SQLiteParameter("@documentId", documentId)
             };
 
             return ExecuteNonQuery(query, parameters) > 0;
@@ -1056,13 +1038,13 @@ namespace study_document_manager
         public static bool RestoreDocument(int id)
         {
             string query = "UPDATE tai_lieu SET is_deleted = 0, deleted_at = NULL WHERE id = @id";
-            return ExecuteNonQuery(query, new SQLiteParameter[] { new SQLiteParameter("@id", id) }) > 0;
+            return ExecuteNonQuery(query, new System.Data.SQLite.SQLiteParameter[] { new System.Data.SQLite.SQLiteParameter("@id", id) }) > 0;
         }
 
         public static bool PermanentDeleteDocument(int id)
         {
             string query = "DELETE FROM tai_lieu WHERE id = @id";
-            return ExecuteNonQuery(query, new SQLiteParameter[] { new SQLiteParameter("@id", id) }) > 0;
+            return ExecuteNonQuery(query, new System.Data.SQLite.SQLiteParameter[] { new System.Data.SQLite.SQLiteParameter("@id", id) }) > 0;
         }
 
         public static int EmptyRecycleBin()
@@ -1095,7 +1077,7 @@ namespace study_document_manager
             if (ids == null || ids.Count == 0) return 0;
             string idList = string.Join(",", ids);
             string query = $"UPDATE tai_lieu SET danh_muc = @subject WHERE id IN ({idList})";
-            return ExecuteNonQuery(query, new SQLiteParameter[] { new SQLiteParameter("@subject", subject ?? "") });
+            return ExecuteNonQuery(query, new System.Data.SQLite.SQLiteParameter[] { new System.Data.SQLite.SQLiteParameter("@subject", subject ?? "") });
         }
 
         public static int BulkToggleImportant(List<int> ids, bool important)
@@ -1103,7 +1085,7 @@ namespace study_document_manager
             if (ids == null || ids.Count == 0) return 0;
             string idList = string.Join(",", ids);
             string query = $"UPDATE tai_lieu SET quan_trong = @val WHERE id IN ({idList})";
-            return ExecuteNonQuery(query, new SQLiteParameter[] { new SQLiteParameter("@val", important ? 1 : 0) });
+            return ExecuteNonQuery(query, new System.Data.SQLite.SQLiteParameter[] { new System.Data.SQLite.SQLiteParameter("@val", important ? 1 : 0) });
         }
 
         #endregion
@@ -1114,7 +1096,7 @@ namespace study_document_manager
         {
             string upsert = @"INSERT OR REPLACE INTO recent_files (document_id, opened_at)
                               VALUES (@docId, datetime('now','localtime'))";
-            ExecuteNonQuery(upsert, new SQLiteParameter[] { new SQLiteParameter("@docId", documentId) });
+            ExecuteNonQuery(upsert, new System.Data.SQLite.SQLiteParameter[] { new System.Data.SQLite.SQLiteParameter("@docId", documentId) });
 
             // Keep only 20 most recent
             string trim = @"DELETE FROM recent_files WHERE id NOT IN
@@ -1136,7 +1118,7 @@ namespace study_document_manager
         public static void RemoveRecentFile(int documentId)
         {
             ExecuteNonQuery("DELETE FROM recent_files WHERE document_id = @docId",
-                new SQLiteParameter[] { new SQLiteParameter("@docId", documentId) });
+                new System.Data.SQLite.SQLiteParameter[] { new System.Data.SQLite.SQLiteParameter("@docId", documentId) });
         }
 
         public static void ClearRecentFiles()
@@ -1168,11 +1150,11 @@ namespace study_document_manager
             int hi = Math.Max(docId1, docId2);
             string query = @"INSERT OR IGNORE INTO document_relations (doc_id_1, doc_id_2, relation_type)
                              VALUES (@d1, @d2, @type)";
-            ExecuteNonQuery(query, new SQLiteParameter[]
+            ExecuteNonQuery(query, new System.Data.SQLite.SQLiteParameter[]
             {
-                new SQLiteParameter("@d1", lo),
-                new SQLiteParameter("@d2", hi),
-                new SQLiteParameter("@type", relationType)
+                new System.Data.SQLite.SQLiteParameter("@d1", lo),
+                new System.Data.SQLite.SQLiteParameter("@d2", hi),
+                new System.Data.SQLite.SQLiteParameter("@type", relationType)
             });
         }
 
@@ -1184,13 +1166,13 @@ namespace study_document_manager
                              WHERE (r.doc_id_1 = @docId OR r.doc_id_2 = @docId)
                              AND t.is_deleted = 0
                              ORDER BY t.ten";
-            return ExecuteQuery(query, new SQLiteParameter[] { new SQLiteParameter("@docId", docId) });
+            return ExecuteQuery(query, new System.Data.SQLite.SQLiteParameter[] { new System.Data.SQLite.SQLiteParameter("@docId", docId) });
         }
 
         public static void RemoveDocumentRelation(int relationId)
         {
             ExecuteNonQuery("DELETE FROM document_relations WHERE id = @id",
-                new SQLiteParameter[] { new SQLiteParameter("@id", relationId) });
+                new System.Data.SQLite.SQLiteParameter[] { new System.Data.SQLite.SQLiteParameter("@id", relationId) });
         }
 
         /// <summary>
@@ -1223,9 +1205,11 @@ namespace study_document_manager
                 )
                 LIMIT 5";
             
-            return ExecuteQuery(query, new SQLiteParameter[] { new SQLiteParameter("@docId", docId) });
+            return ExecuteQuery(query, new System.Data.SQLite.SQLiteParameter[] { new System.Data.SQLite.SQLiteParameter("@docId", docId) });
         }
 
         #endregion
     }
 }
+
+

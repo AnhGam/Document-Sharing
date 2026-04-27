@@ -17,7 +17,7 @@ namespace study_document_manager.Core.Interfaces
         bool FilterIsImportant { get; }
 
         // Data Sources
-        void SetDocumentList(List<StudyDocument> documents);
+        void SetDocumentList(List<Document> documents);
         void SetCategories(List<string> categories);
         void SetFormats(List<string> formats);
         void UpdateStatusCount(int count);
@@ -39,3 +39,4 @@ namespace study_document_manager.Core.Interfaces
         bool ConfirmDelete();
     }
 }
+

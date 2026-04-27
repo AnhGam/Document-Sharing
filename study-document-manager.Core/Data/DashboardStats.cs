@@ -1,4 +1,4 @@
-namespace study_document_manager
+namespace study_document_manager.Core.Data
 {
     public class DashboardStats
     {
@@ -10,3 +10,4 @@ namespace study_document_manager
         public int DeletedDocuments { get; set; }
     }
 }
+

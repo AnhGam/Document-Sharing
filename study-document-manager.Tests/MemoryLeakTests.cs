@@ -2,7 +2,10 @@ using NUnit.Framework;
 using JetBrains.dotMemoryUnit;
 using System.Windows.Forms;
 using study_document_manager;
+using study_document_manager.Documents;
 
+using study_document_manager.Core.Data;
+using study_document_manager.Core;
 namespace study_document_manager.Tests
 {
     [TestFixture]
@@ -52,3 +55,4 @@ namespace study_document_manager.Tests
         }
     }
 }
+

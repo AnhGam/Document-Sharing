@@ -3,6 +3,8 @@ using NetArchTest.Rules;
 using System.Reflection;
 using study_document_manager;
 
+using study_document_manager.Core.Data;
+using study_document_manager.Core;
 namespace study_document_manager.Tests
 {
     [TestFixture]
@@ -40,3 +42,4 @@ namespace study_document_manager.Tests
         }
     }
 }
+

@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\study-document-manager\study-document-manager.csproj" />
+    <ProjectReference Include="..\study-document-manager.Core\study-document-manager.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

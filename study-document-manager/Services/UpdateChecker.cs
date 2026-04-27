@@ -38,7 +38,7 @@ namespace study_document_manager.Services
                 using (var client = new WebClient())
                 {
                     // GitHub API requires User-Agent header
-                    client.Headers.Add("User-Agent", $"StudyDocumentManager/{AppVersion.Current}");
+                    client.Headers.Add("User-Agent", $"DocumentManager/{AppVersion.Current}");
                     client.Headers.Add("Accept", "application/vnd.github.v3+json");
                     client.Encoding = System.Text.Encoding.UTF8;
 
@@ -109,3 +109,4 @@ namespace study_document_manager.Services
         }
     }
 }
+

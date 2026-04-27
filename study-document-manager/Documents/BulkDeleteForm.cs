@@ -1,5 +1,7 @@
+using study_document_manager.Core.Data;
+using study_document_manager.Core;
 using study_document_manager.Core.Entities;
-using study_document_manager.Infrastructure.Repositories;
+using study_document_manager.Core.Infrastructure.Repositories;
 using study_document_manager.UI;
 using study_document_manager;
 using System;
@@ -505,14 +507,14 @@ namespace study_document_manager.Documents
         }
 
         /// <summary>
-        /// Wrapper model cho StudyDocument kèm property Selected (checkbox bound).
+        /// Wrapper model cho Document kèm property Selected (checkbox bound).
         /// </summary>
         public class SelectableDocument : INotifyPropertyChanged
         {
             private bool _selected;
-            private readonly StudyDocument _doc;
+            private readonly Document _doc;
 
-            public SelectableDocument(StudyDocument doc)
+            public SelectableDocument(Document doc)
             {
                 _doc = doc;
             }
@@ -541,3 +543,4 @@ namespace study_document_manager.Documents
         }
     }
 }
+

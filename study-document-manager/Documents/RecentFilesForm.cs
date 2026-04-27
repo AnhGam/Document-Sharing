@@ -1,3 +1,5 @@
+using study_document_manager.Core.Data;
+using study_document_manager.Core;
 using System;
 using System.Data;
 using System.Drawing;
@@ -226,3 +228,4 @@ namespace study_document_manager.Documents
         }
     }
 }
+

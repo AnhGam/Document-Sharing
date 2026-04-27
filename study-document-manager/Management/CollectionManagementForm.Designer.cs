@@ -1,6 +1,6 @@
-namespace study_document_manager
+namespace study_document_manager.Management
 {
-    partial class CollectionManagementForm
+    public partial class CollectionManagementForm
     {
         private System.ComponentModel.IContainer components = null;
 
@@ -117,7 +117,7 @@ namespace study_document_manager
             this.lstCollections.TabIndex = 1;
             this.lstCollections.UseCompatibleStateImageBehavior = false;
             this.lstCollections.View = System.Windows.Forms.View.Details;
-            this.lstCollections.SelectedIndexChanged += new System.EventHandler(this.lstCollections_SelectedIndexChanged);
+            this.lstCollections.SelectedIndexChanged += new System.EventHandler(this.LstCollectionsSelectedIndexChanged);
             //
             // colName
             //
@@ -154,7 +154,7 @@ namespace study_document_manager
             this.btnNewCollection.TabIndex = 0;
             this.btnNewCollection.Text = "+ Tạo mới";
             this.btnNewCollection.UseVisualStyleBackColor = false;
-            this.btnNewCollection.Click += new System.EventHandler(this.btnNewCollection_Click);
+            this.btnNewCollection.Click += new System.EventHandler(this.BtnNewCollectionClick);
             //
             // btnDeleteCollection
             //
@@ -171,7 +171,7 @@ namespace study_document_manager
             this.btnDeleteCollection.TabIndex = 1;
             this.btnDeleteCollection.Text = "Xóa";
             this.btnDeleteCollection.UseVisualStyleBackColor = false;
-            this.btnDeleteCollection.Click += new System.EventHandler(this.btnDeleteCollection_Click);
+            this.btnDeleteCollection.Click += new System.EventHandler(this.BtnDeleteCollectionClick);
             //
             // pnlDocHeader
             //
@@ -209,7 +209,7 @@ namespace study_document_manager
             this.btnClose.TabIndex = 1;
             this.btnClose.Text = "Đóng";
             this.btnClose.UseVisualStyleBackColor = false;
-            this.btnClose.Click += new System.EventHandler(this.btnClose_Click);
+            this.btnClose.Click += new System.EventHandler(this.BtnCloseClick);
             //
             // dgvDocuments
             //
@@ -231,7 +231,7 @@ namespace study_document_manager
             this.dgvDocuments.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             this.dgvDocuments.Size = new System.Drawing.Size(590, 384);
             this.dgvDocuments.TabIndex = 1;
-            this.dgvDocuments.CellDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvDocuments_CellDoubleClick);
+            this.dgvDocuments.CellDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.DgvDocumentsCellDoubleClick);
             //
             // pnlDocButtons
             //
@@ -259,7 +259,7 @@ namespace study_document_manager
             this.btnOpenAll.TabIndex = 0;
             this.btnOpenAll.Text = "Mở tất cả";
             this.btnOpenAll.UseVisualStyleBackColor = false;
-            this.btnOpenAll.Click += new System.EventHandler(this.btnOpenAll_Click);
+            this.btnOpenAll.Click += new System.EventHandler(this.BtnOpenAllClick);
             //
             // btnRemoveFromCollection
             //
@@ -274,7 +274,7 @@ namespace study_document_manager
             this.btnRemoveFromCollection.TabIndex = 1;
             this.btnRemoveFromCollection.Text = "Xóa khỏi bộ sưu tập";
             this.btnRemoveFromCollection.UseVisualStyleBackColor = false;
-            this.btnRemoveFromCollection.Click += new System.EventHandler(this.btnRemoveFromCollection_Click);
+            this.btnRemoveFromCollection.Click += new System.EventHandler(this.BtnRemoveFromCollectionClick);
             //
             // statusStrip
             //
@@ -318,7 +318,7 @@ namespace study_document_manager
             this.Name = "CollectionManagementForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Quản lý Bộ sưu tập";
-            this.Load += new System.EventHandler(this.CollectionManagementForm_Load);
+            this.Load += new System.EventHandler(this.CollectionManagementFormLoad);
             this.splitContainer.Panel1.ResumeLayout(false);
             this.splitContainer.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer)).EndInit();
@@ -359,3 +359,5 @@ namespace study_document_manager
         private System.Windows.Forms.ToolStripStatusLabel lblDocCount;
     }
 }
+
+

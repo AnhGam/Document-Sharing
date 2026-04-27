@@ -1,3 +1,5 @@
+using study_document_manager.Core.Data;
+using study_document_manager.Core;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -7,7 +9,7 @@ using System.Windows.Forms;
 using study_document_manager.UI;
 using study_document_manager.UI.Controls;
 
-namespace study_document_manager
+namespace study_document_manager.Reports
 {
     public class TreeMapForm : Form
     {
@@ -331,3 +333,4 @@ namespace study_document_manager
         }
     }
 }
+

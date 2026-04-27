@@ -1,6 +1,8 @@
-namespace study_document_manager
+using System.Windows.Forms;
+
+namespace study_document_manager.Documents
 {
-    partial class AddEditForm
+    public partial class AddEditForm : global::System.Windows.Forms.Form
     {
         /// <summary>
         /// Required designer variable.
@@ -442,3 +444,4 @@ namespace study_document_manager
         private System.Windows.Forms.Label label8;
     }
 }
+

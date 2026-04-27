@@ -1,3 +1,5 @@
+using study_document_manager.Core.Data;
+using study_document_manager.Core;
 using System;
 using System.Data;
 using System.Data.SQLite;
@@ -6,7 +8,7 @@ using System.IO;
 using System.Windows.Forms;
 using study_document_manager.UI;
 
-namespace study_document_manager
+namespace study_document_manager.Management
 {
     public partial class FileIntegrityCheckForm : Form
     {
@@ -191,10 +193,10 @@ namespace study_document_manager
                     {
                         string newPath = ofd.FileName;
                         string query = "UPDATE tai_lieu SET duong_dan = @duong_dan WHERE id = @id";
-                        SQLiteParameter[] parameters = new SQLiteParameter[]
+                        System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
                         {
-                            new SQLiteParameter("@duong_dan", newPath),
-                            new SQLiteParameter("@id", id)
+                            new System.Data.SQLite.SQLiteParameter("@duong_dan", newPath),
+                            new System.Data.SQLite.SQLiteParameter("@id", id)
                         };
 
                         int result = DatabaseHelper.ExecuteNonQuery(query, parameters);
@@ -230,9 +232,9 @@ namespace study_document_manager
                 try
                 {
                     string query = "UPDATE tai_lieu SET duong_dan = '' WHERE id = @id";
-                    SQLiteParameter[] parameters = new SQLiteParameter[]
+                    System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
                     {
-                        new SQLiteParameter("@id", id)
+                        new System.Data.SQLite.SQLiteParameter("@id", id)
                     };
 
                     int result = DatabaseHelper.ExecuteNonQuery(query, parameters);
@@ -335,3 +337,5 @@ namespace study_document_manager
         }
     }
 }
+
+

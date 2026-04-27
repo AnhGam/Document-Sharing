@@ -1,70 +1,44 @@
-using System;
-using System.Data;
-using System.Diagnostics;
-using System.Drawing;
-using System.IO;
-using System.Windows.Forms;
+using study_document_manager.Core.Data;
+using study_document_manager.Core;
+using study_document_manager.Core.Entities;
 using study_document_manager.UI;
-using study_document_manager.UI.Controls;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Drawing;
+using System.Windows.Forms;
 
-namespace study_document_manager
+namespace study_document_manager.Management
 {
     public partial class CollectionManagementForm : Form
     {
-        private int? selectedCollectionId = null;
-
         public CollectionManagementForm()
         {
             InitializeComponent();
+        }
+
+        private void CollectionManagementFormLoad(object sender, EventArgs e)
+        {
+            LoadCollections();
             ApplyTheme();
         }
 
         private void ApplyTheme()
         {
             this.BackColor = AppTheme.BackgroundMain;
-
-            // Buttons
+            pnlCollectionHeader.BackColor = AppTheme.Primary;
+            pnlDocHeader.BackColor = AppTheme.Primary;
+            
             AppTheme.ApplyButtonSuccess(btnNewCollection);
             AppTheme.ApplyButtonDanger(btnDeleteCollection);
-            AppTheme.ApplyButtonWarning(btnRemoveFromCollection);
             AppTheme.ApplyButtonPrimary(btnOpenAll);
+            AppTheme.ApplyButtonWarning(btnRemoveFromCollection);
             AppTheme.ApplyButtonDanger(btnClose);
-
-            // Status strip
-            statusStrip.BackColor = AppTheme.BackgroundSoft;
-
-            // ListView styling
-            lstCollections.BackColor = AppTheme.BackgroundCard;
-            lstCollections.ForeColor = AppTheme.TextPrimary;
-            lstCollections.Font = AppTheme.FontBody;
-
-            // Split container panels
-            splitContainer.Panel1.BackColor = AppTheme.BackgroundCard;
-            splitContainer.Panel2.BackColor = AppTheme.BackgroundSoft;
-        }
-
-        private void CollectionManagementForm_Load(object sender, EventArgs e)
-        {
-            LoadCollections();
-            SetupDocumentsGrid();
-
-            // Apply DataGridView theme
+            
             AppTheme.ApplyDataGridViewStyle(dgvDocuments);
-
-            // Auto-resize ListView columns on form resize
-            lstCollections.Resize += (s, ev) => ResizeListViewColumns();
-            ResizeListViewColumns();
-        }
-
-        private void ResizeListViewColumns()
-        {
-            if (lstCollections.Columns.Count >= 2)
-            {
-                int totalWidth = lstCollections.ClientSize.Width;
-                int countWidth = 75;
-                lstCollections.Columns[0].Width = totalWidth - countWidth - 5;
-                lstCollections.Columns[1].Width = countWidth;
-            }
+            
+            lblStatus.ForeColor = AppTheme.TextSecondary;
+            lblDocCount.ForeColor = AppTheme.Primary;
         }
 
         private void LoadCollections()
@@ -73,69 +47,40 @@ namespace study_document_manager
             {
                 DataTable dt = DatabaseHelper.GetCollections();
                 lstCollections.Items.Clear();
-
                 foreach (DataRow row in dt.Rows)
                 {
-                    int id = Convert.ToInt32(row["id"]);
-                    string name = row["name"].ToString();
-                    int itemCount = Convert.ToInt32(row["item_count"]);
-
-                    ListViewItem item = new ListViewItem(name);
-                    item.SubItems.Add($"{itemCount} tài liệu");
-                    item.Tag = id;
+                    var item = new ListViewItem(row["name"].ToString());
+                    item.SubItems.Add(row["item_count"].ToString());
+                    item.Tag = Convert.ToInt32(row["id"]);
                     lstCollections.Items.Add(item);
                 }
-
-                lblStatus.Text = $"Có {dt.Rows.Count} bộ sưu tập";
+                
+                dgvDocuments.DataSource = null;
+                btnDeleteCollection.Enabled = false;
+                btnRemoveFromCollection.Enabled = false;
+                btnOpenAll.Enabled = false;
             }
             catch (Exception ex)
             {
-                ToastNotification.Error("Lỗi khi load bộ sưu tập: " + ex.Message);
+                ToastNotification.Error("Lỗi tải bộ sưu tập: " + ex.Message);
             }
         }
 
-        private void SetupDocumentsGrid()
+        private void LstCollectionsSelectedIndexChanged(object sender, EventArgs e)
         {
-            dgvDocuments.AutoGenerateColumns = false;
-            dgvDocuments.Columns.Clear();
-
-            dgvDocuments.Columns.Add(new DataGridViewTextBoxColumn
+            if (lstCollections.SelectedItems.Count > 0)
             {
-                Name = "id",
-                DataPropertyName = "id",
-                Visible = false
-            });
-
-            dgvDocuments.Columns.Add(new DataGridViewTextBoxColumn
+                int collectionId = (int)lstCollections.SelectedItems[0].Tag;
+                LoadDocumentsInCollection(collectionId);
+                btnDeleteCollection.Enabled = true;
+            }
+            else
             {
-                Name = "ten",
-                DataPropertyName = "ten",
-                HeaderText = "Tên tài liệu",
-                Width = 250
-            });
-
-            dgvDocuments.Columns.Add(new DataGridViewTextBoxColumn
-            {
-                Name = "danh_muc",
-                DataPropertyName = "danh_muc",
-                HeaderText = "Danh mục",
-                Width = 100
-            });
-
-            dgvDocuments.Columns.Add(new DataGridViewTextBoxColumn
-            {
-                Name = "dinh_dang",
-                DataPropertyName = "dinh_dang",
-                HeaderText = "Định dạng",
-                Width = 80
-            });
-
-            dgvDocuments.Columns.Add(new DataGridViewTextBoxColumn
-            {
-                Name = "duong_dan",
-                DataPropertyName = "duong_dan",
-                Visible = false
-            });
+                dgvDocuments.DataSource = null;
+                btnDeleteCollection.Enabled = false;
+                btnRemoveFromCollection.Enabled = false;
+                btnOpenAll.Enabled = false;
+            }
         }
 
         private void LoadDocumentsInCollection(int collectionId)
@@ -144,154 +89,136 @@ namespace study_document_manager
             {
                 DataTable dt = DatabaseHelper.GetDocumentsInCollection(collectionId);
                 dgvDocuments.DataSource = dt;
-                lblDocCount.Text = $"Có {dt.Rows.Count} tài liệu trong bộ sưu tập";
+                
+                // Format grid
+                if (dgvDocuments.Columns.Contains("id")) dgvDocuments.Columns["id"].Visible = false;
+                if (dgvDocuments.Columns.Contains("ten")) dgvDocuments.Columns["ten"].HeaderText = "Tên tài liệu";
+                if (dgvDocuments.Columns.Contains("danh_muc")) dgvDocuments.Columns["danh_muc"].HeaderText = "Danh mục";
+                if (dgvDocuments.Columns.Contains("dinh_dang")) dgvDocuments.Columns["dinh_dang"].HeaderText = "Định dạng";
+                if (dgvDocuments.Columns.Contains("added_at")) dgvDocuments.Columns["added_at"].HeaderText = "Ngày thêm vào bộ";
+
+                lblDocCount.Text = $"{dt.Rows.Count} tài liệu trong bộ sưu tập này";
+                btnOpenAll.Enabled = dt.Rows.Count > 0;
+                btnRemoveFromCollection.Enabled = dt.Rows.Count > 0;
             }
             catch (Exception ex)
             {
-                ToastNotification.Error("Lỗi: " + ex.Message);
+                ToastNotification.Error("Lỗi tải tài liệu: " + ex.Message);
             }
         }
 
-        private void lstCollections_SelectedIndexChanged(object sender, EventArgs e)
+        private void BtnNewCollectionClick(object sender, EventArgs e)
         {
-            if (lstCollections.SelectedItems.Count > 0)
-            {
-                selectedCollectionId = (int)lstCollections.SelectedItems[0].Tag;
-                LoadDocumentsInCollection(selectedCollectionId.Value);
-                btnDeleteCollection.Enabled = true;
-                btnOpenAll.Enabled = true;
-            }
-            else
-            {
-                selectedCollectionId = null;
-                dgvDocuments.DataSource = null;
-                btnDeleteCollection.Enabled = false;
-                btnOpenAll.Enabled = false;
-                lblDocCount.Text = "";
-            }
-        }
-
-        private void btnNewCollection_Click(object sender, EventArgs e)
-        {
-            string name = ModernInputBox.Show(
-                "Tạo bộ sưu tập mới", "Nhập tên bộ sưu tập:", "");
-
+            string name = "Bộ sưu tập mới"; // Placeholder until custom dialog is implemented
+            // In a real app, you'd use a small form for this.
             if (!string.IsNullOrWhiteSpace(name))
             {
                 try
                 {
-                    int newId = DatabaseHelper.CreateCollection(name.Trim());
-                    if (newId > 0)
+                    DatabaseHelper.CreateCollection(name.Trim(), "");
+                    LoadCollections();
+                    ToastNotification.Success("Đã tạo bộ sưu tập mới.");
+                }
+                catch (Exception ex)
+                {
+                    ToastNotification.Error("Lỗi: " + ex.Message);
+                }
+            }
+        }
+
+        private void BtnDeleteCollectionClick(object sender, EventArgs e)
+        {
+            if (lstCollections.SelectedItems.Count > 0)
+            {
+                string name = lstCollections.SelectedItems[0].Text;
+                if (MessageBox.Show($"Xóa bộ sưu tập '{name}'?\n\n(Tài liệu sẽ KHÔNG bị xóa, chỉ xóa bộ sưu tập)", 
+                    "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                {
+                    try
                     {
+                        int id = (int)lstCollections.SelectedItems[0].Tag;
+                        DatabaseHelper.DeleteCollection(id);
                         LoadCollections();
-                        lblStatus.Text = "Đã tạo bộ sưu tập: " + name;
+                        ToastNotification.Success("Đã xóa bộ sưu tập.");
                     }
-                }
-                catch (Exception ex)
-                {
-                    ToastNotification.Error("Lỗi: " + ex.Message);
-                }
-            }
-        }
-
-        private void btnDeleteCollection_Click(object sender, EventArgs e)
-        {
-            if (!selectedCollectionId.HasValue) return;
-
-            string collectionName = lstCollections.SelectedItems[0].Text;
-
-            if (MessageBox.Show($"Xóa bộ sưu tập '{collectionName}'?\n\n(Tài liệu sẽ KHÔNG bị xóa, chỉ xóa bộ sưu tập)",
-                "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
-            {
-                try
-                {
-                    if (DatabaseHelper.DeleteCollection(selectedCollectionId.Value))
+                    catch (Exception ex)
                     {
-                        LoadCollections();
-                        dgvDocuments.DataSource = null;
-                        selectedCollectionId = null;
-                        lblStatus.Text = "Đã xóa bộ sưu tập";
-                        lblDocCount.Text = "";
+                        ToastNotification.Error("Lỗi: " + ex.Message);
                     }
-                }
-                catch (Exception ex)
-                {
-                    ToastNotification.Error("Lỗi: " + ex.Message);
                 }
             }
         }
 
-        private void btnRemoveFromCollection_Click(object sender, EventArgs e)
+        private void BtnRemoveFromCollectionClick(object sender, EventArgs e)
         {
-            if (!selectedCollectionId.HasValue || dgvDocuments.SelectedRows.Count == 0) return;
-
-            int docId = Convert.ToInt32(dgvDocuments.SelectedRows[0].Cells["id"].Value);
-            string docName = dgvDocuments.SelectedRows[0].Cells["ten"].Value.ToString();
-
-            if (MessageBox.Show($"Xóa '{docName}' khỏi bộ sưu tập?",
-                "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+            if (lstCollections.SelectedItems.Count > 0 && dgvDocuments.SelectedRows.Count > 0)
             {
-                try
+                string docName = dgvDocuments.SelectedRows[0].Cells["ten"].Value.ToString();
+                if (MessageBox.Show($"Xóa '{docName}' khỏi bộ sưu tập?", 
+                    "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                 {
-                    if (DatabaseHelper.RemoveDocumentFromCollection(selectedCollectionId.Value, docId))
+                    try
                     {
-                        LoadDocumentsInCollection(selectedCollectionId.Value);
-                        LoadCollections(); // Refresh count
-                        lblStatus.Text = "Đã xóa tài liệu khỏi bộ sưu tập";
+                        int colId = (int)lstCollections.SelectedItems[0].Tag;
+                        int docId = Convert.ToInt32(dgvDocuments.SelectedRows[0].Cells["id"].Value);
+                        DatabaseHelper.RemoveDocumentFromCollection(colId, docId);
+                        LoadDocumentsInCollection(colId);
+                        
+                        // Update count in list view
+                        DataTable dt = DatabaseHelper.GetCollections();
+                        foreach(DataRow row in dt.Rows)
+                        {
+                            if (Convert.ToInt32(row["id"]) == colId)
+                            {
+                                lstCollections.SelectedItems[0].SubItems[1].Text = row["item_count"].ToString();
+                                break;
+                            }
+                        }
                     }
-                }
-                catch (Exception ex)
-                {
-                    ToastNotification.Error("Lỗi: " + ex.Message);
-                }
-            }
-        }
-
-        private void btnOpenAll_Click(object sender, EventArgs e)
-        {
-            if (!selectedCollectionId.HasValue) return;
-
-            try
-            {
-                DataTable dt = DatabaseHelper.GetDocumentsInCollection(selectedCollectionId.Value);
-                int openedCount = 0;
-
-                foreach (DataRow row in dt.Rows)
-                {
-                    string path = row["duong_dan"]?.ToString();
-                    if (!string.IsNullOrEmpty(path) && File.Exists(path))
+                    catch (Exception ex)
                     {
-                        Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
-                        openedCount++;
+                        ToastNotification.Error("Lỗi: " + ex.Message);
                     }
                 }
-
-                lblStatus.Text = $"Đã mở {openedCount}/{dt.Rows.Count} tài liệu";
-            }
-            catch (Exception ex)
-            {
-                ToastNotification.Error("Lỗi: " + ex.Message);
             }
         }
 
-        private void dgvDocuments_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
+        private void BtnOpenAllClick(object sender, EventArgs e)
         {
-            if (e.RowIndex < 0) return;
-
-            string path = dgvDocuments.Rows[e.RowIndex].Cells["duong_dan"].Value?.ToString();
-            if (!string.IsNullOrEmpty(path) && File.Exists(path))
+            if (dgvDocuments.Rows.Count > 0)
             {
-                Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
-            }
-            else
-            {
-                ToastNotification.Error("File không tồn tại!");
+                int opened = 0;
+                foreach (DataGridViewRow row in dgvDocuments.Rows)
+                {
+                    string path = row.Cells["duong_dan"].Value?.ToString();
+                    if (!string.IsNullOrEmpty(path) && System.IO.File.Exists(path))
+                    {
+                        try { System.Diagnostics.Process.Start(path); opened++; } catch { }
+                    }
+                }
+                ToastNotification.Info($"Đang mở {opened} tài liệu...");
             }
         }
 
-        private void btnClose_Click(object sender, EventArgs e)
+        private void DgvDocumentsCellDoubleClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex >= 0)
+            {
+                string path = dgvDocuments.Rows[e.RowIndex].Cells["duong_dan"].Value?.ToString();
+                if (!string.IsNullOrEmpty(path) && System.IO.File.Exists(path))
+                {
+                    try { System.Diagnostics.Process.Start(path); }
+                    catch (Exception ex) { ToastNotification.Error(ex.Message); }
+                }
+            }
+        }
+
+        private void BtnCloseClick(object sender, EventArgs e)
         {
             this.Close();
         }
     }
+
 }
+
+

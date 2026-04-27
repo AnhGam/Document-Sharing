@@ -1,3 +1,5 @@
+using study_document_manager.Core.Data;
+using study_document_manager.Core;
 using System;
 using System.Data;
 using System.Drawing;
@@ -5,7 +7,7 @@ using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
 using study_document_manager.UI;
 
-namespace study_document_manager
+namespace study_document_manager.Reports
 {
     public partial class Report : Form
     {
@@ -444,3 +446,5 @@ namespace study_document_manager
         }
     }
 }
+
+

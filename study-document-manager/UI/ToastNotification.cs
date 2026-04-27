@@ -5,7 +5,7 @@ using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 using study_document_manager.UI;
 
-namespace study_document_manager
+namespace study_document_manager.UI
 {
     public enum ToastType { Success, Error, Warning, Info }
 
@@ -348,3 +348,4 @@ namespace study_document_manager
         }
     }
 }
+

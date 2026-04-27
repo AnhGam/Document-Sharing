@@ -1,9 +1,14 @@
+using study_document_manager.Core.Data;
+using study_document_manager.Core;
 using study_document_manager.Core.Entities;
 using study_document_manager.Core.Interfaces;
-using study_document_manager.Infrastructure.Repositories;
+using study_document_manager.Core.Infrastructure.Repositories;
 using study_document_manager.UI;
+using study_document_manager.Management;
 using study_document_manager.UI.Presenters;
 using study_document_manager.Services;
+using study_document_manager.Reports;
+using study_document_manager.UI.Controls;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -12,7 +17,7 @@ using System.Drawing.Drawing2D;
 using System.IO;
 using System.Windows.Forms;
 
-namespace study_document_manager
+namespace study_document_manager.Documents
 {
     public partial class Dashboard : Form, IDashboardView
     {
@@ -106,7 +111,7 @@ namespace study_document_manager
 
             toolBtnDelete.Click += (s, e) => {
                 var doc = dgvDocuments.SelectedRows.Count > 0
-                    ? dgvDocuments.SelectedRows[0].DataBoundItem as Core.Entities.StudyDocument
+                    ? dgvDocuments.SelectedRows[0].DataBoundItem as Core.Entities.Document
                     : null;
                 if (doc != null)
                     DeleteRequested?.Invoke(this, doc.Id);
@@ -114,7 +119,7 @@ namespace study_document_manager
             toolBtnOpen.Click += (s, e) =>
             {
                 var doc = dgvDocuments.SelectedRows.Count > 0
-                    ? dgvDocuments.SelectedRows[0].DataBoundItem as Core.Entities.StudyDocument
+                    ? dgvDocuments.SelectedRows[0].DataBoundItem as Core.Entities.Document
                     : null;
                 OpenFileRequested?.Invoke(this, doc?.DuongDan ?? string.Empty);
             };
@@ -266,11 +271,11 @@ namespace study_document_manager
 
         // --- IDashboardView Implementation ---
 
-        public void SetDocumentList(List<StudyDocument> documents)
+        public void SetDocumentList(List<Document> documents)
         {
-            // Convert List<StudyDocument> to DataTable or BindingList for Grid
+            // Convert List<Document> to DataTable or BindingList for Grid
             // For compatibility with existing Grid setup, we can use a BindingList or map to DataTable
-            // Ideally, we should bind directly to List<StudyDocument>, but the grid column names need to match properties.
+            // Ideally, we should bind directly to List<Document>, but the grid column names need to match properties.
 
             // The existing Grid expects columns: "id", "ten", "danh_muc", etc.
             // Entity has: "Id", "Ten", "MonHoc".
@@ -280,7 +285,7 @@ namespace study_document_manager
             // Let's try binding directly list and see if we can map columns via DataPropertyName in Designer or Code.
             // To be safe and quick without breaking the Designer-generated columns too much:
 
-            var bindingList = new System.ComponentModel.BindingList<StudyDocument>(documents);
+            var bindingList = new System.ComponentModel.BindingList<Document>(documents);
             dgvDocuments.DataSource = bindingList;
 
             // Re-setup grid to map columns if needed, or rely on AutoGenerate if columns are not manually defined.
@@ -504,7 +509,7 @@ namespace study_document_manager
         {
             if (dgvDocuments.SelectedRows.Count == 0) return;
             // Get object from row bound item
-            if (dgvDocuments.SelectedRows[0].DataBoundItem is StudyDocument doc)
+            if (dgvDocuments.SelectedRows[0].DataBoundItem is Document doc)
             {
                 AddEditForm form = new AddEditForm(doc.Id);
                 if (form.ShowDialog() == DialogResult.OK)
@@ -518,7 +523,7 @@ namespace study_document_manager
         private void BtnXoaClick(object sender, EventArgs e)
         {
             if (dgvDocuments.SelectedRows.Count == 0) return;
-            if (dgvDocuments.SelectedRows[0].DataBoundItem is StudyDocument doc)
+            if (dgvDocuments.SelectedRows[0].DataBoundItem is Document doc)
             {
                 DeleteRequested?.Invoke(this, doc.Id);
             }
@@ -532,7 +537,7 @@ namespace study_document_manager
         private void OpenSelectedFile()
         {
             if (dgvDocuments.SelectedRows.Count == 0) return;
-            if (dgvDocuments.SelectedRows[0].DataBoundItem is StudyDocument doc && !string.IsNullOrEmpty(doc.DuongDan))
+            if (dgvDocuments.SelectedRows[0].DataBoundItem is Document doc && !string.IsNullOrEmpty(doc.DuongDan))
             {
                 if (File.Exists(doc.DuongDan))
                 {
@@ -564,7 +569,7 @@ namespace study_document_manager
             {
                 string colName = dgvDocuments.Columns[e.ColumnIndex].Name;
 
-                if (dgvDocuments.Rows[e.RowIndex].DataBoundItem is StudyDocument doc)
+                if (dgvDocuments.Rows[e.RowIndex].DataBoundItem is Document doc)
                 {
                     if (colName == "Icon")
                     {
@@ -586,7 +591,7 @@ namespace study_document_manager
             if (colName == "quan_trong" || colName == "QuanTrong")
             {
                 dgvDocuments.CommitEdit(DataGridViewDataErrorContexts.Commit);
-                if (dgvDocuments.Rows[e.RowIndex].DataBoundItem is StudyDocument doc)
+                if (dgvDocuments.Rows[e.RowIndex].DataBoundItem is Document doc)
                 {
                     // doc.QuanTrong is already updated by CommitEdit
                     _repository.Update(doc);
@@ -605,7 +610,7 @@ namespace study_document_manager
 
         private void CtxMenuCopyPathClick(object sender, EventArgs e)
         {
-            if (dgvDocuments.SelectedRows.Count > 0 && dgvDocuments.SelectedRows[0].DataBoundItem is StudyDocument doc && !string.IsNullOrEmpty(doc.DuongDan))
+            if (dgvDocuments.SelectedRows.Count > 0 && dgvDocuments.SelectedRows[0].DataBoundItem is Document doc && !string.IsNullOrEmpty(doc.DuongDan))
             {
                 Clipboard.SetText(doc.DuongDan);
             }
@@ -613,7 +618,7 @@ namespace study_document_manager
 
         private void CtxMenuOpenFolderClick(object sender, EventArgs e)
         {
-            if (dgvDocuments.SelectedRows.Count > 0 && dgvDocuments.SelectedRows[0].DataBoundItem is StudyDocument doc && File.Exists(doc.DuongDan))
+            if (dgvDocuments.SelectedRows.Count > 0 && dgvDocuments.SelectedRows[0].DataBoundItem is Document doc && File.Exists(doc.DuongDan))
             {
                 System.Diagnostics.Process.Start("explorer.exe", $"/select,\"{doc.DuongDan}\"");
             }
@@ -621,7 +626,7 @@ namespace study_document_manager
 
         private void CtxMenuToggleImportantClick(object sender, EventArgs e)
         {
-            if (dgvDocuments.SelectedRows.Count > 0 && dgvDocuments.SelectedRows[0].DataBoundItem is StudyDocument doc)
+            if (dgvDocuments.SelectedRows.Count > 0 && dgvDocuments.SelectedRows[0].DataBoundItem is Document doc)
             {
                 doc.QuanTrong = !doc.QuanTrong;
                 _repository.Update(doc);
@@ -631,7 +636,7 @@ namespace study_document_manager
 
         private void CtxMenuPersonalNoteClick(object sender, EventArgs e)
         {
-            if (dgvDocuments.SelectedRows.Count > 0 && dgvDocuments.SelectedRows[0].DataBoundItem is StudyDocument doc)
+            if (dgvDocuments.SelectedRows.Count > 0 && dgvDocuments.SelectedRows[0].DataBoundItem is Document doc)
             {
                 using (PersonalNoteForm form = new PersonalNoteForm(doc.Id, doc.Ten))
                 {
@@ -642,7 +647,7 @@ namespace study_document_manager
 
         private void CtxMenuAddToCollectionClick(object sender, EventArgs e)
         {
-            if (!(dgvDocuments.SelectedRows.Count > 0 && dgvDocuments.SelectedRows[0].DataBoundItem is StudyDocument doc))
+            if (!(dgvDocuments.SelectedRows.Count > 0 && dgvDocuments.SelectedRows[0].DataBoundItem is Document doc))
             {
                 MessageBox.Show("Vui lòng chọn tài liệu trước.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
@@ -784,7 +789,7 @@ namespace study_document_manager
             }
         }
 
-        private void MenuCollectionsClick(object sender, EventArgs e) { new CollectionManagementForm().ShowDialog(); }
+        private void MenuCollectionsClick(object sender, EventArgs e) { new Management.CollectionManagementForm().ShowDialog(); }
         private void MenuRecycleBinClick(object sender, EventArgs e) { new Management.RecycleBinForm().ShowDialog(); TriggerRefresh(); }
         private void MenuBatchImportClick(object sender, EventArgs e) { new Documents.BatchImportForm().ShowDialog(); TriggerRefresh(); }
         private void MenuFileExitClick(object sender, EventArgs e) => Application.Exit();
@@ -888,7 +893,7 @@ namespace study_document_manager
                 aboutForm.ShowDialog(this);
             }
         }
-        private void MenuViewCategoriesClick(object sender, EventArgs e) { new CategoryManagementForm().ShowDialog(); TriggerRefresh(); }
+        private void MenuViewCategoriesClick(object sender, EventArgs e) { new Management.CategoryManagementForm().ShowDialog(); TriggerRefresh(); }
         private void BtnThongKeClick(object sender, EventArgs e) { new Report().ShowDialog(); }
         private void BtnXuatClick(object sender, EventArgs e)
         {
@@ -915,8 +920,8 @@ namespace study_document_manager
                             writer.WriteLine("Tên tài liệu,Danh mục,Định dạng,Ngày thêm,Kích thước (MB),Quan trọng,Tags,Đường dẫn");
 
                             // Data from current binding
-                            var docs = dgvDocuments.DataSource as System.ComponentModel.BindingList<StudyDocument>
-                                      ?? (System.Collections.IEnumerable)dgvDocuments.DataSource as System.Collections.Generic.IEnumerable<StudyDocument>;
+                            var docs = dgvDocuments.DataSource as System.ComponentModel.BindingList<Document>
+                                      ?? (System.Collections.IEnumerable)dgvDocuments.DataSource as System.Collections.Generic.IEnumerable<Document>;
                             if (docs != null)
                             {
                                 foreach (var doc in docs)
@@ -937,8 +942,8 @@ namespace study_document_manager
                         }
 
                         int exportedCount = 0;
-                        if (dgvDocuments.DataSource is System.ComponentModel.BindingList<StudyDocument> bl) exportedCount = bl.Count;
-                        else if (dgvDocuments.DataSource is List<StudyDocument> ll) exportedCount = ll.Count;
+                        if (dgvDocuments.DataSource is System.ComponentModel.BindingList<Document> bl) exportedCount = bl.Count;
+                        else if (dgvDocuments.DataSource is List<Document> ll) exportedCount = ll.Count;
 
                         var openResult = MessageBox.Show(
                             $"Đã xuất thành công {exportedCount} tài liệu!\n\nBạn có muốn mở file?",
@@ -1494,10 +1499,10 @@ namespace study_document_manager
                 var param = new System.Data.SQLite.SQLiteParameter("@collectionId", collectionId);
                 var dt = DatabaseHelper.ExecuteQuery(query, new[] { param });
 
-                var docs = new List<StudyDocument>();
+                var docs = new List<Document>();
                 foreach (DataRow row in dt.Rows)
                 {
-                    docs.Add(new StudyDocument
+                    docs.Add(new Document
                     {
                         Id = Convert.ToInt32(row["id"]),
                         Ten = row["ten"]?.ToString(),
@@ -1512,7 +1517,7 @@ namespace study_document_manager
                     });
                 }
 
-                var bindingList = new System.ComponentModel.BindingList<StudyDocument>(docs);
+                var bindingList = new System.ComponentModel.BindingList<Document>(docs);
                 dgvDocuments.DataSource = bindingList;
 
                 if (dgvDocuments.Columns.Contains("id")) dgvDocuments.Columns["id"].DataPropertyName = "Id";
@@ -1599,7 +1604,7 @@ namespace study_document_manager
                 return;
             }
 
-            if (dgvDocuments.SelectedRows[0].DataBoundItem is study_document_manager.Core.Entities.StudyDocument doc && !string.IsNullOrEmpty(doc.DuongDan))
+            if (dgvDocuments.SelectedRows[0].DataBoundItem is study_document_manager.Core.Entities.Document doc && !string.IsNullOrEmpty(doc.DuongDan))
             {
                 string ext = System.IO.Path.GetExtension(doc.DuongDan).ToLowerInvariant();
                 bool isMedia = Array.Exists(PreviewableExtensions, ev => ev == ext);
@@ -1629,7 +1634,7 @@ namespace study_document_manager
             menuRelated.Click += (s, ev) =>
             {
                 if (dgvDocuments.SelectedRows.Count == 0) return;
-                if (dgvDocuments.SelectedRows[0].DataBoundItem is study_document_manager.Core.Entities.StudyDocument doc)
+                if (dgvDocuments.SelectedRows[0].DataBoundItem is study_document_manager.Core.Entities.Document doc)
                 {
                     new study_document_manager.Documents.RelatedDocumentsForm(doc.Id, doc.Ten).ShowDialog();
                 }
@@ -1738,3 +1743,5 @@ namespace study_document_manager
         public override string ToString() => $"{Name} ({Count} tài liệu)";
     }
 }
+
+

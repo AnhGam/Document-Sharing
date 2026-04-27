@@ -1,6 +1,6 @@
-namespace study_document_manager
+namespace study_document_manager.Management
 {
-    partial class FileIntegrityCheckForm
+    public partial class FileIntegrityCheckForm
     {
         private System.ComponentModel.IContainer components = null;
 
@@ -274,3 +274,4 @@ namespace study_document_manager
         private System.Windows.Forms.Label lblSummary;
     }
 }
+
