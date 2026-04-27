@@ -9,7 +9,7 @@ namespace study_document_manager
 {
     public partial class CategoryManagementForm : Form
     {
-        private string currentTab = "subject"; // "subject" hoặc "type"
+        private string currentTab = "subject"; // "subject" (danh mục) hoặc "type" (định dạng)
 
         public CategoryManagementForm()
         {
@@ -56,7 +56,7 @@ namespace study_document_manager
             lblStatus.ForeColor = AppTheme.TextSecondary;
         }
 
-        private void CategoryManagementForm_Load(object sender, EventArgs e)
+        private void CategoryManagementFormLoad(object sender, EventArgs e)
         {
             // Chế độ cá nhân: Mọi user đều được quản lý danh mục của mình
             // Không cần kiểm tra quyền nữa
@@ -85,7 +85,7 @@ namespace study_document_manager
         }
 
         /// <summary>
-        /// Load danh sách loại tài liệu
+        /// Load danh sách định dạng tài liệu
         /// </summary>
         private void LoadTypes()
         {
@@ -94,9 +94,9 @@ namespace study_document_manager
             {
                 DataTable dt = DatabaseHelper.GetDistinctTypes();
                 dgvCategories.DataSource = dt;
-                SetupDataGridView("Loại tài liệu");
-                lblCount.Text = "Tổng số: " + dt.Rows.Count + " loại tài liệu";
-                lblStatus.Text = "Đã tải danh sách loại tài liệu";
+                SetupDataGridView("Định dạng");
+                lblCount.Text = "Tổng số: " + dt.Rows.Count + " định dạng";
+                lblStatus.Text = "Đã tải danh sách định dạng";
             }
             catch (Exception ex)
             {
@@ -123,15 +123,15 @@ namespace study_document_manager
         /// <summary>
         /// Tab danh mục
         /// </summary>
-        private void btnSubjects_Click(object sender, EventArgs e)
+        private void BtnSubjectsClick(object sender, EventArgs e)
         {
             LoadSubjects();
         }
 
         /// <summary>
-        /// Tab loại tài liệu
+        /// Tab định dạng tài liệu
         /// </summary>
-        private void btnTypes_Click(object sender, EventArgs e)
+        private void BtnTypesClick(object sender, EventArgs e)
         {
             LoadTypes();
         }
@@ -139,10 +139,10 @@ namespace study_document_manager
         /// <summary>
         /// Button Thêm
         /// </summary>
-        private void btnAdd_Click(object sender, EventArgs e)
+        private void BtnAddClick(object sender, EventArgs e)
         {
-            string title = currentTab == "subject" ? "Thêm danh mục mới" : "Thêm loại tài liệu mới";
-            string label = currentTab == "subject" ? "Tên danh mục:" : "Tên loại tài liệu:";
+            string title = currentTab == "subject" ? "Thêm danh mục mới" : "Thêm định dạng mới";
+            string label = currentTab == "subject" ? "Tên danh mục:" : "Tên định dạng:";
 
             string newValue = ModernInputBox.Show(title, label, "");
 
@@ -159,7 +159,7 @@ namespace study_document_manager
             // Thông báo: Cần tạo ít nhất 1 tài liệu để thêm danh mục
             DialogResult result = MessageBox.Show(
                 "Để thêm '" + newValue + "' vào danh sách, bạn có muốn tạo một tài liệu mẫu không?\n\n" +
-                "Nếu chọn 'Không', bạn sẽ cần tự tạo tài liệu có danh mục/loại này sau.",
+                "Nếu chọn 'Không', bạn sẽ cần tự tạo tài liệu có danh mục/định dạng này sau.",
                 "Xác nhận", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
 
             if (result == DialogResult.Yes)
@@ -181,7 +181,7 @@ namespace study_document_manager
         /// <summary>
         /// Button Sửa
         /// </summary>
-        private void btnEdit_Click(object sender, EventArgs e)
+        private void BtnEditClick(object sender, EventArgs e)
         {
             if (dgvCategories.SelectedRows.Count == 0)
             {
@@ -192,8 +192,8 @@ namespace study_document_manager
             string oldValue = dgvCategories.SelectedRows[0].Cells[0].Value.ToString();
             int count = Convert.ToInt32(dgvCategories.SelectedRows[0].Cells[1].Value);
 
-            string title = currentTab == "subject" ? "Sửa danh mục" : "Sửa loại tài liệu";
-            string label = currentTab == "subject" ? "Tên danh mục mới:" : "Tên loại tài liệu mới:";
+            string title = currentTab == "subject" ? "Sửa danh mục" : "Sửa định dạng";
+            string label = currentTab == "subject" ? "Tên danh mục mới:" : "Tên định dạng mới:";
 
             string newValue = ModernInputBox.Show(title, label, oldValue);
 
@@ -226,7 +226,7 @@ namespace study_document_manager
         /// <summary>
         /// Button Xóa
         /// </summary>
-        private void btnDelete_Click(object sender, EventArgs e)
+        private void BtnDeleteClick(object sender, EventArgs e)
         {
             if (dgvCategories.SelectedRows.Count == 0)
             {
@@ -242,8 +242,8 @@ namespace study_document_manager
                   "- Xóa toàn bộ " + count + " tài liệu có danh mục này\n" +
                   "- KHÔNG THỂ HOÀN TÁC!\n\n" +
                   "Bạn có chắc chắn muốn tiếp tục?"
-                : "Xóa loại '" + value + "'?\n\nThao tác này sẽ:\n" +
-                  "- Xóa toàn bộ " + count + " tài liệu có loại này\n" +
+                : "Xóa định dạng '" + value + "'?\n\nThao tác này sẽ:\n" +
+                  "- Xóa toàn bộ " + count + " tài liệu có định dạng này\n" +
                   "- KHÔNG THỂ HOÀN TÁC!\n\n" +
                   "Bạn có chắc chắn muốn tiếp tục?";
 
@@ -254,7 +254,7 @@ namespace study_document_manager
             {
                 // Xác nhận lần 2
                 DialogResult confirm = MessageBox.Show(
-                    "XÁC NHẬN LẦN CUỐI:\n\nXóa " + count + " tài liệu có " + (currentTab == "subject" ? "danh mục" : "loại") + " '" + value + "'?", 
+                    "XÁC NHẬN LẦN CUỐI:\n\nXóa " + count + " tài liệu có " + (currentTab == "subject" ? "danh mục" : "định dạng") + " '" + value + "'?", 
                     "Xác nhận xóa", MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation);
 
                 if (confirm == DialogResult.Yes)
@@ -272,7 +272,7 @@ namespace study_document_manager
         /// <summary>
         /// Button Đóng
         /// </summary>
-        private void btnClose_Click(object sender, EventArgs e)
+        private void BtnCloseClick(object sender, EventArgs e)
         {
             this.Close();
         }
@@ -311,12 +311,12 @@ namespace study_document_manager
                 ? "Tài liệu mẫu - " + categoryValue
                 : "Tài liệu mẫu - " + categoryValue;
             
-            string mon_hoc = currentTab == "subject" ? categoryValue : "";
-            string loai = currentTab == "type" ? categoryValue : "tài liệu khác";
-            string duong_dan = ""; // Để trống, người dùng sẽ sửa sau
+            string danhMuc = currentTab == "subject" ? categoryValue : "";
+            string dinhDang = currentTab == "type" ? categoryValue : "tài liệu khác";
+            string duongDan = ""; // Để trống, người dùng sẽ sửa sau
             
-            return DatabaseHelper.InsertDocument(ten, mon_hoc, loai, duong_dan, 
-                "Đây là tài liệu mẫu. Vui lòng cập nhật thông tin.", null, "", false);
+            return DatabaseHelper.InsertDocument(ten, danhMuc, dinhDang, duongDan, 
+                "Đây là tài liệu mẫu. Vui lòng cập nhật thông tin.", null, false, "");
         }
 
         /// <summary>

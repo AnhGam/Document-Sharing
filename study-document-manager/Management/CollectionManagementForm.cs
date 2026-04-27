@@ -116,17 +116,17 @@ namespace study_document_manager
 
             dgvDocuments.Columns.Add(new DataGridViewTextBoxColumn
             {
-                Name = "mon_hoc",
-                DataPropertyName = "mon_hoc",
+                Name = "danh_muc",
+                DataPropertyName = "danh_muc",
                 HeaderText = "Danh mục",
                 Width = 100
             });
 
             dgvDocuments.Columns.Add(new DataGridViewTextBoxColumn
             {
-                Name = "loai",
-                DataPropertyName = "loai",
-                HeaderText = "Loại",
+                Name = "dinh_dang",
+                DataPropertyName = "dinh_dang",
+                HeaderText = "Định dạng",
                 Width = 80
             });
 

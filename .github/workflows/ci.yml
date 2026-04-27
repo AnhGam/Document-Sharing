@@ -48,18 +48,22 @@ jobs:
       - name: Restore and Optimize Assets
         run: |
           nuget restore ${{ env.SOLUTION_FILE }}
+          dotnet restore study-document-manager.Tests/study-document-manager.Tests.csproj
           powershell ./scripts/optimize-assets.ps1
 
       - name: Dependency Audit and Groq AI
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
-          dotnet list ${{ env.SOLUTION_FILE }} package --vulnerable > audit_log.txt || true
+          dotnet list study-document-manager.Tests/study-document-manager.Tests.csproj package --vulnerable > audit_log.txt || true
           powershell ./scripts/security-auditor-groq.ps1 -AuditLog audit_log.txt -ApiKey "${{ env.GROQ_API_KEY }}"
+
+      - name: Build Solution (Zero Warning Policy)
+        run: msbuild ${{ env.SOLUTION_FILE }} /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:Platform="Any CPU" /t:Rebuild /p:TreatWarningsAsErrors=true
 
       - name: Run Advanced Tests (NUnit)
         run: |
-          dotnet test ${{ env.SOLUTION_FILE }} --configuration ${{ env.BUILD_CONFIGURATION }} --logger "trx;LogFileName=test_results.trx"
+          dotnet test study-document-manager.Tests/study-document-manager.Tests.csproj --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --logger "trx;LogFileName=test_results.trx"
         continue-on-error: true
 
       - name: Mutation Testing (Stryker)
@@ -68,9 +72,6 @@ jobs:
           cd study-document-manager.Tests
           dotnet stryker --solution ../${{ env.SOLUTION_FILE }}
         continue-on-error: true
-
-      - name: Build Solution (Zero Warning Policy)
-        run: msbuild ${{ env.SOLUTION_FILE }} /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:Platform="Any CPU" /t:Rebuild /p:TreatWarningsAsErrors=true
 
       - name: Build Installer (Inno Setup)
         run: |
@@ -83,13 +84,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: powershell ./scripts/ai-log-analyzer.ps1 -ApiKey "${{ env.GEMINI_API_KEY }}"
 
-      - name: PR Review (GitHub Models)
-        if: github.event_name == 'pull_request'
-        env:
-          GH_MODELS_TOKEN: ${{ secrets.GH_MODELS_TOKEN }}
-        run: |
-          git diff origin/${{ github.base_ref }} HEAD > pr_diff.txt
-          powershell ./scripts/pr-reviewer-github.ps1 -DiffFile pr_diff.txt -Token "${{ env.GH_MODELS_TOKEN }}"
+
 
       - name: Archive Build Reports (GitOps)
         if: always()

@@ -72,11 +72,11 @@ namespace study_document_manager.Documents
             });
             dgvRecent.Columns.Add(new DataGridViewTextBoxColumn
             {
-                Name = "Subject", HeaderText = "Môn học", Width = 120
+                Name = "Subject", HeaderText = "Danh mục", Width = 120
             });
             dgvRecent.Columns.Add(new DataGridViewTextBoxColumn
             {
-                Name = "Type", HeaderText = "Loại", Width = 70
+                Name = "Type", HeaderText = "Định dạng", Width = 70
             });
             dgvRecent.Columns.Add(new DataGridViewTextBoxColumn
             {
@@ -143,8 +143,8 @@ namespace study_document_manager.Documents
                 {
                     dgvRecent.Rows.Add(
                         row["ten"]?.ToString(),
-                        row["mon_hoc"]?.ToString(),
-                        row["loai"]?.ToString(),
+                        row["danh_muc"]?.ToString(),
+                        row["dinh_dang"]?.ToString(),
                         row["duong_dan"]?.ToString(),
                         row["opened_at"]?.ToString(),
                         row["id"]?.ToString()

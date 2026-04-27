@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data;
 using System.Drawing;
 using System.Windows.Forms;
@@ -9,8 +9,8 @@ namespace study_document_manager
 {
     public partial class Report : Form
     {
-        private string currentStatType = "subject";
-        private int currentTimelineDays = 7;
+        private string _currentStatType = "subject";
+        private int _currentTimelineDays = 7;
 
         public Report()
         {
@@ -120,8 +120,8 @@ namespace study_document_manager
                 
                 lblStatValue1.Text = stats.TotalDocuments.ToString();
                 lblStatValue2.Text = stats.ImportantDocuments.ToString();
-                lblStatValue3.Text = stats.OverdueDocuments.ToString();
-                lblStatValue4.Text = stats.NearDeadlineDocuments.ToString();
+                lblStatValue3.Text = stats.DeletedDocuments.ToString();
+                lblStatValue4.Text = stats.TotalCategories.ToString();
                 lblStatValue5.Text = stats.NoFileDocuments.ToString();
                 lblStatValue6.Text = stats.TotalCollections.ToString();
                 
@@ -133,35 +133,35 @@ namespace study_document_manager
             }
         }
 
-        private void btnBySubject_Click(object sender, EventArgs e)
+        private void BtnBySubjectClick(object sender, EventArgs e)
         {
             LoadStatisticsBySubject();
         }
 
-        private void btnByType_Click(object sender, EventArgs e)
+        private void BtnByTypeClick(object sender, EventArgs e)
         {
             LoadStatisticsByType();
         }
 
-        private void btnByTimeline_Click(object sender, EventArgs e)
+        private void BtnByTimelineClick(object sender, EventArgs e)
         {
             LoadTimelineChart(7);
             lblTimelineTitle.Text = "Tài liệu thêm 7 ngày qua";
         }
 
-        private void btnByMonth_Click(object sender, EventArgs e)
+        private void BtnByMonthClick(object sender, EventArgs e)
         {
             LoadMonthlyChart(12);
             lblTimelineTitle.Text = "Tài liệu thêm 12 tháng qua";
         }
 
-        private void cboChartType_SelectedIndexChanged(object sender, EventArgs e)
+        private void CboChartTypeSelectedIndexChanged(object sender, EventArgs e)
         {
-            if (currentStatType == "subject")
+            if (_currentStatType == "subject")
             {
                 LoadStatisticsBySubject();
             }
-            else if (currentStatType == "type")
+            else if (_currentStatType == "type")
             {
                 LoadStatisticsByType();
             }
@@ -171,7 +171,7 @@ namespace study_document_manager
         {
             try
             {
-                currentStatType = "subject";
+                _currentStatType = "subject";
                 
                 DataTable dt = DatabaseHelper.GetStatisticsBySubject();
 
@@ -206,7 +206,7 @@ namespace study_document_manager
         {
             try
             {
-                currentStatType = "type";
+                _currentStatType = "type";
 
                 DataTable dt = DatabaseHelper.GetStatisticsByType();
 
@@ -227,9 +227,9 @@ namespace study_document_manager
                 }
                 lblTotal.Text = $"Tổng: {total} tài liệu";
 
-                DrawChart(dt, "Loại tài liệu", "Số lượng tài liệu theo loại");
+                DrawChart(dt, "Định dạng", "Số lượng tài liệu theo định dạng");
                 
-                lblStatus.Text = "Đã tải thống kê theo loại tài liệu";
+                lblStatus.Text = "Đã tải thống kê theo định dạng";
             }
             catch (Exception ex)
             {
@@ -241,7 +241,7 @@ namespace study_document_manager
         {
             try
             {
-                currentTimelineDays = days;
+                _currentTimelineDays = days;
                 DataTable dt = DatabaseHelper.GetDocumentsByDay(days);
 
                 if (dt.Rows.Count == 0)
@@ -254,7 +254,7 @@ namespace study_document_manager
                     return;
                 }
 
-                DrawTimelineChart(dt, "ngay_format", $"Tài liệu thêm {days} ngày qua");
+                DrawTimelineChart(dt, "ngay_format");
                 lblStatus.Text = $"Đã tải biểu đồ {days} ngày";
             }
             catch (Exception ex)
@@ -279,7 +279,7 @@ namespace study_document_manager
                     return;
                 }
 
-                DrawTimelineChart(dt, "thang_format", $"Tài liệu thêm {months} tháng qua");
+                DrawTimelineChart(dt, "thang_format");
                 lblStatus.Text = $"Đã tải biểu đồ {months} tháng";
             }
             catch (Exception ex)
@@ -294,8 +294,7 @@ namespace study_document_manager
             chart.ChartAreas.Clear();
             chart.Titles.Clear();
 
-            ChartArea chartArea = new ChartArea("MainArea");
-            chartArea.BackColor = Color.White;
+            ChartArea chartArea = new ChartArea("MainArea") { BackColor = Color.White };
             chartArea.AxisX.Title = xAxisTitle;
             chartArea.AxisY.Title = "Số lượng";
             chartArea.AxisX.LabelStyle.Font = new Font(AppTheme.FontFamily, 9F);
@@ -309,40 +308,41 @@ namespace study_document_manager
             
             chart.ChartAreas.Add(chartArea);
 
-            Title title = new Title(chartTitle);
-            title.Font = new Font(AppTheme.FontFamily, 12F, FontStyle.Bold);
-            title.ForeColor = AppTheme.Primary;
+            Title title = new Title(chartTitle)
+            {
+                Font = new Font(AppTheme.FontFamily, 12F, FontStyle.Bold),
+                ForeColor = AppTheme.Primary
+            };
             chart.Titles.Add(title);
 
             chart.Legends.Clear();
-            Legend legend = new Legend("Legend");
-            legend.Docking = Docking.Bottom;
-            legend.Font = new Font(AppTheme.FontFamily, 9F);
-            legend.BackColor = Color.Transparent;
+            Legend legend = new Legend("Legend")
+            {
+                Docking = Docking.Bottom,
+                Font = new Font(AppTheme.FontFamily, 9F),
+                BackColor = Color.Transparent
+            };
             chart.Legends.Add(legend);
 
             SeriesChartType chartType = GetSelectedChartType();
 
-            Series series = new Series("Số lượng");
-            series.ChartType = chartType;
-            series.ChartArea = "MainArea";
-            series.Legend = "Legend";
-            series.Font = new Font(AppTheme.FontFamily, 9F, FontStyle.Bold);
-            
-            Color[] colors = new Color[]
+            Series series = new Series("Số lượng")
             {
-                AppTheme.Primary,
-                AppTheme.Success,
-                AppTheme.PrimaryLight,
-                Color.FromArgb(16, 185, 129),
-                Color.FromArgb(45, 212, 191),
-                Color.FromArgb(52, 211, 153),
-                Color.FromArgb(94, 234, 212),
+                ChartType = chartType,
+                ChartArea = "MainArea",
+                Legend = "Legend",
+                Font = new Font(AppTheme.FontFamily, 9F, FontStyle.Bold)
+            };
+            
+            Color[] colors = {
+                AppTheme.Primary, AppTheme.Success, AppTheme.PrimaryLight,
+                Color.FromArgb(16, 185, 129), Color.FromArgb(45, 212, 191),
+                Color.FromArgb(52, 211, 153), Color.FromArgb(94, 234, 212),
                 Color.FromArgb(110, 231, 183)
             };
 
             int colorIndex = 0;
-            string categoryColumn = currentStatType == "subject" ? "mon_hoc" : "loai";
+            string categoryColumn = _currentStatType == "subject" ? "danh_muc" : "dinh_dang";
             
             foreach (DataRow row in dt.Rows)
             {
@@ -375,15 +375,14 @@ namespace study_document_manager
             chart.Series.Add(series);
         }
 
-        private void DrawTimelineChart(DataTable dt, string dateColumn, string chartTitle)
+        private void DrawTimelineChart(DataTable dt, string dateColumn)
         {
             chartTimeline.Series.Clear();
             chartTimeline.ChartAreas.Clear();
             chartTimeline.Titles.Clear();
             chartTimeline.Legends.Clear();
 
-            ChartArea chartArea = new ChartArea("TimelineArea");
-            chartArea.BackColor = Color.White;
+            ChartArea chartArea = new ChartArea("TimelineArea") { BackColor = Color.White };
             chartArea.AxisX.Title = "";
             chartArea.AxisY.Title = "Số lượng";
             chartArea.AxisX.LabelStyle.Font = new Font(AppTheme.FontFamily, 8F);
@@ -396,13 +395,15 @@ namespace study_document_manager
             
             chartTimeline.ChartAreas.Add(chartArea);
 
-            Series series = new Series("Số lượng");
-            series.ChartType = SeriesChartType.Area;
-            series.ChartArea = "TimelineArea";
-            series.Color = Color.FromArgb(100, AppTheme.Primary);
-            series.BorderColor = AppTheme.Primary;
-            series.BorderWidth = 2;
-            series.Font = new Font(AppTheme.FontFamily, 8F, FontStyle.Bold);
+            Series series = new Series("Số lượng")
+            {
+                ChartType = SeriesChartType.Area,
+                ChartArea = "TimelineArea",
+                Color = Color.FromArgb(100, AppTheme.Primary),
+                BorderColor = AppTheme.Primary,
+                BorderWidth = 2,
+                Font = new Font(AppTheme.FontFamily, 8F, FontStyle.Bold)
+            };
 
             foreach (DataRow row in dt.Rows)
             {
@@ -437,7 +438,7 @@ namespace study_document_manager
             }
         }
 
-        private void btnClose_Click(object sender, EventArgs e)
+        private void BtnCloseClick(object sender, EventArgs e)
         {
             this.Close();
         }

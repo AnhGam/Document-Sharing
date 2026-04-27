@@ -9,7 +9,8 @@ namespace study_document_manager.Tests
     public class PerformanceTests
     {
         [Test]
-        [DotMemoryUnit]
+        [DotMemoryUnit(FailIfRunWithoutSupport = false)]
+        [Apartment(System.Threading.ApartmentState.STA)]
         public void Dashboard_Should_Not_Leak_Memory_After_Closing()
         {
             // Bài test này dùng dotMemory Unit để kiểm tra rò rỉ bộ nhớ.
@@ -20,8 +21,11 @@ namespace study_document_manager.Tests
 
         private void RunMemoryCheck()
         {
-            // Chụp snapshot trước
-            var memoryBefore = dotMemory.Check();
+            // Chặn các popup thông báo lỗi để không làm phiền người dùng và không làm treo test
+            DatabaseHelper.SuppressPopups = true;
+
+            // Khởi tạo database ảo trong thư mục test để tránh lỗi "unable to open database file"
+            DatabaseHelper.InitializeDatabase();
 
             // Thực hiện hành động (Mở và đóng Form)
             Dashboard dashboard = new Dashboard();
@@ -30,13 +34,21 @@ namespace study_document_manager.Tests
             dashboard.Dispose();
             dashboard = null;
 
-            // Chụp snapshot sau và so sánh
-            dotMemory.Check(memory =>
+            try 
             {
-                // Kiểm tra xem lớp Dashboard có còn tồn tại trong bộ nhớ không
-                var instanceCount = memory.GetObjects(where => where.Type.Is<Dashboard>()).ObjectsCount;
-                Assert.That(instanceCount, Is.EqualTo(0), "Phát hiện rò rỉ bộ nhớ: Lớp Dashboard vẫn tồn tại sau khi đã đóng!");
-            });
+                // Chụp snapshot sau và so sánh
+                dotMemory.Check(memory =>
+                {
+                    // Kiểm tra xem lớp Dashboard có còn tồn tại trong bộ nhớ không
+                    var instanceCount = memory.GetObjects(where => where.Type.Is<Dashboard>()).ObjectsCount;
+                    Assert.That(instanceCount, Is.EqualTo(0), "Phát hiện rò rỉ bộ nhớ: Lớp Dashboard vẫn tồn tại sau khi đã đóng!");
+                });
+            }
+            catch (DotMemoryUnitException)
+            {
+                // Nếu không chạy qua dotMemory Unit runner, bỏ qua test này thay vì làm hỏng build
+                Assert.Ignore("Bỏ qua test rò rỉ bộ nhớ vì môi trường hiện tại không hỗ trợ dotMemory Unit runner.");
+            }
         }
     }
 }

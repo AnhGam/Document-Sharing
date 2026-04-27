@@ -31,37 +31,30 @@ namespace study_document_manager
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(AddEditForm));
             this.mainTableLayout = new System.Windows.Forms.TableLayoutPanel();
             this.label1 = new System.Windows.Forms.Label();
-            this.txt_ten = new System.Windows.Forms.TextBox();
+            this.txtTen = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
-            this.cbo_mon_hoc = new System.Windows.Forms.ComboBox();
+            this.cboDanhMuc = new System.Windows.Forms.ComboBox();
             this.label3 = new System.Windows.Forms.Label();
-            this.cbo_loai = new System.Windows.Forms.ComboBox();
+            this.cboDinhDang = new System.Windows.Forms.ComboBox();
             this.label4 = new System.Windows.Forms.Label();
             this.filePanel = new System.Windows.Forms.Panel();
-            this.txt_duong_dan = new System.Windows.Forms.TextBox();
-            this.btn_chon_file = new study_document_manager.UI.Controls.ModernButton();
+            this.txtDuongDan = new System.Windows.Forms.TextBox();
+            this.btnChonFile = new study_document_manager.UI.Controls.ModernButton();
             this.label5 = new System.Windows.Forms.Label();
-            this.txt_ghi_chu = new System.Windows.Forms.TextBox();
-            this.authorSizePanel = new System.Windows.Forms.TableLayoutPanel();
-            this.label6 = new System.Windows.Forms.Label();
-            this.txt_tac_gia = new System.Windows.Forms.TextBox();
+            this.txtGhiChu = new System.Windows.Forms.TextBox();
+            this.sizePanel = new System.Windows.Forms.TableLayoutPanel();
             this.label7 = new System.Windows.Forms.Label();
-            this.txt_kich_thuoc = new System.Windows.Forms.TextBox();
+            this.txtKichThuoc = new System.Windows.Forms.TextBox();
             this.lblTags = new System.Windows.Forms.Label();
             this.txtTags = new System.Windows.Forms.TextBox();
-            this.deadlinePanel = new System.Windows.Forms.TableLayoutPanel();
-            this.lblDeadline = new System.Windows.Forms.Label();
-            this.dtpDeadline = new System.Windows.Forms.DateTimePicker();
-            this.chkHasDeadline = new System.Windows.Forms.CheckBox();
-            this.chk_quan_trong = new System.Windows.Forms.CheckBox();
+            this.chkQuanTrong = new System.Windows.Forms.CheckBox();
             this.buttonPanel = new System.Windows.Forms.FlowLayoutPanel();
-            this.btn_luu = new study_document_manager.UI.Controls.ModernButton();
-            this.btn_huy = new study_document_manager.UI.Controls.ModernButton();
+            this.btnLuu = new study_document_manager.UI.Controls.ModernButton();
+            this.btnHuy = new study_document_manager.UI.Controls.ModernButton();
             this.label8 = new System.Windows.Forms.Label();
             this.mainTableLayout.SuspendLayout();
             this.filePanel.SuspendLayout();
-            this.authorSizePanel.SuspendLayout();
-            this.deadlinePanel.SuspendLayout();
+            this.sizePanel.SuspendLayout();
             this.buttonPanel.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -71,20 +64,19 @@ namespace study_document_manager
             this.mainTableLayout.ColumnCount = 1;
             this.mainTableLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.mainTableLayout.Controls.Add(this.label1, 0, 0);
-            this.mainTableLayout.Controls.Add(this.txt_ten, 0, 1);
+            this.mainTableLayout.Controls.Add(this.txtTen, 0, 1);
             this.mainTableLayout.Controls.Add(this.label2, 0, 2);
-            this.mainTableLayout.Controls.Add(this.cbo_mon_hoc, 0, 3);
+            this.mainTableLayout.Controls.Add(this.cboDanhMuc, 0, 3);
             this.mainTableLayout.Controls.Add(this.label3, 0, 4);
-            this.mainTableLayout.Controls.Add(this.cbo_loai, 0, 5);
+            this.mainTableLayout.Controls.Add(this.cboDinhDang, 0, 5);
             this.mainTableLayout.Controls.Add(this.label4, 0, 6);
             this.mainTableLayout.Controls.Add(this.filePanel, 0, 7);
             this.mainTableLayout.Controls.Add(this.label5, 0, 8);
-            this.mainTableLayout.Controls.Add(this.txt_ghi_chu, 0, 9);
-            this.mainTableLayout.Controls.Add(this.authorSizePanel, 0, 10);
+            this.mainTableLayout.Controls.Add(this.txtGhiChu, 0, 9);
+            this.mainTableLayout.Controls.Add(this.sizePanel, 0, 10);
             this.mainTableLayout.Controls.Add(this.lblTags, 0, 11);
             this.mainTableLayout.Controls.Add(this.txtTags, 0, 12);
-            this.mainTableLayout.Controls.Add(this.deadlinePanel, 0, 13);
-            this.mainTableLayout.Controls.Add(this.chk_quan_trong, 0, 14);
+            this.mainTableLayout.Controls.Add(this.chkQuanTrong, 0, 14);
             this.mainTableLayout.Controls.Add(this.buttonPanel, 0, 15);
             this.mainTableLayout.Controls.Add(this.label8, 0, 16);
             this.mainTableLayout.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -126,14 +118,14 @@ namespace study_document_manager
             // 
             // txt_ten
             // 
-            this.txt_ten.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.txt_ten.Font = new System.Drawing.Font("Segoe UI", 10F);
-            this.txt_ten.Location = new System.Drawing.Point(34, 65);
-            this.txt_ten.Margin = new System.Windows.Forms.Padding(4, 4, 4, 12);
-            this.txt_ten.Name = "txt_ten";
-            this.txt_ten.Size = new System.Drawing.Size(607, 34);
-            this.txt_ten.TabIndex = 1;
-            this.txt_ten.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.txt_ten_KeyPress);
+            this.txtTen.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.txtTen.Font = new System.Drawing.Font("Segoe UI", 10F);
+            this.txtTen.Location = new System.Drawing.Point(34, 65);
+            this.txtTen.Margin = new System.Windows.Forms.Padding(4, 4, 4, 12);
+            this.txtTen.Name = "txtTen";
+            this.txtTen.Size = new System.Drawing.Size(607, 34);
+            this.txtTen.TabIndex = 1;
+            this.txtTen.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.TxtTenKeyPress);
             // 
             // label2
             // 
@@ -146,17 +138,17 @@ namespace study_document_manager
             this.label2.TabIndex = 2;
             this.label2.Text = "Danh mục:";
             // 
-            // cbo_mon_hoc
+            // cboDanhMuc
             // 
-            this.cbo_mon_hoc.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.cbo_mon_hoc.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cbo_mon_hoc.Font = new System.Drawing.Font("Segoe UI", 10F);
-            this.cbo_mon_hoc.FormattingEnabled = true;
-            this.cbo_mon_hoc.Location = new System.Drawing.Point(34, 152);
-            this.cbo_mon_hoc.Margin = new System.Windows.Forms.Padding(4, 4, 4, 12);
-            this.cbo_mon_hoc.Name = "cbo_mon_hoc";
-            this.cbo_mon_hoc.Size = new System.Drawing.Size(607, 36);
-            this.cbo_mon_hoc.TabIndex = 3;
+            this.cboDanhMuc.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.cboDanhMuc.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cboDanhMuc.Font = new System.Drawing.Font("Segoe UI", 10F);
+            this.cboDanhMuc.FormattingEnabled = true;
+            this.cboDanhMuc.Location = new System.Drawing.Point(34, 152);
+            this.cboDanhMuc.Margin = new System.Windows.Forms.Padding(4, 4, 4, 12);
+            this.cboDanhMuc.Name = "cboDanhMuc";
+            this.cboDanhMuc.Size = new System.Drawing.Size(607, 36);
+            this.cboDanhMuc.TabIndex = 3;
             // 
             // label3
             // 
@@ -167,19 +159,19 @@ namespace study_document_manager
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(112, 25);
             this.label3.TabIndex = 4;
-            this.label3.Text = "Loại tài liệu:";
+            this.label3.Text = "Định dạng:";
             // 
-            // cbo_loai
+            // cboDinhDang
             // 
-            this.cbo_loai.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.cbo_loai.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cbo_loai.Font = new System.Drawing.Font("Segoe UI", 10F);
-            this.cbo_loai.FormattingEnabled = true;
-            this.cbo_loai.Location = new System.Drawing.Point(34, 241);
-            this.cbo_loai.Margin = new System.Windows.Forms.Padding(4, 4, 4, 12);
-            this.cbo_loai.Name = "cbo_loai";
-            this.cbo_loai.Size = new System.Drawing.Size(607, 36);
-            this.cbo_loai.TabIndex = 5;
+            this.cboDinhDang.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.cboDinhDang.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cboDinhDang.Font = new System.Drawing.Font("Segoe UI", 10F);
+            this.cboDinhDang.FormattingEnabled = true;
+            this.cboDinhDang.Location = new System.Drawing.Point(34, 241);
+            this.cboDinhDang.Margin = new System.Windows.Forms.Padding(4, 4, 4, 12);
+            this.cboDinhDang.Name = "cboDinhDang";
+            this.cboDinhDang.Size = new System.Drawing.Size(607, 36);
+            this.cboDinhDang.TabIndex = 5;
             // 
             // label4
             // 
@@ -194,8 +186,8 @@ namespace study_document_manager
             // 
             // filePanel
             // 
-            this.filePanel.Controls.Add(this.txt_duong_dan);
-            this.filePanel.Controls.Add(this.btn_chon_file);
+            this.filePanel.Controls.Add(this.txtDuongDan);
+            this.filePanel.Controls.Add(this.btnChonFile);
             this.filePanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.filePanel.Location = new System.Drawing.Point(30, 326);
             this.filePanel.Margin = new System.Windows.Forms.Padding(0, 0, 0, 12);
@@ -205,40 +197,29 @@ namespace study_document_manager
             // 
             // txt_duong_dan
             // 
-            this.txt_duong_dan.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            this.txtDuongDan.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.txt_duong_dan.Font = new System.Drawing.Font("Segoe UI", 10F);
-            this.txt_duong_dan.Location = new System.Drawing.Point(0, 4);
-            this.txt_duong_dan.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
-            this.txt_duong_dan.Name = "txt_duong_dan";
-            this.txt_duong_dan.ReadOnly = true;
-            this.txt_duong_dan.Size = new System.Drawing.Size(442, 34);
-            this.txt_duong_dan.TabIndex = 0;
+            this.txtDuongDan.Font = new System.Drawing.Font("Segoe UI", 10F);
+            this.txtDuongDan.Location = new System.Drawing.Point(0, 4);
+            this.txtDuongDan.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.txtDuongDan.Name = "txtDuongDan";
+            this.txtDuongDan.ReadOnly = true;
+            this.txtDuongDan.Size = new System.Drawing.Size(442, 34);
+            this.txtDuongDan.TabIndex = 0;
             // 
             // btn_chon_file
             // 
-            this.btn_chon_file.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btn_chon_file.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(20)))), ((int)(((byte)(184)))), ((int)(((byte)(166)))));
-            this.btn_chon_file.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(51)))), ((int)(((byte)(65)))), ((int)(((byte)(85)))));
-            this.btn_chon_file.BorderColor = System.Drawing.Color.Transparent;
-            this.btn_chon_file.BorderRadius = 8;
-            this.btn_chon_file.BorderSize = 0;
-            this.btn_chon_file.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.btn_chon_file.FlatAppearance.BorderSize = 0;
-            this.btn_chon_file.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btn_chon_file.Font = new System.Drawing.Font("Segoe UI Semibold", 9F);
-            this.btn_chon_file.ForeColor = System.Drawing.Color.White;
-            this.btn_chon_file.Location = new System.Drawing.Point(453, 0);
-            this.btn_chon_file.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
-            this.btn_chon_file.Name = "btn_chon_file";
-            this.btn_chon_file.Size = new System.Drawing.Size(162, 48);
-            this.btn_chon_file.TabIndex = 1;
-            this.btn_chon_file.Text = "Chọn file...";
-            this.btn_chon_file.TextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
-            this.btn_chon_file.UseVisualStyleBackColor = false;
-            this.btn_chon_file.Variant = study_document_manager.UI.Controls.ModernButton.ButtonVariant.Primary;
-            this.btn_chon_file.Click += new System.EventHandler(this.btn_chon_file_Click);
+            this.btnChonFile.Location = new System.Drawing.Point(453, 0);
+            this.btnChonFile.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.btnChonFile.Name = "btnChonFile";
+            this.btnChonFile.Size = new System.Drawing.Size(162, 48);
+            this.btnChonFile.TabIndex = 1;
+            this.btnChonFile.Text = "Chọn file...";
+            this.btnChonFile.TextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
+            this.btnChonFile.UseVisualStyleBackColor = false;
+            this.btnChonFile.Variant = study_document_manager.UI.Controls.ModernButton.ButtonVariant.Primary;
+            this.btnChonFile.Click += new System.EventHandler(this.BtnChonFileClick);
             // 
             // label5
             // 
@@ -253,57 +234,31 @@ namespace study_document_manager
             // 
             // txt_ghi_chu
             // 
-            this.txt_ghi_chu.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.txt_ghi_chu.Font = new System.Drawing.Font("Segoe UI", 10F);
-            this.txt_ghi_chu.Location = new System.Drawing.Point(34, 427);
-            this.txt_ghi_chu.Margin = new System.Windows.Forms.Padding(4, 4, 4, 12);
-            this.txt_ghi_chu.Multiline = true;
-            this.txt_ghi_chu.Name = "txt_ghi_chu";
-            this.txt_ghi_chu.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.txt_ghi_chu.Size = new System.Drawing.Size(607, 134);
-            this.txt_ghi_chu.TabIndex = 9;
+            this.txtGhiChu.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.txtGhiChu.Font = new System.Drawing.Font("Segoe UI", 10F);
+            this.txtGhiChu.Location = new System.Drawing.Point(34, 427);
+            this.txtGhiChu.Margin = new System.Windows.Forms.Padding(4, 4, 4, 12);
+            this.txtGhiChu.Multiline = true;
+            this.txtGhiChu.Name = "txtGhiChu";
+            this.txtGhiChu.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.txtGhiChu.Size = new System.Drawing.Size(607, 134);
+            this.txtGhiChu.TabIndex = 9;
             // 
-            // authorSizePanel
+            // sizePanel
             // 
-            this.authorSizePanel.ColumnCount = 4;
-            this.authorSizePanel.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
-            this.authorSizePanel.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.authorSizePanel.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
-            this.authorSizePanel.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 120F));
-            this.authorSizePanel.Controls.Add(this.label6, 0, 0);
-            this.authorSizePanel.Controls.Add(this.txt_tac_gia, 1, 0);
-            this.authorSizePanel.Controls.Add(this.label7, 2, 0);
-            this.authorSizePanel.Controls.Add(this.txt_kich_thuoc, 3, 0);
-            this.authorSizePanel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.authorSizePanel.Location = new System.Drawing.Point(30, 573);
-            this.authorSizePanel.Margin = new System.Windows.Forms.Padding(0, 0, 0, 12);
-            this.authorSizePanel.Name = "authorSizePanel";
-            this.authorSizePanel.RowCount = 1;
-            this.authorSizePanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.authorSizePanel.Size = new System.Drawing.Size(615, 45);
-            this.authorSizePanel.TabIndex = 10;
-            // 
-            // label6
-            // 
-            this.label6.Anchor = System.Windows.Forms.AnchorStyles.Left;
-            this.label6.AutoSize = true;
-            this.label6.Font = new System.Drawing.Font("Segoe UI Semibold", 9F);
-            this.label6.Location = new System.Drawing.Point(4, 10);
-            this.label6.Margin = new System.Windows.Forms.Padding(4, 0, 9, 0);
-            this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(71, 25);
-            this.label6.TabIndex = 0;
-            this.label6.Text = "Tác giả:";
-            // 
-            // txt_tac_gia
-            // 
-            this.txt_tac_gia.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.txt_tac_gia.Font = new System.Drawing.Font("Segoe UI", 10F);
-            this.txt_tac_gia.Location = new System.Drawing.Point(88, 4);
-            this.txt_tac_gia.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
-            this.txt_tac_gia.Name = "txt_tac_gia";
-            this.txt_tac_gia.Size = new System.Drawing.Size(238, 34);
-            this.txt_tac_gia.TabIndex = 1;
+            this.sizePanel.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 120F));
+            this.sizePanel.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
+            this.sizePanel.Controls.Add(this.label7, 0, 0);
+            this.sizePanel.Controls.Add(this.txtKichThuoc, 1, 0);
+            this.sizePanel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.sizePanel.Location = new System.Drawing.Point(30, 573);
+            this.sizePanel.Margin = new System.Windows.Forms.Padding(0, 0, 0, 12);
+            this.sizePanel.Name = "sizePanel";
+            this.sizePanel.RowCount = 1;
+            this.sizePanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.sizePanel.Size = new System.Drawing.Size(615, 45);
+            this.sizePanel.TabIndex = 10;
+
             // 
             // label7
             // 
@@ -319,14 +274,14 @@ namespace study_document_manager
             // 
             // txt_kich_thuoc
             // 
-            this.txt_kich_thuoc.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.txt_kich_thuoc.Font = new System.Drawing.Font("Segoe UI", 10F);
-            this.txt_kich_thuoc.Location = new System.Drawing.Point(499, 4);
-            this.txt_kich_thuoc.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
-            this.txt_kich_thuoc.Name = "txt_kich_thuoc";
-            this.txt_kich_thuoc.ReadOnly = true;
-            this.txt_kich_thuoc.Size = new System.Drawing.Size(112, 34);
-            this.txt_kich_thuoc.TabIndex = 3;
+            this.txtKichThuoc.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.txtKichThuoc.Font = new System.Drawing.Font("Segoe UI", 10F);
+            this.txtKichThuoc.Location = new System.Drawing.Point(499, 4);
+            this.txtKichThuoc.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.txtKichThuoc.Name = "txtKichThuoc";
+            this.txtKichThuoc.ReadOnly = true;
+            this.txtKichThuoc.Size = new System.Drawing.Size(112, 34);
+            this.txtKichThuoc.TabIndex = 3;
             // 
             // lblTags
             // 
@@ -349,78 +304,25 @@ namespace study_document_manager
             this.txtTags.Size = new System.Drawing.Size(607, 34);
             this.txtTags.TabIndex = 12;
             // 
-            // deadlinePanel
-            // 
-            this.deadlinePanel.ColumnCount = 3;
-            this.deadlinePanel.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
-            this.deadlinePanel.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 240F));
-            this.deadlinePanel.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
-            this.deadlinePanel.Controls.Add(this.lblDeadline, 0, 0);
-            this.deadlinePanel.Controls.Add(this.dtpDeadline, 1, 0);
-            this.deadlinePanel.Controls.Add(this.chkHasDeadline, 2, 0);
-            this.deadlinePanel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.deadlinePanel.Location = new System.Drawing.Point(30, 717);
-            this.deadlinePanel.Margin = new System.Windows.Forms.Padding(0, 0, 0, 12);
-            this.deadlinePanel.Name = "deadlinePanel";
-            this.deadlinePanel.RowCount = 1;
-            this.deadlinePanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.deadlinePanel.Size = new System.Drawing.Size(615, 45);
-            this.deadlinePanel.TabIndex = 13;
-            // 
-            // lblDeadline
-            // 
-            this.lblDeadline.Anchor = System.Windows.Forms.AnchorStyles.Left;
-            this.lblDeadline.AutoSize = true;
-            this.lblDeadline.Font = new System.Drawing.Font("Segoe UI Semibold", 9F);
-            this.lblDeadline.Location = new System.Drawing.Point(4, 10);
-            this.lblDeadline.Margin = new System.Windows.Forms.Padding(4, 0, 9, 0);
-            this.lblDeadline.Name = "lblDeadline";
-            this.lblDeadline.Size = new System.Drawing.Size(90, 25);
-            this.lblDeadline.TabIndex = 0;
-            this.lblDeadline.Text = "Hạn chót:";
-            // 
-            // dtpDeadline
-            // 
-            this.dtpDeadline.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.dtpDeadline.Enabled = false;
-            this.dtpDeadline.Font = new System.Drawing.Font("Segoe UI", 10F);
-            this.dtpDeadline.Format = System.Windows.Forms.DateTimePickerFormat.Short;
-            this.dtpDeadline.Location = new System.Drawing.Point(107, 4);
-            this.dtpDeadline.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
-            this.dtpDeadline.Name = "dtpDeadline";
-            this.dtpDeadline.Size = new System.Drawing.Size(232, 34);
-            this.dtpDeadline.TabIndex = 1;
-            // 
-            // chkHasDeadline
-            // 
-            this.chkHasDeadline.Anchor = System.Windows.Forms.AnchorStyles.Left;
-            this.chkHasDeadline.AutoSize = true;
-            this.chkHasDeadline.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.chkHasDeadline.Location = new System.Drawing.Point(352, 8);
-            this.chkHasDeadline.Margin = new System.Windows.Forms.Padding(9, 4, 4, 4);
-            this.chkHasDeadline.Name = "chkHasDeadline";
-            this.chkHasDeadline.Size = new System.Drawing.Size(94, 29);
-            this.chkHasDeadline.TabIndex = 2;
-            this.chkHasDeadline.Text = "Có hạn";
-            this.chkHasDeadline.UseVisualStyleBackColor = true;
+
             // 
             // chk_quan_trong
             // 
-            this.chk_quan_trong.AutoSize = true;
-            this.chk_quan_trong.Font = new System.Drawing.Font("Segoe UI Semibold", 9.5F, System.Drawing.FontStyle.Bold);
-            this.chk_quan_trong.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(158)))), ((int)(((byte)(11)))));
-            this.chk_quan_trong.Location = new System.Drawing.Point(34, 780);
-            this.chk_quan_trong.Margin = new System.Windows.Forms.Padding(4, 6, 4, 12);
-            this.chk_quan_trong.Name = "chk_quan_trong";
-            this.chk_quan_trong.Size = new System.Drawing.Size(158, 29);
-            this.chk_quan_trong.TabIndex = 14;
-            this.chk_quan_trong.Text = "★ Quan trọng";
-            this.chk_quan_trong.UseVisualStyleBackColor = true;
+            this.chkQuanTrong.AutoSize = true;
+            this.chkQuanTrong.Font = new System.Drawing.Font("Segoe UI Semibold", 9.5F, System.Drawing.FontStyle.Bold);
+            this.chkQuanTrong.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(158)))), ((int)(((byte)(11)))));
+            this.chkQuanTrong.Location = new System.Drawing.Point(34, 780);
+            this.chkQuanTrong.Margin = new System.Windows.Forms.Padding(4, 6, 4, 12);
+            this.chkQuanTrong.Name = "chkQuanTrong";
+            this.chkQuanTrong.Size = new System.Drawing.Size(158, 29);
+            this.chkQuanTrong.TabIndex = 14;
+            this.chkQuanTrong.Text = "★ Quan trọng";
+            this.chkQuanTrong.UseVisualStyleBackColor = true;
             // 
             // buttonPanel
             // 
-            this.buttonPanel.Controls.Add(this.btn_luu);
-            this.buttonPanel.Controls.Add(this.btn_huy);
+            this.buttonPanel.Controls.Add(this.btnLuu);
+            this.buttonPanel.Controls.Add(this.btnHuy);
             this.buttonPanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.buttonPanel.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft;
             this.buttonPanel.Location = new System.Drawing.Point(30, 821);
@@ -431,49 +333,49 @@ namespace study_document_manager
             // 
             // btn_luu
             // 
-            this.btn_luu.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(34)))), ((int)(((byte)(197)))), ((int)(((byte)(94)))));
-            this.btn_luu.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(51)))), ((int)(((byte)(65)))), ((int)(((byte)(85)))));
-            this.btn_luu.BorderColor = System.Drawing.Color.Transparent;
-            this.btn_luu.BorderRadius = 8;
-            this.btn_luu.BorderSize = 0;
-            this.btn_luu.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.btn_luu.FlatAppearance.BorderSize = 0;
-            this.btn_luu.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btn_luu.Font = new System.Drawing.Font("Segoe UI Semibold", 10F);
-            this.btn_luu.ForeColor = System.Drawing.Color.White;
-            this.btn_luu.Location = new System.Drawing.Point(443, 4);
-            this.btn_luu.Margin = new System.Windows.Forms.Padding(12, 4, 4, 4);
-            this.btn_luu.Name = "btn_luu";
-            this.btn_luu.Size = new System.Drawing.Size(168, 57);
-            this.btn_luu.TabIndex = 0;
-            this.btn_luu.Text = "Lưu";
-            this.btn_luu.TextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
-            this.btn_luu.UseVisualStyleBackColor = false;
-            this.btn_luu.Variant = study_document_manager.UI.Controls.ModernButton.ButtonVariant.Primary;
-            this.btn_luu.Click += new System.EventHandler(this.btn_luu_Click);
+            this.btnLuu.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(34)))), ((int)(((byte)(197)))), ((int)(((byte)(94)))));
+            this.btnLuu.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(51)))), ((int)(((byte)(65)))), ((int)(((byte)(85)))));
+            this.btnLuu.BorderColor = System.Drawing.Color.Transparent;
+            this.btnLuu.BorderRadius = 8;
+            this.btnLuu.BorderSize = 0;
+            this.btnLuu.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnLuu.FlatAppearance.BorderSize = 0;
+            this.btnLuu.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnLuu.Font = new System.Drawing.Font("Segoe UI Semibold", 10F);
+            this.btnLuu.ForeColor = System.Drawing.Color.White;
+            this.btnLuu.Location = new System.Drawing.Point(443, 4);
+            this.btnLuu.Margin = new System.Windows.Forms.Padding(12, 4, 4, 4);
+            this.btnLuu.Name = "btnLuu";
+            this.btnLuu.Size = new System.Drawing.Size(168, 57);
+            this.btnLuu.TabIndex = 0;
+            this.btnLuu.Text = "Lưu";
+            this.btnLuu.TextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
+            this.btnLuu.UseVisualStyleBackColor = false;
+            this.btnLuu.Variant = study_document_manager.UI.Controls.ModernButton.ButtonVariant.Primary;
+            this.btnLuu.Click += new System.EventHandler(this.BtnLuuClick);
             // 
-            // btn_huy
+            // btnHuy
             // 
-            this.btn_huy.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(248)))), ((int)(((byte)(250)))), ((int)(((byte)(252)))));
-            this.btn_huy.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(51)))), ((int)(((byte)(65)))), ((int)(((byte)(85)))));
-            this.btn_huy.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(203)))), ((int)(((byte)(213)))), ((int)(((byte)(225)))));
-            this.btn_huy.BorderRadius = 8;
-            this.btn_huy.BorderSize = 1;
-            this.btn_huy.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.btn_huy.FlatAppearance.BorderSize = 0;
-            this.btn_huy.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btn_huy.Font = new System.Drawing.Font("Segoe UI Semibold", 10F);
-            this.btn_huy.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(71)))), ((int)(((byte)(85)))), ((int)(((byte)(105)))));
-            this.btn_huy.Location = new System.Drawing.Point(277, 4);
-            this.btn_huy.Margin = new System.Windows.Forms.Padding(12, 4, 4, 4);
-            this.btn_huy.Name = "btn_huy";
-            this.btn_huy.Size = new System.Drawing.Size(150, 57);
-            this.btn_huy.TabIndex = 1;
-            this.btn_huy.Text = "Hủy";
-            this.btn_huy.TextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
-            this.btn_huy.UseVisualStyleBackColor = false;
-            this.btn_huy.Variant = study_document_manager.UI.Controls.ModernButton.ButtonVariant.Primary;
-            this.btn_huy.Click += new System.EventHandler(this.btn_huy_Click);
+            this.btnHuy.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(248)))), ((int)(((byte)(250)))), ((int)(((byte)(252)))));
+            this.btnHuy.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(51)))), ((int)(((byte)(65)))), ((int)(((byte)(85)))));
+            this.btnHuy.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(203)))), ((int)(((byte)(213)))), ((int)(((byte)(225)))));
+            this.btnHuy.BorderRadius = 8;
+            this.btnHuy.BorderSize = 1;
+            this.btnHuy.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnHuy.FlatAppearance.BorderSize = 0;
+            this.btnHuy.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnHuy.Font = new System.Drawing.Font("Segoe UI Semibold", 10F);
+            this.btnHuy.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(71)))), ((int)(((byte)(85)))), ((int)(((byte)(105)))));
+            this.btnHuy.Location = new System.Drawing.Point(277, 4);
+            this.btnHuy.Margin = new System.Windows.Forms.Padding(12, 4, 4, 4);
+            this.btnHuy.Name = "btnHuy";
+            this.btnHuy.Size = new System.Drawing.Size(150, 57);
+            this.btnHuy.TabIndex = 1;
+            this.btnHuy.Text = "Hủy";
+            this.btnHuy.TextColor = System.Drawing.Color.FromArgb(((int)(((byte)(71)))), ((int)(((byte)(85)))), ((int)(((byte)(105)))));
+            this.btnHuy.UseVisualStyleBackColor = false;
+            this.btnHuy.Variant = study_document_manager.UI.Controls.ModernButton.ButtonVariant.Secondary;
+            this.btnHuy.Click += new System.EventHandler(this.BtnHuyClick);
             // 
             // label8
             // 
@@ -501,15 +403,13 @@ namespace study_document_manager
             this.Name = "AddEditForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Thêm/Sửa tài liệu";
-            this.Load += new System.EventHandler(this.AddEditForm_Load);
+            this.Load += new System.EventHandler(this.AddEditFormLoad);
             this.mainTableLayout.ResumeLayout(false);
             this.mainTableLayout.PerformLayout();
             this.filePanel.ResumeLayout(false);
             this.filePanel.PerformLayout();
-            this.authorSizePanel.ResumeLayout(false);
-            this.authorSizePanel.PerformLayout();
-            this.deadlinePanel.ResumeLayout(false);
-            this.deadlinePanel.PerformLayout();
+            this.sizePanel.ResumeLayout(false);
+            this.sizePanel.PerformLayout();
             this.buttonPanel.ResumeLayout(false);
             this.ResumeLayout(false);
 
@@ -519,32 +419,26 @@ namespace study_document_manager
 
         private System.Windows.Forms.TableLayoutPanel mainTableLayout;
         internal System.Windows.Forms.Label label1;
-        internal System.Windows.Forms.TextBox txt_ten;
+        internal System.Windows.Forms.TextBox txtTen;
         private System.Windows.Forms.Label label2;
-        internal System.Windows.Forms.ComboBox cbo_mon_hoc;
+        internal System.Windows.Forms.ComboBox cboDanhMuc;
         private System.Windows.Forms.Label label3;
-        internal System.Windows.Forms.ComboBox cbo_loai;
+        internal System.Windows.Forms.ComboBox cboDinhDang;
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.Panel filePanel;
-        internal System.Windows.Forms.TextBox txt_duong_dan;
-        private study_document_manager.UI.Controls.ModernButton btn_chon_file;
+        internal System.Windows.Forms.TextBox txtDuongDan;
+        private study_document_manager.UI.Controls.ModernButton btnChonFile;
         private System.Windows.Forms.Label label5;
-        internal System.Windows.Forms.TextBox txt_ghi_chu;
-        private System.Windows.Forms.TableLayoutPanel authorSizePanel;
-        private System.Windows.Forms.Label label6;
-        internal System.Windows.Forms.TextBox txt_tac_gia;
+        internal System.Windows.Forms.TextBox txtGhiChu;
+        private System.Windows.Forms.TableLayoutPanel sizePanel;
         private System.Windows.Forms.Label label7;
-        internal System.Windows.Forms.TextBox txt_kich_thuoc;
+        internal System.Windows.Forms.TextBox txtKichThuoc;
         private System.Windows.Forms.Label lblTags;
         internal System.Windows.Forms.TextBox txtTags;
-        private System.Windows.Forms.TableLayoutPanel deadlinePanel;
-        private System.Windows.Forms.Label lblDeadline;
-        internal System.Windows.Forms.DateTimePicker dtpDeadline;
-        internal System.Windows.Forms.CheckBox chkHasDeadline;
-        private System.Windows.Forms.CheckBox chk_quan_trong;
+        private System.Windows.Forms.CheckBox chkQuanTrong;
         private System.Windows.Forms.FlowLayoutPanel buttonPanel;
-        private study_document_manager.UI.Controls.ModernButton btn_luu;
-        private study_document_manager.UI.Controls.ModernButton btn_huy;
+        private study_document_manager.UI.Controls.ModernButton btnLuu;
+        private study_document_manager.UI.Controls.ModernButton btnHuy;
         private System.Windows.Forms.Label label8;
     }
 }

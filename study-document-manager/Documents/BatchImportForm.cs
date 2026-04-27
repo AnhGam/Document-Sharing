@@ -13,7 +13,8 @@ namespace study_document_manager.Documents
     public class BatchImportForm : Form
     {
         private DataGridView dgvFiles;
-        private Button btnSelectFolder;
+        private Button btnSelect;
+        private ContextMenuStrip menuSelect;
         private Button btnImport;
         private Button btnClose;
         private Button btnSelectAll;
@@ -27,7 +28,7 @@ namespace study_document_manager.Documents
         private Panel pnlActions;
         private CheckBox chkRecursive;
 
-        private List<FileEntry> fileEntries = new List<FileEntry>();
+        private readonly List<FileEntry> fileEntries = new List<FileEntry>();
 
         public BatchImportForm()
         {
@@ -50,25 +51,29 @@ namespace study_document_manager.Documents
 
             var lblTitle = new Label
             {
-                Text = "Import tài liệu từ thư mục",
+                Text = "Import tài liệu",
                 Font = new Font(AppTheme.FontFamily, 14f, FontStyle.Bold),
                 AutoSize = true,
                 Location = new Point(16, 8)
             };
 
-            btnSelectFolder = new Button
+            btnSelect = new Button
             {
-                Text = "Chọn thư mục...",
-                Size = new Size(140, 32),
+                Text = "Thêm tài liệu...",
+                Size = new Size(180, 32),
                 Location = new Point(16, 48)
             };
-            btnSelectFolder.Click += BtnSelectFolder_Click;
+            btnSelect.Click += BtnSelectClick;
+
+            menuSelect = new ContextMenuStrip();
+            menuSelect.Items.Add("📄 Chọn file(s)...", null, BtnSelectFilesClick);
+            menuSelect.Items.Add("📁 Chọn thư mục...", null, BtnSelectFolderClick);
 
             lblFolder = new Label
             {
-                Text = "Chưa chọn thư mục",
+                Text = "Chưa chọn tài liệu",
                 AutoSize = true,
-                Location = new Point(165, 56),
+                Location = new Point(315, 56),
                 Font = new Font(AppTheme.FontFamily, 9f, FontStyle.Italic)
             };
 
@@ -76,11 +81,11 @@ namespace study_document_manager.Documents
             {
                 Text = "Bao gồm thư mục con",
                 AutoSize = true,
-                Location = new Point(600, 56),
+                Location = new Point(650, 56),
                 Checked = true
             };
 
-            pnlHeader.Controls.AddRange(new Control[] { lblTitle, btnSelectFolder, lblFolder, chkRecursive });
+            pnlHeader.Controls.AddRange(new Control[] { lblTitle, btnSelect, lblFolder, chkRecursive });
             this.Controls.Add(pnlHeader);
 
             // DataGridView
@@ -103,10 +108,10 @@ namespace study_document_manager.Documents
             pnlActions = new Panel { Dock = DockStyle.Bottom, Height = 95, Padding = new Padding(12, 8, 12, 8) };
 
             // Row 1: Subject + select buttons
-            lblSubject = new Label { Text = "Môn học chung:", AutoSize = true, Location = new Point(16, 10) };
+            lblSubject = new Label { Text = "Danh mục chung:", AutoSize = true, Location = new Point(16, 10) };
             cboSubject = new ComboBox
             {
-                Location = new Point(120, 7),
+                Location = new Point(135, 7),
                 Size = new Size(200, 28),
                 DropDownStyle = ComboBoxStyle.DropDown
             };
@@ -122,7 +127,7 @@ namespace study_document_manager.Documents
             lblStatus = new Label { AutoSize = true, Location = new Point(16, 70), Font = new Font(AppTheme.FontFamily, 9f) };
 
             btnImport = new Button { Text = "Import", Size = new Size(120, 35), Location = new Point(650, 8) };
-            btnImport.Click += BtnImport_Click;
+            btnImport.Click += BtnImportClick;
             btnImport.Enabled = false;
 
             btnClose = new Button { Text = "Đóng", Size = new Size(90, 35), Location = new Point(778, 8) };
@@ -144,7 +149,7 @@ namespace study_document_manager.Documents
             {
                 Name = "Selected",
                 HeaderText = "",
-                Width = 40
+                Width = 30
             });
 
             dgvFiles.Columns.Add(new DataGridViewTextBoxColumn
@@ -154,7 +159,7 @@ namespace study_document_manager.Documents
 
             dgvFiles.Columns.Add(new DataGridViewTextBoxColumn
             {
-                Name = "FileType", HeaderText = "Loại", Width = 80, ReadOnly = true
+                Name = "FileType", HeaderText = "Định dạng", Width = 70, ReadOnly = true
             });
 
             dgvFiles.Columns.Add(new DataGridViewTextBoxColumn
@@ -164,7 +169,17 @@ namespace study_document_manager.Documents
 
             dgvFiles.Columns.Add(new DataGridViewTextBoxColumn
             {
-                Name = "FilePath", HeaderText = "Đường dẫn", Width = 350, ReadOnly = true
+                Name = "FilePath", HeaderText = "Đường dẫn", Width = 250, ReadOnly = true
+            });
+
+            dgvFiles.Columns.Add(new DataGridViewCheckBoxColumn
+            {
+                Name = "Important", HeaderText = "Quan trọng", Width = 80, ReadOnly = false
+            });
+
+            dgvFiles.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                Name = "Note", HeaderText = "Ghi chú (Note)", Width = 200, ReadOnly = false
             });
         }
 
@@ -175,17 +190,17 @@ namespace study_document_manager.Documents
             pnlActions.BackColor = AppTheme.BackgroundSoft;
             lblStatus.ForeColor = AppTheme.TextSecondary;
 
-            AppTheme.ApplyButtonPrimary(btnSelectFolder);
+            AppTheme.ApplyButtonPrimary(btnSelect);
             AppTheme.ApplyButtonSuccess(btnImport);
             AppTheme.ApplyButtonSecondary(btnSelectAll);
             AppTheme.ApplyButtonSecondary(btnDeselectAll);
             AppTheme.ApplyButtonDanger(btnClose);
             AppTheme.ApplyDataGridViewStyle(dgvFiles);
 
-            // Fix: allow checkbox clicks after theme sets ReadOnly=true
+            // Fix: allow interaction after theme sets ReadOnly=true
             dgvFiles.ReadOnly = false;
             foreach (DataGridViewColumn col in dgvFiles.Columns)
-                col.ReadOnly = col.Name != "Selected";
+                col.ReadOnly = (col.Name != "Selected" && col.Name != "Important" && col.Name != "Note");
         }
 
         private void LoadSubjects()
@@ -197,17 +212,23 @@ namespace study_document_manager.Documents
                 cboSubject.Items.Add("");
                 foreach (DataRow row in subjects.Rows)
                 {
-                    cboSubject.Items.Add(row["mon_hoc"].ToString());
+                    cboSubject.Items.Add(row["danh_muc"].ToString());
                 }
             }
             catch { }
         }
 
-        private void BtnSelectFolder_Click(object sender, EventArgs e)
+        private void BtnSelectClick(object sender, EventArgs e)
+        {
+            menuSelect.Show(btnSelect, new Point(0, btnSelect.Height));
+        }
+
+        private void BtnSelectFolderClick(object sender, EventArgs e)
         {
             using (var dialog = new FolderBrowserDialog())
             {
                 dialog.Description = "Chọn thư mục chứa tài liệu cần import";
+                dialog.ShowNewFolderButton = false;
                 if (dialog.ShowDialog() == DialogResult.OK)
                 {
                     ScanFolder(dialog.SelectedPath);
@@ -215,11 +236,59 @@ namespace study_document_manager.Documents
             }
         }
 
+        private void BtnSelectFilesClick(object sender, EventArgs e)
+        {
+            using (var dialog = new OpenFileDialog())
+            {
+                dialog.Multiselect = true;
+                dialog.Title = "Chọn các file cần import";
+                dialog.Filter = "Tất cả các file|*.*";
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    AddFilesToGrid(dialog.FileNames);
+                }
+            }
+        }
+
+        private void AddFilesToGrid(string[] filePaths)
+        {
+
+            foreach (var filePath in filePaths)
+            {
+                // Ngăn chặn thêm trùng lặp file đã có trong danh sách
+                if (fileEntries.Any(e => e.FilePath.Equals(filePath, StringComparison.OrdinalIgnoreCase)))
+                    continue;
+
+                var info = new FileInfo(filePath);
+                var entry = new FileEntry
+                {
+                    FileName = Path.GetFileNameWithoutExtension(filePath),
+                    FileType = DetectFileType(info.Extension),
+                    FileSize = info.Length,
+                    FilePath = filePath,
+                    Extension = info.Extension
+                };
+                fileEntries.Add(entry);
+
+                int rowIndex = dgvFiles.Rows.Add();
+                var row = dgvFiles.Rows[rowIndex];
+                row.Cells["Selected"].Value = true;
+                row.Cells["FileName"].Value = entry.FileName;
+                row.Cells["FileType"].Value = entry.FileType;
+                row.Cells["FileSize"].Value = FormatFileSize(entry.FileSize);
+                row.Cells["FilePath"].Value = entry.FilePath;
+                row.Cells["Important"].Value = false;
+                row.Cells["Note"].Value = "";
+            }
+
+            lblFolder.Text = $"Đang chờ import {fileEntries.Count} tài liệu";
+            lblStatus.Text = $"Đã chọn {fileEntries.Count} file";
+            btnImport.Enabled = fileEntries.Count > 0;
+        }
+
         private void ScanFolder(string folderPath)
         {
             lblFolder.Text = folderPath;
-            fileEntries.Clear();
-            dgvFiles.Rows.Clear();
 
             var searchOption = chkRecursive.Checked
                 ? SearchOption.AllDirectories
@@ -231,6 +300,10 @@ namespace study_document_manager.Documents
 
                 foreach (var filePath in files)
                 {
+                    // Ngăn chặn thêm trùng lặp file đã có trong danh sách
+                    if (fileEntries.Any(e => e.FilePath.Equals(filePath, StringComparison.OrdinalIgnoreCase)))
+                        continue;
+
                     var info = new FileInfo(filePath);
                     var entry = new FileEntry
                     {
@@ -249,9 +322,12 @@ namespace study_document_manager.Documents
                     row.Cells["FileType"].Value = entry.FileType;
                     row.Cells["FileSize"].Value = FormatFileSize(entry.FileSize);
                     row.Cells["FilePath"].Value = entry.FilePath;
+                    row.Cells["Important"].Value = false;
+                    row.Cells["Note"].Value = "";
                 }
 
-                lblStatus.Text = $"Tìm thấy {fileEntries.Count} file";
+                lblFolder.Text = $"Đang chờ import {fileEntries.Count} tài liệu";
+                lblStatus.Text = $"Đã có {fileEntries.Count} file trong danh sách";
                 btnImport.Enabled = fileEntries.Count > 0;
             }
             catch (Exception ex)
@@ -268,7 +344,7 @@ namespace study_document_manager.Documents
             }
         }
 
-        private void BtnImport_Click(object sender, EventArgs e)
+        private void BtnImportClick(object sender, EventArgs e)
         {
             var selectedIndices = new List<int>();
             for (int i = 0; i < dgvFiles.Rows.Count; i++)
@@ -291,7 +367,7 @@ namespace study_document_manager.Documents
             progressBar.Value = 0;
 
             btnImport.Enabled = false;
-            btnSelectFolder.Enabled = false;
+            btnSelect.Enabled = false;
 
             int success = 0;
             int failed = 0;
@@ -301,17 +377,17 @@ namespace study_document_manager.Documents
                 var entry = fileEntries[idx];
                 try
                 {
+                    string note = dgvFiles.Rows[idx].Cells["Note"].Value?.ToString() ?? "";
+                    bool isImportant = Convert.ToBoolean(dgvFiles.Rows[idx].Cells["Important"].Value ?? false);
                     bool result = DatabaseHelper.InsertDocument(
                         entry.FileName,
                         string.IsNullOrEmpty(subject) ? "" : subject,
                         entry.FileType,
                         entry.FilePath,
-                        "",
+                        note,
                         (double)entry.FileSize / (1024.0 * 1024.0),
-                        "",
-                        false,
-                        "",
-                        null
+                        isImportant,
+                        ""
                     );
 
                     if (result) success++;
@@ -328,7 +404,7 @@ namespace study_document_manager.Documents
 
             progressBar.Visible = false;
             btnImport.Enabled = true;
-            btnSelectFolder.Enabled = true;
+            btnSelect.Enabled = true;
 
             lblStatus.Text = $"Hoàn tất: {success}/{selectedIndices.Count} file đã import";
 

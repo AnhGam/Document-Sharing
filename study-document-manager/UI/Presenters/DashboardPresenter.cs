@@ -32,13 +32,13 @@ namespace study_document_manager.UI.Presenters
 
         private void LoadFilterOptions()
         {
-            var subjects = _repository.GetDistinctSubjects();
-            subjects.Insert(0, "Tất cả");
-            _view.SetSubjects(subjects);
+            var categories = _repository.GetDistinctCategories();
+            categories.Insert(0, "Tất cả");
+            _view.SetCategories(categories);
 
-            var types = _repository.GetDistinctTypes();
-            types.Insert(0, "Tất cả");
-            _view.SetTypes(types);
+            var formats = _repository.GetDistinctFormats();
+            formats.Insert(0, "Tất cả");
+            _view.SetFormats(formats);
         }
 
         private void LoadAllDocuments()
@@ -65,8 +65,8 @@ namespace study_document_manager.UI.Presenters
         {
             var docs = _repository.SearchAdvanced(
                 _view.SearchKeyword,
-                _view.SelectedSubject,
-                _view.SelectedType,
+                _view.SelectedCategory,
+                _view.SelectedFormat,
                 _view.FilterFromDate,
                 _view.FilterToDate,
                 _view.FilterMinSize,

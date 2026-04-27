@@ -1,4 +1,4 @@
-﻿namespace study_document_manager
+namespace study_document_manager
 {
     partial class Report
     {
@@ -132,7 +132,7 @@
             this.btnClose.TabIndex = 1;
             this.btnClose.Text = "Đóng";
             this.btnClose.UseVisualStyleBackColor = false;
-            this.btnClose.Click += new System.EventHandler(this.btnClose_Click);
+            this.btnClose.Click += new System.EventHandler(this.BtnCloseClick);
             // 
             // pnlStats
             // 
@@ -238,7 +238,7 @@
             this.lblStatLabel3.Name = "lblStatLabel3";
             this.lblStatLabel3.Size = new System.Drawing.Size(156, 20);
             this.lblStatLabel3.TabIndex = 1;
-            this.lblStatLabel3.Text = "Quá hạn";
+            this.lblStatLabel3.Text = "Đã xóa";
             // 
             // pnlStatCard4
             // 
@@ -268,7 +268,7 @@
             this.lblStatLabel4.Name = "lblStatLabel4";
             this.lblStatLabel4.Size = new System.Drawing.Size(156, 20);
             this.lblStatLabel4.TabIndex = 1;
-            this.lblStatLabel4.Text = "Gần deadline";
+            this.lblStatLabel4.Text = "Danh mục";
             // 
             // pnlStatCard5
             // 
@@ -367,7 +367,7 @@
             this.cboChartType.Name = "cboChartType";
             this.cboChartType.Size = new System.Drawing.Size(160, 28);
             this.cboChartType.TabIndex = 4;
-            this.cboChartType.SelectedIndexChanged += new System.EventHandler(this.cboChartType_SelectedIndexChanged);
+            this.cboChartType.SelectedIndexChanged += new System.EventHandler(this.CboChartTypeSelectedIndexChanged);
             // 
             // lblStatType
             // 
@@ -393,7 +393,7 @@
             this.btnBySubject.TabIndex = 0;
             this.btnBySubject.Text = "Danh mục";
             this.btnBySubject.UseVisualStyleBackColor = false;
-            this.btnBySubject.Click += new System.EventHandler(this.btnBySubject_Click);
+            this.btnBySubject.Click += new System.EventHandler(this.BtnBySubjectClick);
             // 
             // btnByType
             // 
@@ -406,9 +406,9 @@
             this.btnByType.Name = "btnByType";
             this.btnByType.Size = new System.Drawing.Size(100, 32);
             this.btnByType.TabIndex = 1;
-            this.btnByType.Text = "Loại";
+            this.btnByType.Text = "Định dạng";
             this.btnByType.UseVisualStyleBackColor = false;
-            this.btnByType.Click += new System.EventHandler(this.btnByType_Click);
+            this.btnByType.Click += new System.EventHandler(this.BtnByTypeClick);
             // 
             // btnByTimeline
             // 
@@ -423,7 +423,7 @@
             this.btnByTimeline.TabIndex = 6;
             this.btnByTimeline.Text = "7 ngày";
             this.btnByTimeline.UseVisualStyleBackColor = false;
-            this.btnByTimeline.Click += new System.EventHandler(this.btnByTimeline_Click);
+            this.btnByTimeline.Click += new System.EventHandler(this.BtnByTimelineClick);
             // 
             // btnByMonth
             // 
@@ -438,7 +438,7 @@
             this.btnByMonth.TabIndex = 7;
             this.btnByMonth.Text = "Theo tháng";
             this.btnByMonth.UseVisualStyleBackColor = false;
-            this.btnByMonth.Click += new System.EventHandler(this.btnByMonth_Click);
+            this.btnByMonth.Click += new System.EventHandler(this.BtnByMonthClick);
             // 
             // lblTotal
             // 

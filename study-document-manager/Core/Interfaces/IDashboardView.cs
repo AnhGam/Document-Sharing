@@ -8,8 +8,8 @@ namespace study_document_manager.Core.Interfaces
     {
         // Properties
         string SearchKeyword { get; }
-        string SelectedSubject { get; }
-        string SelectedType { get; }
+        string SelectedCategory { get; }
+        string SelectedFormat { get; }
         DateTime? FilterFromDate { get; }
         DateTime? FilterToDate { get; }
         double? FilterMinSize { get; }
@@ -18,8 +18,8 @@ namespace study_document_manager.Core.Interfaces
 
         // Data Sources
         void SetDocumentList(List<StudyDocument> documents);
-        void SetSubjects(List<string> subjects);
-        void SetTypes(List<string> types);
+        void SetCategories(List<string> categories);
+        void SetFormats(List<string> formats);
         void UpdateStatusCount(int count);
 
         // Events
@@ -27,10 +27,11 @@ namespace study_document_manager.Core.Interfaces
         event EventHandler FilterApplied;
         event EventHandler RefreshRequested;
         event EventHandler<int> DeleteRequested;
-        event EventHandler<int> EditRequested;
-        event EventHandler AddRequested;
+
+
         event EventHandler<string> OpenFileRequested;
         event EventHandler ExportRequested;
+        event EventHandler StatisticsRequested;
 
         // UI Feedback
         void ShowMessage(string message);

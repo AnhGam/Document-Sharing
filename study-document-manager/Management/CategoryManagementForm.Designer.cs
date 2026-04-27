@@ -66,7 +66,7 @@ namespace study_document_manager
             this.btnClose.TabIndex = 1;
             this.btnClose.Text = "Đóng";
             this.btnClose.UseVisualStyleBackColor = false;
-            this.btnClose.Click += new System.EventHandler(this.btnClose_Click);
+            this.btnClose.Click += new System.EventHandler(this.BtnCloseClick);
             //
             // lblTitle
             //
@@ -77,7 +77,7 @@ namespace study_document_manager
             this.lblTitle.Name = "lblTitle";
             this.lblTitle.Size = new System.Drawing.Size(280, 25);
             this.lblTitle.TabIndex = 0;
-            this.lblTitle.Text = "Quản lý Danh mục và Loại";
+            this.lblTitle.Text = "Quản lý Danh mục và Định dạng";
             //
             // pnlTabs
             //
@@ -104,7 +104,7 @@ namespace study_document_manager
             this.btnSubjects.TabIndex = 0;
             this.btnSubjects.Text = "Danh mục";
             this.btnSubjects.UseVisualStyleBackColor = false;
-            this.btnSubjects.Click += new System.EventHandler(this.btnSubjects_Click);
+            this.btnSubjects.Click += new System.EventHandler(this.BtnSubjectsClick);
             //
             // btnTypes
             //
@@ -117,9 +117,9 @@ namespace study_document_manager
             this.btnTypes.Name = "btnTypes";
             this.btnTypes.Size = new System.Drawing.Size(130, 32);
             this.btnTypes.TabIndex = 1;
-            this.btnTypes.Text = "Loại tài liệu";
+            this.btnTypes.Text = "Định dạng";
             this.btnTypes.UseVisualStyleBackColor = false;
-            this.btnTypes.Click += new System.EventHandler(this.btnTypes_Click);
+            this.btnTypes.Click += new System.EventHandler(this.BtnTypesClick);
             //
             // pnlButtons
             //
@@ -148,7 +148,7 @@ namespace study_document_manager
             this.btnAdd.TabIndex = 0;
             this.btnAdd.Text = "Thêm";
             this.btnAdd.UseVisualStyleBackColor = false;
-            this.btnAdd.Click += new System.EventHandler(this.btnAdd_Click);
+            this.btnAdd.Click += new System.EventHandler(this.BtnAddClick);
             //
             // btnEdit
             //
@@ -163,7 +163,7 @@ namespace study_document_manager
             this.btnEdit.TabIndex = 1;
             this.btnEdit.Text = "Sửa";
             this.btnEdit.UseVisualStyleBackColor = false;
-            this.btnEdit.Click += new System.EventHandler(this.btnEdit_Click);
+            this.btnEdit.Click += new System.EventHandler(this.BtnEditClick);
             //
             // btnDelete
             //
@@ -178,7 +178,7 @@ namespace study_document_manager
             this.btnDelete.TabIndex = 2;
             this.btnDelete.Text = "Xóa";
             this.btnDelete.UseVisualStyleBackColor = false;
-            this.btnDelete.Click += new System.EventHandler(this.btnDelete_Click);
+            this.btnDelete.Click += new System.EventHandler(this.BtnDeleteClick);
             //
             // lblCount
             //
@@ -248,8 +248,8 @@ namespace study_document_manager
             this.MinimumSize = new System.Drawing.Size(600, 450);
             this.Name = "CategoryManagementForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "Quản lý Danh mục và Loại tài liệu";
-            this.Load += new System.EventHandler(this.CategoryManagementForm_Load);
+            this.Text = "Quản lý Danh mục và Định dạng";
+            this.Load += new System.EventHandler(this.CategoryManagementFormLoad);
             this.headerPanel.ResumeLayout(false);
             this.headerPanel.PerformLayout();
             this.pnlTabs.ResumeLayout(false);

@@ -22,16 +22,14 @@ namespace study_document_manager.Infrastructure.Repositories
             {
                 Id = Convert.ToInt32(row["id"]),
                 Ten = row["ten"].ToString(),
-                MonHoc = row["mon_hoc"].ToString(),
-                Loai = row["loai"].ToString(),
+                DanhMuc = row["danh_muc"]?.ToString() ?? "",
+                DinhDang = row["dinh_dang"]?.ToString() ?? "",
                 DuongDan = row["duong_dan"].ToString(),
                 GhiChu = row["ghi_chu"].ToString(),
                 NgayThem = Convert.ToDateTime(row["ngay_them"]),
                 KichThuoc = row["kich_thuoc"] != DBNull.Value ? Convert.ToDouble(row["kich_thuoc"]) : (double?)null,
-                TacGia = row["tac_gia"].ToString(),
                 QuanTrong = Convert.ToInt32(row["quan_trong"]) == 1,
-                Tags = row["tags"].ToString(),
-                Deadline = row["deadline"] != DBNull.Value ? Convert.ToDateTime(row["deadline"]) : (DateTime?)null
+                Tags = row["tags"].ToString()
             };
         }
 
@@ -64,7 +62,7 @@ namespace study_document_manager.Infrastructure.Repositories
              string query = @"SELECT * FROM tai_lieu
                            WHERE (is_deleted IS NULL OR is_deleted = 0)
                            AND (ten LIKE @keyword
-                           OR mon_hoc LIKE @keyword
+                           OR danh_muc LIKE @keyword
                            OR ghi_chu LIKE @keyword)
                            ORDER BY ngay_them DESC";
 
@@ -72,54 +70,48 @@ namespace study_document_manager.Infrastructure.Repositories
              return ExecuteAndMap(query, parameters);
         }
 
-        public List<StudyDocument> Filter(string subject, string type)
+        public List<StudyDocument> Filter(string category, string format)
         {
             string query = "SELECT * FROM tai_lieu WHERE (is_deleted IS NULL OR is_deleted = 0)";
             var parameters = new List<SQLiteParameter>();
 
-            if (!string.IsNullOrEmpty(subject) && subject != "Tất cả")
+            if (!string.IsNullOrEmpty(category) && category != "Tất cả")
             {
-                query += " AND mon_hoc = @mon_hoc";
-                parameters.Add(new SQLiteParameter("@mon_hoc", subject));
+                query += " AND danh_muc = @danh_muc";
+                parameters.Add(new SQLiteParameter("@danh_muc", category));
             }
 
-            if (!string.IsNullOrEmpty(type) && type != "Tất cả")
+            if (!string.IsNullOrEmpty(format) && format != "Tất cả")
             {
-                query += " AND loai = @loai";
-                parameters.Add(new SQLiteParameter("@loai", type));
+                query += " AND dinh_dang = @dinh_dang";
+                parameters.Add(new SQLiteParameter("@dinh_dang", format));
             }
 
             query += " ORDER BY ngay_them DESC";
             return ExecuteAndMap(query, parameters.ToArray());
         }
 
-        public List<StudyDocument> SearchAdvanced(string keyword, string subject, string type, DateTime? fromDate, DateTime? toDate, double? minSize, double? maxSize, bool? isImportant)
+        public List<StudyDocument> SearchAdvanced(string keyword, string category, string format, DateTime? fromDate, DateTime? toDate, double? minSize, double? maxSize, bool? isImportant)
         {
-             // Reusing logic from DatabaseHelper but returning Entities
-             // For simplicity, we can call DatabaseHelper.SearchDocumentsAdvanced if we modified it to return List,
-             // but here we duplicate query logic to keep layers clean (or ideally refactor DatabaseHelper to be a pure DB facade).
-             // Given the timeline, I will map the result of DatabaseHelper if possible, OR rewrite query here.
-             // I will rewrite query here to be independent.
-
             string baseQuery = @"SELECT * FROM tai_lieu WHERE (is_deleted IS NULL OR is_deleted = 0)";
             List<SQLiteParameter> parameterList = new List<SQLiteParameter>();
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {
-                baseQuery += " AND (ten LIKE @keyword OR mon_hoc LIKE @keyword OR ghi_chu LIKE @keyword OR tags LIKE @keyword)";
+                baseQuery += " AND (ten LIKE @keyword OR danh_muc LIKE @keyword OR ghi_chu LIKE @keyword OR tags LIKE @keyword)";
                 parameterList.Add(new SQLiteParameter("@keyword", "%" + keyword + "%"));
             }
 
-            if (!string.IsNullOrEmpty(subject) && subject != "Tất cả")
+            if (!string.IsNullOrEmpty(category) && category != "Tất cả")
             {
-                baseQuery += " AND mon_hoc = @mon_hoc";
-                parameterList.Add(new SQLiteParameter("@mon_hoc", subject));
+                baseQuery += " AND danh_muc = @danh_muc";
+                parameterList.Add(new SQLiteParameter("@danh_muc", category));
             }
 
-            if (!string.IsNullOrEmpty(type) && type != "Tất cả")
+            if (!string.IsNullOrEmpty(format) && format != "Tất cả")
             {
-                baseQuery += " AND loai = @loai";
-                parameterList.Add(new SQLiteParameter("@loai", type));
+                baseQuery += " AND dinh_dang = @dinh_dang";
+                parameterList.Add(new SQLiteParameter("@dinh_dang", format));
             }
 
             if (fromDate.HasValue)
@@ -158,12 +150,12 @@ namespace study_document_manager.Infrastructure.Repositories
 
         public bool Add(StudyDocument doc)
         {
-            return DatabaseHelper.InsertDocument(doc.Ten, doc.MonHoc, doc.Loai, doc.DuongDan, doc.GhiChu, doc.KichThuoc, doc.TacGia, doc.QuanTrong, doc.Tags, doc.Deadline);
+            return DatabaseHelper.InsertDocument(doc.Ten, doc.DanhMuc, doc.DinhDang, doc.DuongDan, doc.GhiChu, doc.KichThuoc, doc.QuanTrong, doc.Tags);
         }
 
         public bool Update(StudyDocument doc)
         {
-             return DatabaseHelper.UpdateDocument(doc.Id, doc.Ten, doc.MonHoc, doc.Loai, doc.DuongDan, doc.GhiChu, doc.KichThuoc, doc.TacGia, doc.QuanTrong, doc.Tags, doc.Deadline);
+             return DatabaseHelper.UpdateDocument(doc.Id, doc.Ten, doc.DanhMuc, doc.DinhDang, doc.DuongDan, doc.GhiChu, doc.KichThuoc, doc.QuanTrong, doc.Tags);
         }
 
         public bool Delete(int id)
@@ -171,19 +163,21 @@ namespace study_document_manager.Infrastructure.Repositories
             return DatabaseHelper.DeleteDocument(id);
         }
 
-        public List<string> GetDistinctSubjects()
+        public List<string> GetDistinctCategories()
         {
             var dt = DatabaseHelper.GetDistinctSubjects();
             var list = new List<string>();
-            foreach(DataRow row in dt.Rows) list.Add(row["mon_hoc"].ToString());
+            foreach(DataRow row in dt.Rows) 
+                list.Add(row["danh_muc"]?.ToString() ?? "");
             return list;
         }
 
-        public List<string> GetDistinctTypes()
+        public List<string> GetDistinctFormats()
         {
             var dt = DatabaseHelper.GetDistinctTypes();
              var list = new List<string>();
-            foreach(DataRow row in dt.Rows) list.Add(row["loai"].ToString());
+            foreach(DataRow row in dt.Rows) 
+                list.Add(row["dinh_dang"]?.ToString() ?? "");
             return list;
         }
 
@@ -192,24 +186,5 @@ namespace study_document_manager.Infrastructure.Repositories
             return DatabaseHelper.GetDistinctTags();
         }
 
-        public List<StudyDocument> GetUpcomingDeadlines(int days)
-        {
-            string query = @"SELECT * FROM tai_lieu
-                            WHERE deadline IS NOT NULL
-                            AND date(deadline) >= date('now', 'localtime')
-                            AND date(deadline) <= date('now', 'localtime', '+' || @days || ' days')
-                            ORDER BY deadline ASC";
-             var parameters = new SQLiteParameter[] { new SQLiteParameter("@days", days) };
-             return ExecuteAndMap(query, parameters);
-        }
-
-        public List<StudyDocument> GetOverdueDocuments()
-        {
-             string query = @"SELECT * FROM tai_lieu
-                            WHERE deadline IS NOT NULL
-                            AND date(deadline) < date('now', 'localtime')
-                            ORDER BY deadline ASC";
-            return ExecuteAndMap(query);
-        }
     }
 }

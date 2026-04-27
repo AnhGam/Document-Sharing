@@ -86,7 +86,7 @@ namespace study_document_manager.Documents
             });
             dgvDuplicates.Columns.Add(new DataGridViewTextBoxColumn
             {
-                Name = "FileType", HeaderText = "Loại", Width = 60, ReadOnly = true
+                Name = "FileType", HeaderText = "Định dạng", Width = 60, ReadOnly = true
             });
             dgvDuplicates.Columns.Add(new DataGridViewTextBoxColumn
             {
@@ -192,7 +192,7 @@ namespace study_document_manager.Documents
                             false,
                             $"#{groupNum}",
                             row["ten"]?.ToString(),
-                            row["loai"]?.ToString(),
+                            row["dinh_dang"]?.ToString(),
                             FormatSize(sizeKb),
                             row["duong_dan"]?.ToString(),
                             row["id"]?.ToString()

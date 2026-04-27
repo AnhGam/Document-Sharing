@@ -120,14 +120,14 @@ namespace study_document_manager.Management
 
             dgvDeleted.Columns.Add(new DataGridViewTextBoxColumn
             {
-                Name = "mon_hoc", DataPropertyName = "mon_hoc",
-                HeaderText = "Môn học", Width = 130
+                Name = "danh_muc", DataPropertyName = "danh_muc",
+                HeaderText = "Danh mục", Width = 130
             });
 
             dgvDeleted.Columns.Add(new DataGridViewTextBoxColumn
             {
-                Name = "loai", DataPropertyName = "loai",
-                HeaderText = "Loại", Width = 90
+                Name = "dinh_dang", DataPropertyName = "dinh_dang",
+                HeaderText = "Định dạng", Width = 90
             });
 
             dgvDeleted.Columns.Add(new DataGridViewTextBoxColumn

@@ -93,7 +93,7 @@ namespace study_document_manager.Documents
 
             var lblType = new Label
             {
-                Text = "Loại:",
+                Text = "Định dạng:",
                 AutoSize = true,
                 Location = new Point(520, 15),
                 ForeColor = AppTheme.TextSecondary,
@@ -148,9 +148,9 @@ namespace study_document_manager.Documents
 
             var colSubject = new DataGridViewTextBoxColumn
             {
-                Name = "MonHoc",
+                Name = "DanhMuc",
                 HeaderText = "Danh mục",
-                DataPropertyName = "MonHoc",
+                DataPropertyName = "DanhMuc",
                 AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill,
                 FillWeight = 20,
                 ReadOnly = true
@@ -158,9 +158,9 @@ namespace study_document_manager.Documents
 
             var colType = new DataGridViewTextBoxColumn
             {
-                Name = "Loai",
-                HeaderText = "Loại",
-                DataPropertyName = "Loai",
+                Name = "DinhDang",
+                HeaderText = "Định dạng",
+                DataPropertyName = "DinhDang",
                 Width = 80,
                 AutoSizeMode = DataGridViewAutoSizeColumnMode.None,
                 ReadOnly = true
@@ -343,7 +343,7 @@ namespace study_document_manager.Documents
             {
                 var subjects = DatabaseHelper.GetDistinctSubjects();
                 foreach (System.Data.DataRow row in subjects.Rows)
-                    cboSubject.Items.Add(row["mon_hoc"].ToString());
+                    cboSubject.Items.Add(row["danh_muc"].ToString());
             }
             catch { }
             cboSubject.SelectedIndex = 0;
@@ -355,7 +355,7 @@ namespace study_document_manager.Documents
             {
                 var types = DatabaseHelper.GetDistinctTypes();
                 foreach (System.Data.DataRow row in types.Rows)
-                    cboType.Items.Add(row["loai"].ToString());
+                    cboType.Items.Add(row["dinh_dang"].ToString());
             }
             catch { }
             cboType.SelectedIndex = 0;
@@ -373,9 +373,9 @@ namespace study_document_manager.Documents
             {
                 if (!string.IsNullOrEmpty(keyword) && !d.Ten.ToLower().Contains(keyword))
                     return false;
-                if (subject != null && !string.Equals(d.MonHoc, subject, StringComparison.OrdinalIgnoreCase))
+                if (subject != null && !string.Equals(d.DanhMuc, subject, StringComparison.OrdinalIgnoreCase))
                     return false;
-                if (type != null && !string.Equals(d.Loai, type, StringComparison.OrdinalIgnoreCase))
+                if (type != null && !string.Equals(d.DinhDang, type, StringComparison.OrdinalIgnoreCase))
                     return false;
                 return true;
             }).ToList();
@@ -482,7 +482,7 @@ namespace study_document_manager.Documents
                 {
                     var subjects = DatabaseHelper.GetDistinctSubjects();
                     foreach (System.Data.DataRow row in subjects.Rows)
-                        cbo.Items.Add(row["mon_hoc"].ToString());
+                        cbo.Items.Add(row["danh_muc"].ToString());
                 }
                 catch { }
 
@@ -532,8 +532,8 @@ namespace study_document_manager.Documents
 
             public int Id => _doc.Id;
             public string Ten => _doc.Ten ?? "";
-            public string MonHoc => _doc.MonHoc ?? "";
-            public string Loai => _doc.Loai ?? "";
+            public string DanhMuc => _doc.DanhMuc ?? "";
+            public string DinhDang => _doc.DinhDang ?? "";
             public string NgayThemFormatted => _doc.NgayThem.ToString("dd/MM/yyyy");
             public string QuanTrongDisplay => _doc.QuanTrong ? "★" : "";
 
