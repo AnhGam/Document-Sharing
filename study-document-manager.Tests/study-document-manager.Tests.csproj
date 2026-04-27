@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
+    <PlatformTarget>x86</PlatformTarget>
     <IsPackable>false</IsPackable>
     <RootNamespace>study_document_manager.Tests</RootNamespace>
   </PropertyGroup>

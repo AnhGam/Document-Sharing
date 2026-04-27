@@ -14,6 +14,8 @@ namespace study_document_manager
     {
         private static string _databasePath;
         private static string _connectionString;
+        public static bool SuppressPopups { get; set; } = false;
+
 
         /// <summary>
         /// Đường dẫn đến file database SQLite
@@ -71,8 +73,11 @@ namespace study_document_manager
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Lỗi khởi tạo database: " + ex.Message,
-                    "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                if (!SuppressPopups)
+                {
+                    MessageBox.Show("Lỗi khởi tạo database: " + ex.Message,
+                        "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
         }
 
@@ -228,8 +233,11 @@ namespace study_document_manager
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Lỗi kết nối database: " + ex.Message,
-                    "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                if (!SuppressPopups)
+                {
+                    MessageBox.Show("Lỗi kết nối database: " + ex.Message,
+                        "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
                 return false;
             }
         }
@@ -259,8 +267,11 @@ namespace study_document_manager
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Lỗi truy vấn: " + ex.Message,
-                    "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                if (!SuppressPopups)
+                {
+                    MessageBox.Show("Lỗi truy vấn: " + ex.Message,
+                        "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
             return dt;
         }
@@ -288,8 +299,11 @@ namespace study_document_manager
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Lỗi thực thi: " + ex.Message,
-                    "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                if (!SuppressPopups)
+                {
+                    MessageBox.Show("Lỗi thực thi: " + ex.Message,
+                        "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
             return affectedRows;
         }
@@ -317,8 +331,11 @@ namespace study_document_manager
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Lỗi thực thi: " + ex.Message,
-                    "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                if (!SuppressPopups)
+                {
+                    MessageBox.Show("Lỗi thực thi: " + ex.Message,
+                        "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
             return result;
         }
