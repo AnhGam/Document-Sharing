@@ -362,6 +362,3 @@ FodyWeavers.xsd
 
 # Redistributable installers (binary, do not commit)
 redist/
-
-# AI Documents
-.ai_docs/
