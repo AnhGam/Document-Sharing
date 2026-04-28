@@ -3,7 +3,7 @@
 
 Write-Host "--- Checking Asset Optimization ---"
 
-$assetPath = "study-document-manager/assets"
+$assetPath = "document-sharing-manager/assets"
 $maxSizeKB = 500
 
 $largeFiles = Get-ChildItem -Path $assetPath -Recurse -Include *.png, *.jpg, *.ico | Where-Object { $_.Length / 1KB -gt $maxSizeKB }

@@ -37,7 +37,8 @@ $migratorCode = @"
 using System;
 using System.IO;
 using System.Reflection;
-using study_document_manager;
+using document_sharing_manager;
+using document_sharing_manager.Core.Data;
 
 class Program {
     static void Main(string[] args) {
@@ -55,8 +56,8 @@ class Program {
 $migratorCode | Out-File "DbMigrator.cs"
 
 # Compile and run (assuming solution was built earlier)
-$binPath = "study-document-manager/bin/Release"
-Copy-Item "$binPath/study-document-manager.exe" "study-document-manager.dll" -ErrorAction SilentlyContinue
+$binPath = "document-sharing-manager/bin/Release"
+Copy-Item "$binPath/document-sharing-manager.exe" "document-sharing-manager.dll" -ErrorAction SilentlyContinue
 Copy-Item "$binPath/System.Data.SQLite.dll" "." -ErrorAction SilentlyContinue
 
 # Verify migration via SQL

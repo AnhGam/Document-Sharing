@@ -1,5 +1,5 @@
 # Tài Liệu Thiết Kế Kiến Trúc Hệ Thống (Architecture Design Document)
-**Dự án:** Cloud-Based Study Document Manager
+**Dự án:** Document Sharing Manager
 **Mô hình:** Client - Server (Self-Hosted / Cloud Ready)
 
 ---

@@ -1,12 +1,15 @@
 # APP_CONTEXT: BỘ NHỚ ĐỊNH HƯỚNG DỰ ÁN & QUY TẮC CỐT LÕI (STRICT MODE)
 
 ## 1. BỐI CẢNH DỰ ÁN
-- **Tên dự án:** Cloud-Based Document Manager.
-- **Mục tiêu:** Hệ thống quản lý thư mục, file và chia sẻ dữ liệu đa dụng. Chuyển đổi từ mô hình Desktop Offline sang Client-Server (Hybrid Cloud).
+- **Tên dự án:** Document Sharing Manager
+- **Mô hình:** Client - Server (Self-Hosted / Cloud Ready)
 - **Tính năng đặc thù:** Hỗ trợ Sync ngầm, Files On-Demand (Virtual Drive), quản lý xung đột dữ liệu (Conflict Resolution).
 
 ## 2. QUY TẮC MÃ HÓA CHO AI (VIBE CODE BEST PRACTICES)
 Khi AI đọc file này và tiến hành sinh code, BẮT BUỘC phải tuân thủ các chuẩn mực sau:
+
+### 2.0. Quy tắc triển khai (Integration Rules)
+- **Immediate Integration:** Code phải được tích hợp (viết/sửa) trực tiếp vào codebase hiện tại ngay sau khi hoàn thành mỗi bước logic. Tuyệt đối không để code ở dạng "lý thuyết" hoặc chỉ nằm trong artifact mà không cập nhật vào file nguồn.
 
 ### 2.1. C# & .NET 8 Best Practices
 - **Async/Await All The Way:** Tuyệt đối không dùng `.Result` hay `.Wait()`. Mọi I/O bound operations phải là `Async`.
@@ -19,9 +22,10 @@ Khi AI đọc file này và tiến hành sinh code, BẮT BUỘC phải tuân th
 - **Single Responsibility (SRP):** Controller chỉ nhận request và trả response. Logic nghiệp vụ phải nằm ở Application Service. Truy xuất dữ liệu phải nằm ở Repository.
 - **Tách biệt Entity & DTO:** Tuyệt đối không trả `Entity` (Domain) trực tiếp ra ngoài Controller API. Bắt buộc map qua `DTO` (Data Transfer Object).
 
-### 2.3. WinForms Client Best Practices
-- **Không Block UI Thread:** Mọi tác vụ mạng, đọc/ghi file phải dùng `Task.Run` hoặc `async/await`. Cập nhật giao diện từ luồng nền phải bọc trong `Control.Invoke()` hoặc `Control.BeginInvoke()`.
-- **MVP Pattern (Model-View-Presenter):** Khuyến khích tách logic ra khỏi code-behind của Form (`.Designer.cs`) bằng Presenter.
+### 2.4. Backend-Frontend Decoupling (Server Readiness)
+- **Zero UI Dependency in Core/Infrastructure:** Tuyệt đối không được để các project Core, Infrastructure hoặc API tham chiếu đến bất kỳ thư viện WinForms hoặc UI nào (`System.Windows.Forms`, `System.Drawing`).
+- **Independent Backend:** Code Backend phải được thiết kế sao cho có thể tách ra thành project riêng và chạy trên Linux/Docker (Server) mà không cần phần Client. Các logic liên quan đến File System trên server phải trừu tượng hóa qua Interface.
+- **Pushable Backend:** Khi push lên server, chỉ cần project Server API và các project phụ thuộc (Core, Infrastructure) là đủ hoạt động.
 
 ## 3. LỘ TRÌNH THỰC THI (DO NOT SKIP)
 AI không được nhảy cóc. Phải code theo trình tự:
