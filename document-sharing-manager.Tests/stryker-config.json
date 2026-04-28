@@ -1,7 +1,7 @@
 {
   "stryker-config": {
-    "solution": "../study-document-manager.sln",
-    "project": "study-document-manager.csproj",
+    "solution": "../document-sharing-manager.sln",
+    "project": "document-sharing-manager.csproj",
     "reporters": [
       "html",
       "progress"

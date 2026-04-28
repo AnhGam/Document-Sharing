@@ -169,7 +169,7 @@ study-document-manager/
 ├── README.md                           # Giới thiệu & hướng dẫn
 ├── DATABASE.md                         # Database schema documentation
 ├── PROJECT_STRUCTURE.md                # (file hiện tại)
-└── study-document-manager.sln          # Solution file
+└── document-sharing-manager.sln          # Solution file
 ```
 
 ### 2.2. Database Schema (SQLite)

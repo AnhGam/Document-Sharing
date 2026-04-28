@@ -1,4 +1,3 @@
-name: Super CI/CD Pipeline
 
 on:
   push:
@@ -48,14 +47,14 @@ jobs:
       - name: Restore and Optimize Assets
         run: |
           nuget restore ${{ env.SOLUTION_FILE }}
-          dotnet restore study-document-manager.Tests/study-document-manager.Tests.csproj
+          dotnet restore document-sharing-manager.Tests/document-sharing-manager.Tests.csproj
           powershell ./scripts/optimize-assets.ps1
 
       - name: Dependency Audit and Groq AI
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
-          dotnet list study-document-manager.Tests/study-document-manager.Tests.csproj package --vulnerable > audit_log.txt || true
+          dotnet list document-sharing-manager.Tests/document-sharing-manager.Tests.csproj package --vulnerable > audit_log.txt || true
           powershell ./scripts/security-auditor-groq.ps1 -AuditLog audit_log.txt -ApiKey "${{ env.GROQ_API_KEY }}"
 
       - name: Build Solution (Zero Warning Policy)
@@ -63,13 +62,13 @@ jobs:
 
       - name: Run Advanced Tests (NUnit)
         run: |
-          dotnet test study-document-manager.Tests/study-document-manager.Tests.csproj --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --logger "trx;LogFileName=test_results.trx"
+          dotnet test document-sharing-manager.Tests/document-sharing-manager.Tests.csproj --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --logger "trx;LogFileName=test_results.trx"
         continue-on-error: true
 
       - name: Mutation Testing (Stryker)
         run: |
           dotnet tool install -g dotnet-stryker
-          cd study-document-manager.Tests
+          cd document-sharing-manager.Tests
           dotnet stryker --solution ../${{ env.SOLUTION_FILE }}
         continue-on-error: true
 
@@ -99,7 +98,7 @@ jobs:
           name: document-sharing-manager-v${{ github.run_number }}
           path: |
             installer/*.exe
-            study-document-manager.Tests/StrykerOutput/
+            document-sharing-manager.Tests/StrykerOutput/
             *.md
           retention-days: 7
 
@@ -140,6 +139,6 @@ jobs:
             if [ "$STATUS" != "success" ]; then COLOR=15158332; fi
             
             curl -H "Content-Type: application/json" \
-              -d "{\"embeds\": [{\"title\": \"Build Status: $STATUS\", \"description\": \"**Project:** Study Document Manager\n**Version:** Automated by MinVer\n**Author:** ${{ github.actor }}\n**Commit:** ${{ github.sha }}\n\n[Download Artifacts](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\", \"color\": $COLOR}]}" \
+              -d "{\"embeds\": [{\"title\": \"Build Status: $STATUS\", \"description\": \"**Project:** Document Sharing Manager\n**Version:** Automated by MinVer\n**Author:** ${{ github.actor }}\n**Commit:** ${{ github.sha }}\n\n[Download Artifacts](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\", \"color\": $COLOR}]}" \
               $DISCORD_WEBHOOK
           fi

@@ -969,13 +969,13 @@ namespace document_sharing_manager.Documents
 
                 var lnkGitHub = new LinkLabel
                 {
-                    Text = "GitHub: hayato-shino05/study-document-manager",
+                    Text = "GitHub: hayato-shino05/Document-Sharing",
                     Font = AppTheme.FontSmall,
                     Location = new Point(32, 240),
                     AutoSize = true
                 };
                 lnkGitHub.LinkClicked += (s, ev) =>
-                    System.Diagnostics.Process.Start("https://github.com/hayato-shino05/study-document-manager");
+                    System.Diagnostics.Process.Start("https://github.com/hayato-shino05/Document-Sharing");
 
                 var btnClose = new Button
                 {

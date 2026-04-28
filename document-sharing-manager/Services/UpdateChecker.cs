@@ -24,7 +24,7 @@ namespace document_sharing_manager.Services
     public static class UpdateChecker
     {
         private const string RepoOwner = "hayato-shino05";
-        private const string RepoName = "study-document-manager";
+        private const string RepoName = "Document-Sharing";
         private static readonly string ApiUrl =
             $"https://api.github.com/repos/{RepoOwner}/{RepoName}/releases/latest";
 

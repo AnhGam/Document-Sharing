@@ -1,10 +1,10 @@
-; Inno Setup Script for Study Document Manager v3.1.2
+; Inno Setup Script for Document Sharing Manager v3.1.2
 
-#define MyAppName "Study Document Manager"
+#define MyAppName "Document Sharing Manager"
 #define MyAppVersion "3.1.2"
 #define MyAppPublisher "hayato-shino05"
-#define MyAppURL "https://github.com/hayato-shino05/study-document-manager"
-#define MyAppExeName "study-document-manager.exe"
+#define MyAppURL "https://github.com/hayato-shino05/Document-Sharing"
+#define MyAppExeName "document-sharing-manager.exe"
 
 [Setup]
 AppId={{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}
@@ -20,8 +20,8 @@ DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
 LicenseFile=LICENSE
 OutputDir=installer
-OutputBaseFilename=StudyDocumentManager_v{#MyAppVersion}_Setup
-SetupIconFile=study-document-manager\assets\logo\logo.ico
+OutputBaseFilename=DocumentSharingManager_v{#MyAppVersion}_Setup
+SetupIconFile=document-sharing-manager\assets\logo\logo.ico
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
@@ -41,12 +41,12 @@ Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescrip
 ; .NET Framework 4.8 Web Installer (~1.5 MB) - đặt file ndp48-web.exe vào thư mục redist/
 Source: "redist\ndp48-web.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall; Tasks: installnet48; Check: not IsNet48Installed
 ; Application files
-Source: "study-document-manager\bin\Release\study-document-manager.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "study-document-manager\bin\Release\study-document-manager.exe.config"; DestDir: "{app}"; Flags: ignoreversion
-Source: "study-document-manager\bin\Release\*.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "study-document-manager\bin\Release\x64\*"; DestDir: "{app}\x64"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "study-document-manager\bin\Release\x86\*"; DestDir: "{app}\x86"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "study-document-manager\bin\Release\assets\*"; DestDir: "{app}\assets"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "document-sharing-manager\bin\Release\document-sharing-manager.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "document-sharing-manager\bin\Release\document-sharing-manager.exe.config"; DestDir: "{app}"; Flags: ignoreversion
+Source: "document-sharing-manager\bin\Release\*.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "document-sharing-manager\bin\Release\x64\*"; DestDir: "{app}\x64"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "document-sharing-manager\bin\Release\x86\*"; DestDir: "{app}\x86"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "document-sharing-manager\bin\Release\assets\*"; DestDir: "{app}\assets"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
