@@ -15,5 +15,9 @@
   3. Nếu chưa có -> KHÓA THREAD (Block) hàm `CreateFile`, gọi Sync Engine ưu tiên tải file đó về bằng `HttpClient`.
   4. Tải xong -> Trỏ file handle của hệ thống vào file cache vừa tải. Hệ điều hành tiếp tục mở file bình thường.
 
-## 3. Chỉ thị cho AI
-- Bắt buộc phải viết code phân rã cẩn thận, tạo một lớp Interface `IVirtualFileSystem` riêng biệt để tách logic Dokan ra khỏi Logic Sync, giúp cho quá trình Mock và Unit Testing trở nên khả thi. Phải có Ghost Code để user chạy app mà không cần cài Dokan Driver vào máy nếu chưa test xong.
+## 4. Managed Storage Implementation (Current Version)
+Currently, the system implements a simplified version of the Virtual Drive concept via `StorageService.cs`:
+- **Managed Folder:** A `storage/` directory is created in the app base path.
+- **Relocation:** Files imported via `BatchImportForm` are copied into this folder.
+- **Path Resolution:** The database stores relative paths (e.g., `storage/file_timestamp.pdf`), which are resolved at runtime using `StorageService.ResolvePath()`. This ensures that even if source files are deleted or the app is moved, links remain intact as long as the `storage/` folder is preserved.
+- **Legacy Fallback:** If a stored path is absolute and exists, the system still supports direct opening.

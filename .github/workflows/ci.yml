@@ -7,7 +7,7 @@ on:
     branches: [main, master, development]
 
 env:
-  SOLUTION_FILE: study-document-manager.sln
+  SOLUTION_FILE: document-sharing-manager.sln
   BUILD_CONFIGURATION: Release
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -96,12 +96,33 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: study-document-manager-v${{ github.run_number }}
+          name: document-sharing-manager-v${{ github.run_number }}
           path: |
             installer/*.exe
             study-document-manager.Tests/StrykerOutput/
             *.md
           retention-days: 7
+
+  capacity-and-governance:
+    name: Capacity & FinOps Governance
+    needs: build-and-test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: document-sharing-manager-v${{ github.run_number }}
+          path: .
+
+      - name: Run Capacity Check
+        run: powershell ./scripts/capacity-governance.ps1 -MaxInstallerSizeMB 50 -MaxRepoSizeMB 500
+
+      - name: Publish Capacity Report
+        if: always()
+        run: |
+          cat capacity_report.md >> $GITHUB_STEP_SUMMARY
 
   notify:
     name: Discord Notification

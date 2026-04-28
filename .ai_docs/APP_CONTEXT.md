@@ -1,8 +1,8 @@
 # APP_CONTEXT: BỘ NHỚ ĐỊNH HƯỚNG DỰ ÁN & QUY TẮC CỐT LÕI (STRICT MODE)
 
 ## 1. BỐI CẢNH DỰ ÁN
-- **Tên dự án:** Cloud-Based Document Manager.
-- **Mục tiêu:** Hệ thống quản lý thư mục, file và chia sẻ dữ liệu đa dụng. Chuyển đổi từ mô hình Desktop Offline sang Client-Server (Hybrid Cloud).
+- **Tên dự án:** Document Sharing Manager
+- **Mô hình:** Client - Server (Self-Hosted / Cloud Ready)
 - **Tính năng đặc thù:** Hỗ trợ Sync ngầm, Files On-Demand (Virtual Drive), quản lý xung đột dữ liệu (Conflict Resolution).
 
 ## 2. QUY TẮC MÃ HÓA CHO AI (VIBE CODE BEST PRACTICES)
