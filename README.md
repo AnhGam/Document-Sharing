@@ -61,3 +61,9 @@ Archived build reports and AI analyses.
 | Date | Time | Commit | Status | Reports |
 | :--- | :--- | :--- | :--- | :--- |
 | 2026-04-28 | 08:42 | d6c04d4 | success |  [View Reports](./reports/2026/04/28/d6c04d46d331a7f4c8f74b01d298a098e414f064-25041793958/) |
+
+## Build History Table
+
+| Date | Time | Commit | Status | Reports |
+| :--- | :--- | :--- | :--- | :--- |
+| 2026-04-29 | 02:46 | 3da0cd7 | failure |  [View Reports](./reports/2026/04/29/3da0cd7a93575ec90cd030ff00156b9dc2b9e594-25088354116/) |
