@@ -23,6 +23,8 @@ $prompt = @"
 You are a Cyber Security expert. I have a WinForms project and these are the results from 'dotnet list package --vulnerable'.
 Summarize the most critical risks and provide brief advice (max 150 words, in English) on what should be prioritized.
 
+IMPORTANT: If there are any critical or high-risk vulnerabilities (e.g., CVSS > 7.0) that MUST block the release, start your response with exactly 'BUILD_STATUS: FAIL'. Otherwise, start with 'BUILD_STATUS: PASS'.
+
 LOG:
 $logContent
 "@
@@ -46,6 +48,16 @@ try {
     
     # Save for summary
     $analysis | Out-File "security_audit_summary.md"
+    
+    # Check for FAIL status
+    if ($analysis -match "BUILD_STATUS: FAIL") {
+        Write-Host "`n[!] CRITICAL: AI has flagged this build as VULNERABLE. Blocking pipeline.`n" -ForegroundColor Red
+        exit 1
+    } else {
+        Write-Host "`n[+] PASS: AI has approved the security posture.`n" -ForegroundColor Green
+        exit 0
+    }
 } catch {
     Write-Host "ERROR: Failed to call Groq API: $_"
+    exit 1 # Fail build if auditor fails
 }

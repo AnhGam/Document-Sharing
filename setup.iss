@@ -2,8 +2,8 @@
 
 #define MyAppName "Document Sharing Manager"
 #define MyAppVersion "3.1.2"
-#define MyAppPublisher "hayato-shino05"
-#define MyAppURL "https://github.com/hayato-shino05/Document-Sharing"
+#define MyAppPublisher "AnhGam"
+#define MyAppURL "https://github.com/AnhGam/Document-Sharing"
 #define MyAppExeName "document-sharing-manager.exe"
 
 [Setup]

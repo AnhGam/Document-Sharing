@@ -35,5 +35,22 @@ public class Result<T>
 
 ## 4. DTOs (Data Transfer Objects)
 - Yêu cầu AI tự tạo thư mục `DTOs`.
-- Thay vì dùng class thông thường, với .NET 8, ưu tiên dùng `record` cho DTOs vì tính bất biến (immutability).
-- VD: `public record DocumentDto(Guid Id, string FileName, long FileSize, DateTime UpdatedAt);`
+- Sử dụng class thông thường cho DTOs. Đảm bảo tính bất biến (immutability) bằng cách sử dụng `readonly` fields hoặc `get-only` properties nếu cần.
+- VD: 
+```csharp
+public class DocumentDto
+{
+    public Guid Id { get; }
+    public string FileName { get; }
+    public long FileSize { get; }
+    public DateTime UpdatedAt { get; }
+
+    public DocumentDto(Guid id, string fileName, long fileSize, DateTime updatedAt)
+    {
+        Id = id;
+        FileName = fileName;
+        FileSize = fileSize;
+        UpdatedAt = updatedAt;
+    }
+}
+```

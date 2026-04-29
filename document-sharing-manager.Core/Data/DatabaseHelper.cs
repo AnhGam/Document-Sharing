@@ -27,7 +27,7 @@ namespace document_sharing_manager.Core.Data
                 if (string.IsNullOrEmpty(_databasePath))
                 {
                     string appFolder = AppDomain.CurrentDomain.BaseDirectory;
-                    _databasePath = Path.Combine(appFolder, "data", "study_documents.db");
+                    _databasePath = Path.Combine(appFolder, "data", "document_sharing.db");
                 }
                 return _databasePath;
             }
@@ -65,7 +65,16 @@ namespace document_sharing_manager.Core.Data
                 // Tạo file database nếu chưa có
                 if (!File.Exists(DatabasePath))
                 {
-                    SQLiteConnection.CreateFile(DatabasePath);
+                    string oldDbPath = Path.Combine(dataFolder, "study_documents.db");
+                    if (File.Exists(oldDbPath))
+                    {
+                        // Di chuyển dữ liệu từ bản cũ sang bản mới
+                        File.Move(oldDbPath, DatabasePath);
+                    }
+                    else
+                    {
+                        SQLiteConnection.CreateFile(DatabasePath);
+                    }
                 }
 
                 // Tạo các bảng
@@ -360,7 +369,7 @@ namespace document_sharing_manager.Core.Data
         /// <summary>
         /// Lọc tài liệu theo danh mục và định dạng
         /// </summary>
-        public static DataTable FilterDocuments(string danhMuc, string dinhDang)
+        public static DataTable FilterDocuments(string dinhDang)
         {
             string query = "SELECT * FROM tai_lieu WHERE 1=1";
 
@@ -386,7 +395,6 @@ namespace document_sharing_manager.Core.Data
         /// </summary>
         public static DataTable SearchDocumentsAdvanced(
             string keyword = null,
-            string danhMuc = null,
             string dinhDang = null,
             DateTime? fromDate = null,
             DateTime? toDate = null,
@@ -477,7 +485,7 @@ namespace document_sharing_manager.Core.Data
             catch { return false; }
         }
 
-        public static bool InsertDocument(string ten, string danhMuc, string dinhDang,
+        public static bool InsertDocument(string ten, string dinhDang,
             string duongDan, string ghiChu, double? kichThuoc, bool quanTrong,
             string tags = null)
         {
@@ -504,7 +512,7 @@ namespace document_sharing_manager.Core.Data
         /// <summary>
         /// Cập nhật tài liệu
         /// </summary>
-        public static bool UpdateDocument(int id, string ten, string danhMuc, string dinhDang,
+        public static bool UpdateDocument(int id, string ten, string dinhDang,
             string duongDan, string ghiChu, double? kichThuoc, bool quanTrong,
             string tags = null)
         {

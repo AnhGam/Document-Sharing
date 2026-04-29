@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SQLite;
-using document_sharing_manager.Core.Entities;
+using document_sharing_manager.Core.Domain;
 using document_sharing_manager.Core.Interfaces;
 using document_sharing_manager.Core.Data;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace document_sharing_manager.Core.Infrastructure.Repositories
 {
@@ -69,7 +71,7 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
              return ExecuteAndMap(query, parameters);
         }
 
-        public List<Document> Filter(string category, string format)
+        public List<Document> Filter(string format)
         {
             string query = "SELECT * FROM tai_lieu WHERE (is_deleted IS NULL OR is_deleted = 0)";
             var parameters = new List<System.Data.SQLite.SQLiteParameter>();
@@ -84,7 +86,7 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
             return ExecuteAndMap(query, parameters.ToArray());
         }
 
-        public List<Document> SearchAdvanced(string keyword, string category, string format, DateTime? fromDate, DateTime? toDate, double? minSize, double? maxSize, bool? isImportant)
+        public List<Document> SearchAdvanced(string keyword, string format, DateTime? fromDate, DateTime? toDate, double? minSize, double? maxSize, bool? isImportant)
         {
             string baseQuery = @"SELECT * FROM tai_lieu WHERE (is_deleted IS NULL OR is_deleted = 0)";
             List<System.Data.SQLite.SQLiteParameter> parameterList = new List<System.Data.SQLite.SQLiteParameter>();
@@ -137,12 +139,12 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
 
         public bool Add(Document doc)
         {
-            return DatabaseHelper.InsertDocument(doc.Ten, "", doc.DinhDang, doc.DuongDan, doc.GhiChu, doc.KichThuoc, doc.QuanTrong, doc.Tags);
+            return DatabaseHelper.InsertDocument(doc.Ten, doc.DinhDang, doc.DuongDan, doc.GhiChu, doc.KichThuoc, doc.QuanTrong, doc.Tags);
         }
 
         public bool Update(Document doc)
         {
-             return DatabaseHelper.UpdateDocument(doc.Id, doc.Ten, "", doc.DinhDang, doc.DuongDan, doc.GhiChu, doc.KichThuoc, doc.QuanTrong, doc.Tags);
+             return DatabaseHelper.UpdateDocument(doc.Id, doc.Ten, doc.DinhDang, doc.DuongDan, doc.GhiChu, doc.KichThuoc, doc.QuanTrong, doc.Tags);
         }
 
         public bool Delete(int id)
@@ -169,6 +171,52 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
             return DatabaseHelper.GetDistinctTags();
         }
 
+        public async Task<BaseEntity> GetByIdAsync(int id, CancellationToken ct = default)
+        {
+            return await Task.FromResult<BaseEntity>(GetById(id)); 
+        }
+
+        public async Task<IEnumerable<BaseEntity>> GetAllAsync(CancellationToken ct = default)
+        {
+            var dt = await Task.Run(() => DatabaseHelper.GetAllDocuments());
+            var list = new List<Document>();
+            foreach (DataRow row in dt.Rows)
+            {
+                list.Add(MapRowToEntity(row));
+            }
+            return list;
+        }
+
+        public async Task AddAsync(BaseEntity entity, CancellationToken ct = default)
+        {
+            if (entity is Document doc)
+            {
+                await Task.Run(() => Add(doc));
+            }
+        }
+
+        public async Task UpdateAsync(BaseEntity entity, CancellationToken ct = default)
+        {
+             if (entity is Document doc)
+            {
+                await Task.Run(() => Update(doc));
+            }
+        }
+
+        public async Task DeleteAsync(int id, CancellationToken ct = default)
+        {
+             await Task.Run(() => Delete(id));
+        }
+
+        public async Task<IEnumerable<BaseEntity>> GetFilesByOwnerAsync(int ownerId, CancellationToken ct = default)
+        {
+            return await GetAllAsync(ct);
+        }
+
+        public async Task<BaseEntity> GetByVersionAsync(int docId, int version, CancellationToken ct = default)
+        {
+            return await Task.FromResult<BaseEntity>(null);
+        }
     }
 }
 

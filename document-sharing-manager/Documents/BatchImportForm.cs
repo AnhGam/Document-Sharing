@@ -10,7 +10,8 @@ using System.Windows.Forms;
 using System.Drawing.Drawing2D;
 using document_sharing_manager.UI;
 using document_sharing_manager.UI.Controls;
-using document_sharing_manager.Core.Entities;
+using document_sharing_manager.Core.Domain;
+using document_sharing_manager.Core.Interfaces;
 using document_sharing_manager.Core.Services;
 
 namespace document_sharing_manager.Documents
@@ -262,7 +263,7 @@ namespace document_sharing_manager.Documents
                 row.Cells["Selected"].Value = true;
                 row.Cells["FileName"].Value = entry.FileName;
                 row.Cells["FileType"].Value = entry.FileType;
-                row.Cells["FileSize"].Value = document_sharing_manager.Core.Entities.Document.FormatFileSize(entry.FileSize);
+                row.Cells["FileSize"].Value = Document.FormatFileSize(entry.FileSize);
                 row.Cells["FilePath"].Value = entry.FilePath;
                 row.Cells["Important"].Value = false;
                 row.Cells["Note"].Value = "";
@@ -373,10 +374,9 @@ namespace document_sharing_manager.Documents
                 {
                     string note = dgvFiles.Rows[idx].Cells["Note"].Value?.ToString() ?? "";
                     bool isImportant = Convert.ToBoolean(dgvFiles.Rows[idx].Cells["Important"].Value ?? false);
-                    string managedPath = StorageService.ImportFile(entry.FilePath);
+                    string managedPath = FileStorageService.ImportFile(entry.FilePath);
                     bool result = DatabaseHelper.InsertDocument(
                         entry.FileName,
-                        "",
                         entry.FileType,
                         managedPath,
                         note,

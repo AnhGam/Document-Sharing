@@ -1,6 +1,6 @@
 using document_sharing_manager.Core.Data;
 using document_sharing_manager.Core;
-using document_sharing_manager.Core.Entities;
+using document_sharing_manager.Core.Domain;
 using document_sharing_manager.UI;
 using System;
 using System.Collections.Generic;

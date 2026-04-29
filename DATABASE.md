@@ -1,6 +1,6 @@
 # Database Schema (SQLite)
 
-The application uses a local SQLite database named `study_documents.db`.
+The application uses a local SQLite database named `document_sharing.db`.
 
 ## Tables
 
@@ -97,5 +97,5 @@ All query methods filter by `is_deleted = 0` to hide soft-deleted documents from
 
 ## Backup & Restore
 
-- **Backup**: Copies `study_documents.db` to a user-specified path.
+- **Backup**: Copies `document_sharing.db` to a user-specified path.
 - **Restore**: Copies a backup `.db` file back to the application data directory, replacing the current database.

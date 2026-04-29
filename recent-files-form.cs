@@ -184,7 +184,7 @@ namespace document_sharing_manager.Documents
 
             try
             {
-                System.Diagnostics.Process.Start(path);
+                FileStorageService.OpenFile(path);
             }
             catch (Exception ex)
             {

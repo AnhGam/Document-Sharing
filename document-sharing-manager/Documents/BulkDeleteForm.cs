@@ -1,6 +1,6 @@
 using document_sharing_manager.Core.Data;
 using document_sharing_manager.Core;
-using document_sharing_manager.Core.Entities;
+using document_sharing_manager.Core.Domain;
 using document_sharing_manager.Core.Infrastructure.Repositories;
 using document_sharing_manager.UI;
 using document_sharing_manager;

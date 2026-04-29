@@ -11,11 +11,11 @@ Khi AI đọc file này và tiến hành sinh code, BẮT BUỘC phải tuân th
 ### 2.0. Quy tắc triển khai (Integration Rules)
 - **Immediate Integration:** Code phải được tích hợp (viết/sửa) trực tiếp vào codebase hiện tại ngay sau khi hoàn thành mỗi bước logic. Tuyệt đối không để code ở dạng "lý thuyết" hoặc chỉ nằm trong artifact mà không cập nhật vào file nguồn.
 
-### 2.1. C# & .NET 8 Best Practices
+### 2.1. C# & .NET 4.8 / .NET Standard 2.0 Best Practices
 - **Async/Await All The Way:** Tuyệt đối không dùng `.Result` hay `.Wait()`. Mọi I/O bound operations phải là `Async`.
 - **CancellationToken:** Bắt buộc truyền `CancellationToken` vào mọi method `Async` để hỗ trợ hủy tác vụ khi cần.
-- **Nullable Reference Types:** Dự án mặc định bật `<Nullable>enable</Nullable>`. Code sinh ra phải kiểm tra null chặt chẽ, sử dụng `?` và `!` hợp lý.
-- **Tránh ném Exception cho Logic:** Sử dụng pattern `Result<T>` (hoặc trả về Tuple/Record chứa thông tin lỗi) thay vì dùng `throw new Exception()` cho các luồng xử lý nghiệp vụ thông thường. Chỉ `throw` khi lỗi hệ thống nghiêm trọng.
+- **Legacy Compatibility:** Vì project UI dùng .NET 4.8, tránh sử dụng các tính năng mới của C# 9.0+ như `record`, `init-only properties` trừ khi đã được cấu hình hỗ trợ. Ưu tiên sử dụng class truyền thống với `readonly` fields.
+- **Tránh ném Exception cho Logic:** Sử dụng pattern `Result<T>` thay vì dùng `throw new Exception()` cho các luồng xử lý nghiệp vụ thông thường. Chỉ `throw` khi lỗi hệ thống nghiêm trọng.
 
 ### 2.2. Clean Architecture & SOLID
 - **Dependency Inversion (DIP):** Các class không bao giờ khởi tạo (`new`) trực tiếp các Service phụ thuộc. Mọi phụ thuộc phải được truyền qua Constructor Injection.
@@ -37,7 +37,7 @@ AI không được nhảy cóc. Phải code theo trình tự:
 6. Nâng cao (Virtual Drive, CI/CD).
 
 ## 4. QUY TẮC ĐỌC CODE HIỆN TẠI (CONTEXT AWARENESS & CODE STYLE)
-**CHÚ Ý CHO AI:** Không được tự ý "sáng tác" cấu trúc bừa bãi. Trước khi tạo Server hay sửa code, MÀY (AI) BẮT BUỘC phải sử dụng tool (`list_dir`, `view_file`, `grep_search`) để đọc thư mục dự án hiện tại (`study-document-manager`) và tuân thủ chặt chẽ các chuẩn mực đang có:
-- **Naming Conventions & Syntax:** Hãy nhìn cách dự án đang code. Phải giữ nguyên các quy tắc như: Biến private luôn dùng `readonly` (nếu không thay đổi), sử dụng Object Initializers (Easy Initialization `{}`), Target-typed `new()`, và các Convention C# hiện tại mà dev đã cất công fix cả buổi tối.
-- **Thêm Server vào Monorepo:** Khi được yêu cầu tạo Server, hãy nhìn xem folder WinForms hiện tại tên gì, đang nằm ở đâu. Server API phải được tạo thành một project ngang hàng (Sibling project) trong cùng Solution, với tên gọi tương xứng (VD: `study-document-manager-api`). Đừng tạo folder lộn xộn.
+**CHÚ Ý CHO AI:** Không được tự ý "sáng tác" cấu trúc bừa bãi. Trước khi tạo Server hay sửa code, MÀY (AI) BẮT BUỘC phải sử dụng tool (`list_dir`, `view_file`, `grep_search`) để đọc thư mục dự án hiện tại (`document-sharing-manager`) và tuân thủ chặt chẽ các chuẩn mực đang có:
+- **Naming Conventions & Syntax:** Hãy nhìn cách dự án đang code. Phải giữ nguyên các quy tắc như: Biến private luôn dùng `readonly` (nếu không thay đổi), sử dụng Object Initializers (Easy Initialization `{}`), và các Convention C# hiện tại mà dev đã cất công fix.
+- **Thêm Server vào Monorepo:** Khi được yêu cầu tạo Server, hãy nhìn xem folder WinForms hiện tại tên gì, đang nằm ở đâu. Server API phải được tạo thành một project ngang hàng (Sibling project) trong cùng Solution, với tên gọi tương xứng (VD: `document-sharing-manager-api`). Đừng tạo folder lộn xộn.
 - **Tương thích:** Bất kỳ đoạn code nào chèn thêm vào WinForms hiện hành đều phải "nhập gia tùy tục", bắt chước y hệt văn phong (vibe) của các file class bên cạnh.

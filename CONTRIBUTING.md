@@ -1,6 +1,6 @@
-# Đóng góp cho Study Document Manager
+# Đóng góp cho Document Sharing Manager
 
-Chào mừng bạn đến với dự án **Study Document Manager**! Chúng tôi rất vui vì bạn quan tâm và muốn đóng góp để làm cho ứng dụng quản lý tài liệu cá nhân này trở nên tốt hơn. Dù là sửa lỗi nhỏ, bổ sung tính năng hay cải thiện tài liệu, mọi đóng góp đều được trân trọng.
+Chào mừng bạn đến với dự án **Document Sharing Manager**! Chúng tôi rất vui vì bạn quan tâm và muốn đóng góp để làm cho ứng dụng quản lý tài liệu cá nhân này trở nên tốt hơn. Dù là sửa lỗi nhỏ, bổ sung tính năng hay cải thiện tài liệu, mọi đóng góp đều được trân trọng.
 
 ## Mục lục
 
@@ -32,8 +32,8 @@ Chúng tôi tuân theo quy trình GitHub Flow cơ bản:
 Fork repository này về tài khoản GitHub của bạn, sau đó clone về máy:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/study-document-manager.git
-cd study-document-manager
+git clone https://github.com/AnhGam/Document-Sharing.git
+cd Document-Sharing
 ```
 
 ### 2. Tạo Branch
@@ -121,8 +121,7 @@ Bạn có ý tưởng hay? Hãy kiểm tra xem tính năng đó đã có trong [
 
 Nếu cần hỗ trợ thêm, bạn có thể liên hệ với maintainer:
 
-- **Maintainer**: hayato-shino05
-- **Email**: hayatoshino05@gmail.com
-- **GitHub**: [@hayato-shino05](https://github.com/hayato-shino05)
+- **Maintainer**: AnhGam
+- **GitHub**: [@AnhGam](https://github.com/AnhGam)
 
 Cảm ơn bạn đã đóng góp cho cộng đồng!
