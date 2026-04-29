@@ -63,7 +63,6 @@ namespace document_sharing_manager.UI.Presenters
         {
             var docs = _repository.SearchAdvanced(
                 _view.SearchKeyword,
-                "",
                 _view.SelectedFormat,
                 _view.FilterFromDate,
                 _view.FilterToDate,

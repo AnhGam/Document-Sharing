@@ -915,7 +915,7 @@ namespace document_sharing_manager.Documents
 
                 var lblAppName = new Label
                 {
-                    Text = "Personal Directory Manager",
+                    Text = "Document Sharing Manager",
                     Font = new Font(AppTheme.FontFamily, 18F, FontStyle.Bold),
                     ForeColor = AppTheme.Primary,
                     Location = new Point(30, 25),
@@ -942,7 +942,7 @@ namespace document_sharing_manager.Documents
 
                 var lblDesc = new Label
                 {
-                    Text = "Personal Directory Manager\nProfessional OneDrive-style File Management",
+                    Text = "Document Sharing Manager\nProfessional OneDrive-style File Management",
                     Font = AppTheme.FontSmall,
                     ForeColor = AppTheme.TextSecondary,
                     Location = new Point(32, 125),
@@ -1115,7 +1115,7 @@ namespace document_sharing_manager.Documents
             using (var sfd = new SaveFileDialog())
             {
                 sfd.Filter = "SQLite Database|*.db";
-                sfd.FileName = $"study_documents_backup_{DateTime.Now:yyyyMMdd_HHmmss}.db";
+                sfd.FileName = $"doc_sharing_backup_{DateTime.Now:yyyyMMdd_HHmmss}.db";
                 if (sfd.ShowDialog() == DialogResult.OK)
                 {
                     try

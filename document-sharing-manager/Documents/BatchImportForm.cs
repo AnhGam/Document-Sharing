@@ -377,7 +377,6 @@ namespace document_sharing_manager.Documents
                     string managedPath = FileStorageService.ImportFile(entry.FilePath);
                     bool result = DatabaseHelper.InsertDocument(
                         entry.FileName,
-                        "",
                         entry.FileType,
                         managedPath,
                         note,

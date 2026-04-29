@@ -13,7 +13,8 @@ namespace document_sharing_manager.Documents
 {
     public partial class AddEditForm : global::System.Windows.Forms.Form
     {
-        private int? _documentId = null;
+        private readonly int? _documentId = null;
+        private string _originalPath = null;
 
         public AddEditForm()
         {
@@ -94,6 +95,7 @@ namespace document_sharing_manager.Documents
                     txtTen.Text = row["ten"].ToString();
                     cboDinhDang.Text = row["dinh_dang"].ToString();
                     txtDuongDan.Text = row["duong_dan"].ToString();
+                    _originalPath = txtDuongDan.Text;
                     txtGhiChu.Text = row["ghi_chu"].ToString();
                     
                     if (row["kich_thuoc"] != DBNull.Value)
@@ -122,46 +124,49 @@ namespace document_sharing_manager.Documents
         /// </summary>
         private void BtnChonFileClick(object sender, EventArgs e)
         {
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "Tất cả file hỗ trợ|*.pdf;*.doc;*.docx;*.ppt;*.pptx;*.txt;*.xlsx;*.xls;*.jpg;*.jpeg;*.png;*.gif;*.bmp;*.ico;*.tiff;*.webp;*.mp4;*.avi;*.mkv;*.mov;*.wmv;*.webm;*.flv;*.m4v|" +
-                                      "Tài liệu|*.pdf;*.doc;*.docx;*.ppt;*.pptx;*.txt;*.xlsx;*.xls|" +
-                                      "Hình ảnh|*.jpg;*.jpeg;*.png;*.gif;*.bmp;*.ico;*.tiff;*.webp|" +
-                                      "Video|*.mp4;*.avi;*.mkv;*.mov;*.wmv;*.webm;*.flv;*.m4v|" +
-                                      "PDF (*.pdf)|*.pdf|" +
-                                      "Word (*.doc;*.docx)|*.doc;*.docx|" +
-                                      "Excel (*.xlsx;*.xls)|*.xlsx;*.xls|" +
-                                      "PowerPoint (*.ppt;*.pptx)|*.ppt;*.pptx";
-            openFileDialog.Title = "Chọn file";
-
-            if (openFileDialog.ShowDialog() == DialogResult.OK)
+            using (OpenFileDialog openFileDialog = new OpenFileDialog
             {
-                string duongDan = openFileDialog.FileName;
-                txtDuongDan.Text = duongDan;
+                Filter = "Tất cả file hỗ trợ|*.pdf;*.doc;*.docx;*.ppt;*.pptx;*.txt;*.xlsx;*.xls;*.jpg;*.jpeg;*.png;*.gif;*.bmp;*.ico;*.tiff;*.webp;*.mp4;*.avi;*.mkv;*.mov;*.wmv;*.webm;*.flv;*.m4v|" +
+                          "Tài liệu|*.pdf;*.doc;*.docx;*.ppt;*.pptx;*.txt;*.xlsx;*.xls|" +
+                          "Hình ảnh|*.jpg;*.jpeg;*.png;*.gif;*.bmp;*.ico;*.tiff;*.webp|" +
+                          "Video|*.mp4;*.avi;*.mkv;*.mov;*.wmv;*.webm;*.flv;*.m4v|" +
+                          "PDF (*.pdf)|*.pdf|" +
+                          "Word (*.doc;*.docx)|*.doc;*.docx|" +
+                          "Excel (*.xlsx;*.xls)|*.xlsx;*.xls|" +
+                          "PowerPoint (*.ppt;*.pptx)|*.ppt;*.pptx",
+                Title = "Chọn file"
+            })
+            {
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    string duongDan = openFileDialog.FileName;
+                    txtDuongDan.Text = duongDan;
 
-                // Tự động điền tên file nếu chưa có tên
-                if (string.IsNullOrWhiteSpace(txtTen.Text))
-                {
-                    txtTen.Text = Path.GetFileNameWithoutExtension(duongDan);
-                }
+                    // Tự động điền tên file nếu chưa có tên
+                    if (string.IsNullOrWhiteSpace(txtTen.Text))
+                    {
+                        txtTen.Text = Path.GetFileNameWithoutExtension(duongDan);
+                    }
 
-                // Tự động nhận diện loại file
-                string ext = Path.GetExtension(duongDan).ToLowerInvariant();
-                string detectedType = DetectFileType(ext);
-                if (!string.IsNullOrEmpty(detectedType))
-                {
-                    cboDinhDang.SelectedItem = detectedType;
-                }
+                    // Tự động nhận diện loại file
+                    string ext = Path.GetExtension(duongDan).ToLowerInvariant();
+                    string detectedType = DetectFileType(ext);
+                    if (!string.IsNullOrEmpty(detectedType))
+                    {
+                        cboDinhDang.SelectedItem = detectedType;
+                    }
 
-                // Tính kích thước file
-                try
-                {
-                    FileInfo fileInfo = new FileInfo(duongDan);
-                    double kichThuoc = fileInfo.Length / (1024.0 * 1024.0); // Convert to MB
-                    txtKichThuoc.Text = FormatFileSize(kichThuoc);
-                }
-                catch
-                {
-                    txtKichThuoc.Text = "0.00";
+                    // Tính kích thước file
+                    try
+                    {
+                        FileInfo fileInfo = new FileInfo(duongDan);
+                        double kichThuoc = fileInfo.Length / (1024.0 * 1024.0); // Convert to MB
+                        txtKichThuoc.Text = FormatFileSize(kichThuoc);
+                    }
+                    catch
+                    {
+                        txtKichThuoc.Text = "0.00";
+                    }
                 }
             }
         }
@@ -210,12 +215,17 @@ namespace document_sharing_manager.Documents
                 if (_documentId.HasValue)
                 {
                     // Sửa tài liệu
+                    string finalPath = txtDuongDan.Text.Trim();
+                    if (finalPath != _originalPath)
+                    {
+                        finalPath = FileStorageService.ImportFile(finalPath);
+                    }
+
                     success = DatabaseHelper.UpdateDocument(
                         _documentId.Value,
                         txtTen.Text.Trim(),
-                        "",
                         cboDinhDang.Text.Trim(),
-                        FileStorageService.ImportFile(txtDuongDan.Text.Trim()),
+                        finalPath,
                         txtGhiChu.Text.Trim(),
                         kichThuoc,
                         chkQuanTrong.Checked,
@@ -234,7 +244,6 @@ namespace document_sharing_manager.Documents
                     // Thêm tài liệu mới
                     success = DatabaseHelper.InsertDocument(
                         txtTen.Text.Trim(),
-                        "",
                         cboDinhDang.Text.Trim(),
                         FileStorageService.ImportFile(txtDuongDan.Text.Trim()),
                         txtGhiChu.Text.Trim(),

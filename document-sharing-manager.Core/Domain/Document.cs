@@ -21,10 +21,9 @@ namespace document_sharing_manager.Core.Domain
         {
             string[] Suffix = { "B", "KB", "MB", "GB", "TB" };
             int i;
-            double dblSByte = bytes;
-            for (i = 0; i < Suffix.Length && bytes >= 1024; i++, bytes /= 1024)
+            for (i = 0; i < Suffix.Length - 1 && bytes >= 1024; i++)
             {
-                dblSByte = bytes / 1024.0;
+                bytes /= 1024.0;
             }
 
             return String.Format("{0:0.##} {1}", bytes, Suffix[i]);

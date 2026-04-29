@@ -71,7 +71,7 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
              return ExecuteAndMap(query, parameters);
         }
 
-        public List<Document> Filter(string category, string format)
+        public List<Document> Filter(string format)
         {
             string query = "SELECT * FROM tai_lieu WHERE (is_deleted IS NULL OR is_deleted = 0)";
             var parameters = new List<System.Data.SQLite.SQLiteParameter>();
@@ -86,7 +86,7 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
             return ExecuteAndMap(query, parameters.ToArray());
         }
 
-        public List<Document> SearchAdvanced(string keyword, string category, string format, DateTime? fromDate, DateTime? toDate, double? minSize, double? maxSize, bool? isImportant)
+        public List<Document> SearchAdvanced(string keyword, string format, DateTime? fromDate, DateTime? toDate, double? minSize, double? maxSize, bool? isImportant)
         {
             string baseQuery = @"SELECT * FROM tai_lieu WHERE (is_deleted IS NULL OR is_deleted = 0)";
             List<System.Data.SQLite.SQLiteParameter> parameterList = new List<System.Data.SQLite.SQLiteParameter>();
@@ -139,12 +139,12 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
 
         public bool Add(Document doc)
         {
-            return DatabaseHelper.InsertDocument(doc.Ten, "", doc.DinhDang, doc.DuongDan, doc.GhiChu, doc.KichThuoc, doc.QuanTrong, doc.Tags);
+            return DatabaseHelper.InsertDocument(doc.Ten, doc.DinhDang, doc.DuongDan, doc.GhiChu, doc.KichThuoc, doc.QuanTrong, doc.Tags);
         }
 
         public bool Update(Document doc)
         {
-             return DatabaseHelper.UpdateDocument(doc.Id, doc.Ten, "", doc.DinhDang, doc.DuongDan, doc.GhiChu, doc.KichThuoc, doc.QuanTrong, doc.Tags);
+             return DatabaseHelper.UpdateDocument(doc.Id, doc.Ten, doc.DinhDang, doc.DuongDan, doc.GhiChu, doc.KichThuoc, doc.QuanTrong, doc.Tags);
         }
 
         public bool Delete(int id)

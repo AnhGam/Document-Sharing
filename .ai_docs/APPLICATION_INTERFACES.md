@@ -40,9 +40,17 @@ public class Result<T>
 ```csharp
 public class DocumentDto
 {
-    public Guid Id { get; set; }
-    public string FileName { get; set; }
-    public long FileSize { get; set; }
-    public DateTime UpdatedAt { get; set; }
+    public Guid Id { get; }
+    public string FileName { get; }
+    public long FileSize { get; }
+    public DateTime UpdatedAt { get; }
+
+    public DocumentDto(Guid id, string fileName, long fileSize, DateTime updatedAt)
+    {
+        Id = id;
+        FileName = fileName;
+        FileSize = fileSize;
+        UpdatedAt = updatedAt;
+    }
 }
 ```
