@@ -1,17 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using document_sharing_manager.Core.Entities;
+using document_sharing_manager.Core.Domain;
 using document_sharing_manager.Core.Interfaces;
 
 namespace document_sharing_manager.UI.Presenters
 {
     public class DashboardPresenter
     {
-        private readonly IDashboardView _view;
+        private readonly IDashboardContract _view;
         private readonly IDocumentRepository _repository;
 
-        public DashboardPresenter(IDashboardView view, IDocumentRepository repository)
+        public DashboardPresenter(IDashboardContract view, IDocumentRepository repository)
         {
             _view = view;
             _repository = repository;

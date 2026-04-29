@@ -9,6 +9,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Windows.Forms;
 using document_sharing_manager.UI;
+using document_sharing_manager.Core.Interfaces;
 using document_sharing_manager.Core.Services;
 
 namespace document_sharing_manager.Documents
@@ -160,7 +161,7 @@ namespace document_sharing_manager.Documents
                     {
                         string rawPath = row["duong_dan"]?.ToString();
                         if (string.IsNullOrEmpty(rawPath)) continue;
-                        string path = StorageService.ResolvePath(rawPath);
+                        string path = FileStorageService.ResolvePath(rawPath);
                         if (!File.Exists(path)) continue;
 
                         try
@@ -287,4 +288,3 @@ namespace document_sharing_manager.Documents
         }
     }
 }
-

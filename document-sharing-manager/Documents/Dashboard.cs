@@ -1,7 +1,8 @@
 using document_sharing_manager.Core.Data;
 using document_sharing_manager.Core;
-using document_sharing_manager.Core.Entities;
+using document_sharing_manager.Core.Domain;
 using document_sharing_manager.Core.Interfaces;
+using document_sharing_manager.Core.Services;
 using document_sharing_manager.Core.Infrastructure.Repositories;
 using document_sharing_manager.UI;
 using document_sharing_manager.Management;
@@ -9,7 +10,6 @@ using document_sharing_manager.UI.Presenters;
 using document_sharing_manager.Services;
 using document_sharing_manager.Reports;
 using document_sharing_manager.UI.Controls;
-using document_sharing_manager.Core.Services;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -20,7 +20,7 @@ using System.Windows.Forms;
 
 namespace document_sharing_manager.Documents
 {
-    public partial class Dashboard : Form, IDashboardView
+    public partial class Dashboard : Form, IDashboardContract
     {
         private readonly DashboardPresenter _presenter;
         private readonly IDocumentRepository _repository;
@@ -143,7 +143,7 @@ namespace document_sharing_manager.Documents
             toolBtnDelete.Click += (s, e) =>
             {
                 var doc = dgvDocuments.SelectedRows.Count > 0
-                    ? dgvDocuments.SelectedRows[0].DataBoundItem as Core.Entities.Document
+                    ? dgvDocuments.SelectedRows[0].DataBoundItem as Core.Domain.Document
                     : null;
                 if (doc != null)
                     DeleteRequested?.Invoke(this, doc.Id);
@@ -151,7 +151,7 @@ namespace document_sharing_manager.Documents
             toolBtnOpen.Click += (s, e) =>
             {
                 var doc = dgvDocuments.SelectedRows.Count > 0
-                    ? dgvDocuments.SelectedRows[0].DataBoundItem as Core.Entities.Document
+                    ? dgvDocuments.SelectedRows[0].DataBoundItem as Core.Domain.Document
                     : null;
                 OpenFileRequested?.Invoke(this, doc?.DuongDan ?? string.Empty);
             };
@@ -321,8 +321,8 @@ namespace document_sharing_manager.Documents
         {
             lblCount.Text = $"Tổng số: {count} tài liệu";
             try {
-                long storageSize = StorageService.GetTotalStorageSize();
-                string sizeStr = document_sharing_manager.Core.Entities.Document.FormatFileSize(storageSize);
+                long storageSize = FileStorageService.GetTotalStorageSize();
+                string sizeStr = document_sharing_manager.Core.Domain.Document.FormatFileSize(storageSize);
                 lblStatus.Text = $"Sẵn sàng | Bộ nhớ quản lý: {sizeStr}";
             } catch {
                 lblStatus.Text = "Sẵn sàng";
@@ -580,7 +580,7 @@ namespace document_sharing_manager.Documents
             if (dgvDocuments.SelectedRows.Count == 0) return;
             if (dgvDocuments.SelectedRows[0].DataBoundItem is Document doc && !string.IsNullOrEmpty(doc.DuongDan))
             {
-                string resolvedPath = StorageService.ResolvePath(doc.DuongDan);
+                string resolvedPath = FileStorageService.ResolvePath(doc.DuongDan);
                 if (File.Exists(resolvedPath))
                 {
                     try
@@ -722,7 +722,7 @@ namespace document_sharing_manager.Documents
         {
             if (dgvDocuments.SelectedRows.Count > 0 && dgvDocuments.SelectedRows[0].DataBoundItem is Document doc)
             {
-                string resolvedPath = StorageService.ResolvePath(doc.DuongDan);
+                string resolvedPath = FileStorageService.ResolvePath(doc.DuongDan);
                 if (File.Exists(resolvedPath))
                 {
                     System.Diagnostics.Process.Start("explorer.exe", $"/select,\"{resolvedPath}\"");
@@ -1697,7 +1697,7 @@ namespace document_sharing_manager.Documents
                 return;
             }
 
-            if (dgvDocuments.SelectedRows[0].DataBoundItem is document_sharing_manager.Core.Entities.Document doc && !string.IsNullOrEmpty(doc.DuongDan))
+            if (dgvDocuments.SelectedRows[0].DataBoundItem is document_sharing_manager.Core.Domain.Document doc && !string.IsNullOrEmpty(doc.DuongDan))
             {
                 string ext = System.IO.Path.GetExtension(doc.DuongDan).ToLowerInvariant();
                 bool isMedia = Array.Exists(PreviewableExtensions, ev => ev == ext);
@@ -1727,7 +1727,7 @@ namespace document_sharing_manager.Documents
             menuRelated.Click += (s, ev) =>
             {
                 if (dgvDocuments.SelectedRows.Count == 0) return;
-                if (dgvDocuments.SelectedRows[0].DataBoundItem is document_sharing_manager.Core.Entities.Document doc)
+                if (dgvDocuments.SelectedRows[0].DataBoundItem is document_sharing_manager.Core.Domain.Document doc)
                 {
                     new document_sharing_manager.Documents.RelatedDocumentsForm(doc.Id, doc.Ten).ShowDialog();
                 }

@@ -1,5 +1,6 @@
 using document_sharing_manager.Core.Data;
-using document_sharing_manager.Core.Entities;
+using document_sharing_manager.Core.Domain;
+using document_sharing_manager.Core.Interfaces;
 using document_sharing_manager.Core.Services;
 using System;
 using System.Drawing;
@@ -214,7 +215,7 @@ namespace document_sharing_manager.Documents
                         txtTen.Text.Trim(),
                         "",
                         cboDinhDang.Text.Trim(),
-                        StorageService.ImportFile(txtDuongDan.Text.Trim()),
+                        FileStorageService.ImportFile(txtDuongDan.Text.Trim()),
                         txtGhiChu.Text.Trim(),
                         kichThuoc,
                         chkQuanTrong.Checked,
@@ -235,7 +236,7 @@ namespace document_sharing_manager.Documents
                         txtTen.Text.Trim(),
                         "",
                         cboDinhDang.Text.Trim(),
-                        StorageService.ImportFile(txtDuongDan.Text.Trim()),
+                        FileStorageService.ImportFile(txtDuongDan.Text.Trim()),
                         txtGhiChu.Text.Trim(),
                         kichThuoc,
                         chkQuanTrong.Checked,

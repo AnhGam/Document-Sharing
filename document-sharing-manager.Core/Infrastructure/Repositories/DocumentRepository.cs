@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SQLite;
-using document_sharing_manager.Core.Entities;
+using document_sharing_manager.Core.Domain;
 using document_sharing_manager.Core.Interfaces;
 using document_sharing_manager.Core.Data;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace document_sharing_manager.Core.Infrastructure.Repositories
 {
@@ -169,6 +171,52 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
             return DatabaseHelper.GetDistinctTags();
         }
 
+        public async Task<BaseEntity> GetByIdAsync(int id, CancellationToken ct = default)
+        {
+            return await Task.FromResult<BaseEntity>(GetById(id)); 
+        }
+
+        public async Task<IEnumerable<BaseEntity>> GetAllAsync(CancellationToken ct = default)
+        {
+            var dt = await Task.Run(() => DatabaseHelper.GetAllDocuments());
+            var list = new List<Document>();
+            foreach (DataRow row in dt.Rows)
+            {
+                list.Add(MapRowToEntity(row));
+            }
+            return list;
+        }
+
+        public async Task AddAsync(BaseEntity entity, CancellationToken ct = default)
+        {
+            if (entity is Document doc)
+            {
+                await Task.Run(() => Add(doc));
+            }
+        }
+
+        public async Task UpdateAsync(BaseEntity entity, CancellationToken ct = default)
+        {
+             if (entity is Document doc)
+            {
+                await Task.Run(() => Update(doc));
+            }
+        }
+
+        public async Task DeleteAsync(int id, CancellationToken ct = default)
+        {
+             await Task.Run(() => Delete(id));
+        }
+
+        public async Task<IEnumerable<BaseEntity>> GetFilesByOwnerAsync(int ownerId, CancellationToken ct = default)
+        {
+            return await GetAllAsync(ct);
+        }
+
+        public async Task<BaseEntity> GetByVersionAsync(int docId, int version, CancellationToken ct = default)
+        {
+            return await Task.FromResult<BaseEntity>(null);
+        }
     }
 }
 

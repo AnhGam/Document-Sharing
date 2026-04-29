@@ -5,10 +5,10 @@
 ---
 
 ## 1. Tóm tắt: Định hướng Nâng cấp
-- **Client (Giữ nguyên WinForms):** KHÔNG CẦN phải đập bỏ WinForms để xây lại bằng framework khác (như WPF, MAUI) trừ khi bạn muốn đổi giao diện hoàn toàn. WinForms rất nhẹ và đủ tốt cho các tác vụ Desktop.
-  - **Thêm:** Cơ chế chạy ngầm (System Tray), Background Worker để Sync file liên tục, và tích hợp sâu vào hệ điều hành (như Virtual Drive).
-- **Server (Xây mới):** Cần một Backend API (khuyến nghị `ASP.NET Core Web API`) làm trung tâm lưu trữ, xác thực và điều phối dữ liệu.
-- **Local Database (SQLite):** Vẫn giữ lại SQLite ở Client để làm **Local Cache** (bộ nhớ đệm). Nhờ SQLite, người dùng vẫn có thể xem danh sách tài liệu, mở file đã tải khi KHÔNG CÓ MẠNG (Offline Mode).
+- **Client (WinForms .NET 4.8):** Duy trì nền tảng WinForms hiện tại để đảm bảo tính nhẹ nhàng và ổn định trên Windows.
+  - **Thêm:** Cơ chế chạy ngầm (System Tray), Background Worker để Sync file liên tục, và quản lý Virtual Storage thông qua `StorageService`.
+- **Server (Future Strategy):** Cần một Backend API (khuyến nghị `ASP.NET Core` chạy trên Linux/Docker) làm trung tâm lưu trữ, xác thực và điều phối dữ liệu.
+- **Local Database (SQLite):** Sử dụng SQLite làm **Local Cache** để hỗ trợ Offline Mode.
 
 ---
 
@@ -29,7 +29,7 @@
 
 Nếu dùng 1 PC cá nhân mạnh (như máy chơi game/editor) làm Host chạy 24/7:
 
-- **Hệ điều hành Server:** Backend viết bằng .NET Core chạy được trên mọi OS (Linux/Windows). Nếu dùng PC ở nhà, Windows vẫn host tốt dưới dạng Windows Service hoặc thông qua Docker Desktop.
+- **Hệ điều hành Server:** Backend nên được viết bằng .NET Core/8+ để chạy được trên mọi OS (Linux/Windows).
 - **Bảo mật mạng (Networking):** Không cần mở Port (Port Forwarding) trên Router gây nguy hiểm rủi ro bị tấn công mạng. Khuyên dùng **Cloudflare Tunnels** hoặc **Tailscale**. Dịch vụ này tạo một đường hầm mã hóa (Tunnel) ra Internet, giúp thiết bị khác truy cập an toàn với tên miền HTTPS chuẩn chỉnh.
 - **Bảo mật máy Host:** Người dùng khác truy cập vào Web API, Web API sẽ giới hạn họ chỉ có quyền đọc/ghi trong thư mục lưu trữ được chỉ định (vd: `D:\AppStorage`). Họ hoàn toàn không có quyền xem hay can thiệp vào các thư mục khác (như `C:\` hay game của Host).
 - **Tối ưu tài nguyên máy Host:** 

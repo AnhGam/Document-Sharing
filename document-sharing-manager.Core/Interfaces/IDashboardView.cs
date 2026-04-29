@@ -1,12 +1,11 @@
 using System;
 using System.Collections.Generic;
-using document_sharing_manager.Core.Entities;
+using document_sharing_manager.Core.Domain;
 
 namespace document_sharing_manager.Core.Interfaces
 {
-    public interface IDashboardView
+    public interface IDashboardContract
     {
-        // Properties
         string SearchKeyword { get; }
         string SelectedFormat { get; }
         DateTime? FilterFromDate { get; }
@@ -15,26 +14,16 @@ namespace document_sharing_manager.Core.Interfaces
         double? FilterMaxSize { get; }
         bool FilterIsImportant { get; }
 
-        // Data Sources
-        void SetDocumentList(List<Document> documents);
-        void SetFormats(List<string> formats);
-        void UpdateStatusCount(int count);
-
-        // Events
         event EventHandler SearchRequested;
         event EventHandler FilterApplied;
         event EventHandler RefreshRequested;
         event EventHandler<int> DeleteRequested;
 
-
-        event EventHandler<string> OpenFileRequested;
-        event EventHandler ExportRequested;
-        event EventHandler StatisticsRequested;
-
-        // UI Feedback
-        void ShowMessage(string message);
-        void ShowError(string message);
+        void SetFormats(List<string> formats);
+        void SetDocumentList(List<Document> documents);
+        void UpdateStatusCount(int count);
         bool ConfirmDelete();
+        void ShowMessage(string message);
+        void ShowError(string error);
     }
 }
-

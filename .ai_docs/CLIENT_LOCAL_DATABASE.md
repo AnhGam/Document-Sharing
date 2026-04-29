@@ -3,7 +3,8 @@
 **Mục đích:** Tối ưu hóa SQLite để làm Local Cache cho WinForms, chịu tải tốt các tác vụ đọc/ghi nền mà không khóa luồng UI.
 
 ## 1. Lựa chọn Công nghệ
-- Không dùng EF Core cho Client để tránh cồng kềnh. Bắt buộc dùng **Dapper** (Micro ORM) kết hợp `Microsoft.Data.Sqlite`. Dapper cung cấp tốc độ map dữ liệu nhanh nhất và footprint nhỏ nhất.
+- Sử dụng thư viện **System.Data.SQLite** (phù hợp cho .NET 4.8). 
+- Hiện tại dự án đang sử dụng ADO.NET truyền thống (`SQLiteCommand`, `SQLiteDataAdapter`) thông qua class `DatabaseHelper`. Tuy nhiên, có thể cân nhắc tích hợp **Dapper** (Micro ORM) để tối ưu hóa việc map dữ liệu và giảm code boilerplate trong tương lai.
 
 ## 2. Tối ưu hóa SQLite
 - **WAL Mode (Write-Ahead Logging):** Bắt buộc bật `PRAGMA journal_mode=WAL;` khi khởi tạo DB. Điều này cho phép nhiều tác vụ đọc và một tác vụ ghi diễn ra ĐỒNG THỜI mà không bị "Database is locked" (Rất hay gặp nếu UI đang đọc danh sách mà Sync Engine đang ghi dữ liệu mới).

@@ -2,17 +2,18 @@
 
 **Mục đích:** Xây dựng quy trình tự động hóa đạt chuẩn Enterprise, tối ưu hóa chi phí (FinOps) và đảm bảo tính quan sát toàn diện (Observability).
 
-## 1. Cấu trúc GitHub Actions (dotnet-ci.yml)
-Pipeline được chia thành các Job chuyên biệt để đảm bảo tốc độ và độ tin cậy:
-- **Job 1: Security & Quality Gates:**
-    - Secret Scanning (Gitleaks).
-    - Static Analysis (SonarCloud/CodeQL).
-    - Dependency Audit (NuGet Vulnerability Scan).
-- **Job 2: Build & Unit Tests:** Chạy `dotnet test` với Coverage report.
-- **Job 3: Mutation Testing (Stryker):** Đánh giá chất lượng của chính bộ Test.
-- **Job 4: Capacity & Governance (FinOps):**
-    - Kiểm tra dung lượng Artifact/Installer (Ngưỡng cảnh báo: 50MB).
-    - Phân tích xu hướng tăng trưởng dung lượng repo.
+## 1. Cấu trúc GitHub Actions (ci.yml)
+Pipeline được chia thành các bước chuyên biệt để đảm bảo tốc độ và độ tin cậy:
+- **Security & Linting:** Quét bí mật bằng Gitleaks.
+- **Build & Tests:** 
+    - Khôi phục NuGet packages cho WinForms (.NET 4.8).
+    - Tối ưu hóa Asset qua `optimize-assets.ps1` (Fail build nếu file quá lớn).
+    - Build solution bằng `msbuild`.
+    - Chạy Unit Tests (NUnit).
+- **AI Security Audit (Groq):** Sử dụng `security-auditor-groq.ps1` để phân tích lỗ hổng bảo mật. Pipeline sẽ **FAIL** nếu AI phát hiện rủi ro nghiêm trọng.
+- **Capacity & FinOps Governance:** 
+    - Sử dụng `capacity-governance.ps1` để kiểm tra dung lượng Installer và Repository.
+    - Tự động chặn build nếu vượt ngưỡng (50MB cho Installer).
 
 ## 2. Docker & Container Strategy (Platform Engineering)
 - **Multi-Stage Build:** Giảm kích thước Image (Runtime dùng Alpine).
