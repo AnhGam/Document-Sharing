@@ -24,6 +24,8 @@ namespace document_sharing_manager.Documents
     {
         private readonly DashboardPresenter _presenter;
         private readonly IDocumentRepository _repository;
+        private readonly SyncEngine _syncEngine;
+        private readonly SyncWatcher _syncWatcher;
 
         // Implementation of IDashboardView Properties
         public string SearchKeyword => txtSearch.Text.Trim();
@@ -60,6 +62,14 @@ namespace document_sharing_manager.Documents
             // In a real DI container scenario, these would be injected.
             _repository = new DocumentRepository();
             _presenter = new DashboardPresenter(this, _repository);
+
+            // Initialize Sync Engine and Watcher
+            _syncEngine = new SyncEngine(_repository);
+            _syncWatcher = new SyncWatcher(_syncEngine, _repository);
+            
+            // Start background processes
+            _syncEngine.Start();
+            _syncWatcher.Start();
 
             // Register internal events
             RegisterEvents();
@@ -178,6 +188,13 @@ namespace document_sharing_manager.Documents
             chkEnableDateFilter.Checked = false;
             chkEnableSizeFilter.Checked = false;
             chkImportantOnly.Checked = false;
+        }
+
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            _syncEngine.Stop();
+            _syncWatcher.Dispose();
+            base.OnFormClosing(e);
         }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)

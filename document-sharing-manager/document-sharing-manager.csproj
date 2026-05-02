@@ -12,6 +12,7 @@
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
+    <LangVersion>latest</LangVersion>
     <TargetFrameworkProfile />
     <RuntimeIdentifier>win</RuntimeIdentifier>
     <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
@@ -143,6 +144,7 @@
     <Compile Include="Services\AppVersion.cs" />
     <Compile Include="Services\UpdateChecker.cs" />
     <Compile Include="Services\UpdateInstaller.cs" />
+    <Compile Include="Services\SyncWatcher.cs" />
     <Compile Include="Management\RecycleBinForm.cs">
       <SubType>Form</SubType>
     </Compile>
