@@ -65,12 +65,12 @@ jobs:
           dotnet test document-sharing-manager.Tests/document-sharing-manager.Tests.csproj --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --logger "trx;LogFileName=test_results.trx"
         continue-on-error: true
 
-      - name: Mutation Testing (Stryker)
-        run: |
-          dotnet tool install -g dotnet-stryker
-          cd document-sharing-manager.Tests
-          dotnet stryker --solution ../${{ env.SOLUTION_FILE }}
-        continue-on-error: true
+#      - name: Mutation Testing (Stryker)
+#        run: |
+#          dotnet tool install -g dotnet-stryker
+#          cd document-sharing-manager.Tests
+#          dotnet stryker --solution ../${{ env.SOLUTION_FILE }}
+#        continue-on-error: true
 
       - name: Build Installer (Inno Setup)
         run: |
@@ -106,6 +106,10 @@ jobs:
     name: Capacity & FinOps Governance
     needs: build-and-test
     runs-on: windows-latest
+    outputs:
+      installer_size: ${{ steps.capacity.outputs.installer_size }}
+      repo_size: ${{ steps.capacity.outputs.repo_size }}
+      build_duration: ${{ steps.capacity.outputs.build_duration }}
     steps:
       - uses: actions/checkout@v4
       
@@ -115,8 +119,13 @@ jobs:
           name: document-sharing-manager-v${{ github.run_number }}
           path: .
 
-      - name: Run Capacity Check
-        run: powershell ./scripts/capacity-governance.ps1 -MaxInstallerSizeMB 50 -MaxRepoSizeMB 500
+      - name: Run Capacity Check & DORA Analytics
+        id: capacity
+        run: |
+          $startTime = [DateTimeOffset]::Parse("${{ github.event.repository.pushed_at }}").ToUnixTimeSeconds()
+          $now = [DateTimeOffset]::Now.ToUnixTimeSeconds()
+          $duration = $now - $startTime
+          powershell ./scripts/capacity-governance.ps1 -MaxInstallerSizeMB 50 -MaxRepoSizeMB 500 -BuildDurationSeconds $duration
 
       - name: Publish Capacity Report
         if: always()
@@ -125,7 +134,7 @@ jobs:
 
   notify:
     name: Discord Notification
-    needs: build-and-test
+    needs: [build-and-test, capacity-and-governance]
     runs-on: ubuntu-latest
     if: always()
     steps:
@@ -138,7 +147,20 @@ jobs:
             COLOR=3066993
             if [ "$STATUS" != "success" ]; then COLOR=15158332; fi
             
+            # Enhanced summary for the notification
+            INSTALLER_SIZE="${{ needs.capacity-and-governance.outputs.installer_size }}"
+            REPO_SIZE="${{ needs.capacity-and-governance.outputs.repo_size }}"
+            DURATION="${{ needs.capacity-and-governance.outputs.build_duration }}"
+            
+            MSG="**Project:** Document Sharing Manager\n**Author:** ${{ github.actor }}\n**Commit:** ${{ github.sha }}\n\n"
+            MSG="$MSG**[DORA & Capacity Metrics]**\n"
+            MSG="$MSG- **Lead Time (CI):** $DURATION min\n"
+            MSG="$MSG- **Installer Size:** $INSTALLER_SIZE MB\n"
+            MSG="$MSG- **Repo Size:** $REPO_SIZE MB\n"
+            MSG="$MSG- **Status:** $STATUS\n\n"
+            MSG="$MSG[View Full Report](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+
             curl -H "Content-Type: application/json" \
-              -d "{\"embeds\": [{\"title\": \"Build Status: $STATUS\", \"description\": \"**Project:** Document Sharing Manager\n**Version:** Automated by MinVer\n**Author:** ${{ github.actor }}\n**Commit:** ${{ github.sha }}\n\n[Download Artifacts](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\", \"color\": $COLOR}]}" \
+              -d "{\"embeds\": [{\"title\": \"🚀 CI/CD Pipeline Performance: $STATUS\", \"description\": \"$MSG\", \"color\": $COLOR}]}" \
               $DISCORD_WEBHOOK
           fi

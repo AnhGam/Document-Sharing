@@ -1,6 +1,6 @@
 <div align="center">
 
-![Document Sharing Manager](document-sharing-manager/assets/logo/hero-banner.png)
+![Document Sharing Manager](docs/assets/hero-banner.png)
 
 [![CI/CD Status](https://img.shields.io/badge/CI%2FCD-Enterprise_Pipeline_2026-success?style=for-the-badge&logo=github-actions)](https://github.com/AnhGam/Document-Sharing/actions)
 [![DevOps Excellence](https://img.shields.io/badge/Strategy-Platform_Engineering-blueviolet?style=for-the-badge)](.ai_docs/CI_CD_PIPELINE.md)
