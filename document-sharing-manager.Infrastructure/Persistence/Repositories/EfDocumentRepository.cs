@@ -30,11 +30,11 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
 
         public async Task AddAsync(BaseEntity entity, CancellationToken ct = default)
         {
-            if (entity is Document doc)
-            {
-                await _context.Documents.AddAsync(doc, ct);
-                await _context.SaveChangesAsync(ct);
-            }
+            if (entity is not Document doc)
+                throw new ArgumentException("Entity must be of type Document", nameof(entity));
+
+            await _context.Documents.AddAsync(doc, ct);
+            await _context.SaveChangesAsync(ct);
         }
 
         public async Task UpdateAsync(BaseEntity entity, CancellationToken ct = default)
@@ -64,6 +64,42 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
             throw new NotImplementedException("Version control is in roadmap.");
         }
 
+        public async Task<List<Document>> SearchAsync(string keyword, CancellationToken ct = default)
+        {
+            return await _context.Documents
+                .AsNoTracking()
+                .Where(d => d.Ten.Contains(keyword) || d.GhiChu.Contains(keyword))
+                .ToListAsync(ct);
+        }
+
+        public async Task<List<Document>> SearchAdvancedAsync(string keyword, string format, DateTime? fromDate, DateTime? toDate, decimal? minSize, decimal? maxSize, bool? isImportant, CancellationToken ct = default)
+        {
+            var query = _context.Documents.AsNoTracking().AsQueryable();
+
+            if (!string.IsNullOrEmpty(keyword))
+                query = query.Where(d => d.Ten.Contains(keyword));
+
+            if (!string.IsNullOrEmpty(format))
+                query = query.Where(d => d.DinhDang == format);
+
+            if (fromDate.HasValue)
+                query = query.Where(d => d.NgayThem >= fromDate.Value);
+
+            if (toDate.HasValue)
+                query = query.Where(d => d.NgayThem <= toDate.Value);
+
+            if (minSize.HasValue)
+                query = query.Where(d => d.KichThuoc >= minSize.Value);
+
+            if (maxSize.HasValue)
+                query = query.Where(d => d.KichThuoc <= maxSize.Value);
+
+            if (isImportant.HasValue)
+                query = query.Where(d => d.QuanTrong == isImportant.Value);
+
+            return await query.ToListAsync(ct);
+        }
+
         // --- Synchronous Legacy Implementation ---
 
         public List<Document> GetAll()
@@ -84,7 +120,7 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
                 .ToList();
         }
 
-        public List<Document> SearchAdvanced(string keyword, string format, DateTime? fromDate, DateTime? toDate, double? minSize, double? maxSize, bool? isImportant)
+        public List<Document> SearchAdvanced(string keyword, string format, DateTime? fromDate, DateTime? toDate, decimal? minSize, decimal? maxSize, bool? isImportant)
         {
             var query = _context.Documents.AsNoTracking().AsQueryable();
 

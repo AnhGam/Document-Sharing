@@ -398,8 +398,8 @@ namespace document_sharing_manager.Core.Data
             string dinhDang = null,
             DateTime? fromDate = null,
             DateTime? toDate = null,
-            double? minSize = null,
-            double? maxSize = null,
+            decimal? minSize = null,
+            decimal? maxSize = null,
             bool? isImportant = null)
         {
             string baseQuery = @"SELECT * FROM tai_lieu WHERE (is_deleted IS NULL OR is_deleted = 0)";
@@ -486,7 +486,7 @@ namespace document_sharing_manager.Core.Data
         }
 
         public static bool InsertDocument(string ten, string dinhDang,
-            string duongDan, string ghiChu, double? kichThuoc, bool quanTrong,
+            string duongDan, string ghiChu, decimal? kichThuoc, bool quanTrong,
             string tags = null)
         {
             string query = @"INSERT INTO tai_lieu
@@ -513,7 +513,7 @@ namespace document_sharing_manager.Core.Data
         /// Cập nhật tài liệu
         /// </summary>
         public static bool UpdateDocument(int id, string ten, string dinhDang,
-            string duongDan, string ghiChu, double? kichThuoc, bool quanTrong,
+            string duongDan, string ghiChu, decimal? kichThuoc, bool quanTrong,
             string tags = null)
         {
             string query = @"UPDATE tai_lieu SET

@@ -29,7 +29,7 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
                 DuongDan = row["duong_dan"].ToString(),
                 GhiChu = row["ghi_chu"].ToString(),
                 NgayThem = Convert.ToDateTime(row["ngay_them"]),
-                KichThuoc = row["kich_thuoc"] != DBNull.Value ? Convert.ToDouble(row["kich_thuoc"]) : (double?)null,
+                KichThuoc = row["kich_thuoc"] != DBNull.Value ? Convert.ToDecimal(row["kich_thuoc"]) : (decimal?)null,
                 QuanTrong = Convert.ToInt32(row["quan_trong"]) == 1,
                 Tags = row["tags"].ToString()
             };
@@ -71,22 +71,7 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
              return ExecuteAndMap(query, parameters);
         }
 
-        public List<Document> Filter(string format)
-        {
-            string query = "SELECT * FROM tai_lieu WHERE (is_deleted IS NULL OR is_deleted = 0)";
-            var parameters = new List<System.Data.SQLite.SQLiteParameter>();
-
-            if (!string.IsNullOrEmpty(format) && format != "Tất cả")
-            {
-                query += " AND dinh_dang = @dinh_dang";
-                parameters.Add(new System.Data.SQLite.SQLiteParameter("@dinh_dang", format));
-            }
-
-            query += " ORDER BY ngay_them DESC";
-            return ExecuteAndMap(query, parameters.ToArray());
-        }
-
-        public List<Document> SearchAdvanced(string keyword, string format, DateTime? fromDate, DateTime? toDate, double? minSize, double? maxSize, bool? isImportant)
+        public List<Document> SearchAdvanced(string keyword, string format, DateTime? fromDate, DateTime? toDate, decimal? minSize, decimal? maxSize, bool? isImportant)
         {
             string baseQuery = @"SELECT * FROM tai_lieu WHERE (is_deleted IS NULL OR is_deleted = 0)";
             List<System.Data.SQLite.SQLiteParameter> parameterList = new List<System.Data.SQLite.SQLiteParameter>();
@@ -152,11 +137,6 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
             return DatabaseHelper.DeleteDocument(id);
         }
 
-        public List<string> GetDistinctCategories()
-        {
-            return new List<string>();
-        }
-
         public List<string> GetDistinctFormats()
         {
             var dt = DatabaseHelper.GetDistinctTypes();
@@ -164,11 +144,6 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
             foreach(DataRow row in dt.Rows) 
                 list.Add(row["dinh_dang"]?.ToString() ?? "");
             return list;
-        }
-
-        public List<string> GetDistinctTags()
-        {
-            return DatabaseHelper.GetDistinctTags();
         }
 
         public async Task<BaseEntity> GetByIdAsync(int id, CancellationToken ct = default)
@@ -189,18 +164,18 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
 
         public async Task AddAsync(BaseEntity entity, CancellationToken ct = default)
         {
-            if (entity is Document doc)
-            {
-                await Task.Run(() => Add(doc));
-            }
+            if (!(entity is Document doc))
+                throw new ArgumentException("Entity must be of type Document", nameof(entity));
+
+            await Task.Run(() => Add(doc));
         }
 
         public async Task UpdateAsync(BaseEntity entity, CancellationToken ct = default)
         {
-             if (entity is Document doc)
-            {
-                await Task.Run(() => Update(doc));
-            }
+             if (!(entity is Document doc))
+                throw new ArgumentException("Entity must be of type Document", nameof(entity));
+
+            await Task.Run(() => Update(doc));
         }
 
         public async Task DeleteAsync(int id, CancellationToken ct = default)
@@ -217,6 +192,15 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
         {
             return await Task.FromResult<BaseEntity>(null);
         }
+
+        public async Task<List<Document>> SearchAsync(string keyword, CancellationToken ct = default)
+        {
+            return await Task.Run(() => Search(keyword));
+        }
+
+        public async Task<List<Document>> SearchAdvancedAsync(string keyword, string format, DateTime? fromDate, DateTime? toDate, decimal? minSize, decimal? maxSize, bool? isImportant, CancellationToken ct = default)
+        {
+            return await Task.Run(() => SearchAdvanced(keyword, format, fromDate, toDate, minSize, maxSize, isImportant));
+        }
     }
 }
-

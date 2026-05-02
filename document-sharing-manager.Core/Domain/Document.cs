@@ -9,21 +9,21 @@ namespace document_sharing_manager.Core.Domain
         public string DuongDan { get; set; }
         public string GhiChu { get; set; }
         public DateTime NgayThem { get; set; } = DateTime.Now;
-        public double? KichThuoc { get; set; }
+        public decimal? KichThuoc { get; set; }
         public bool QuanTrong { get; set; }
         public string Tags { get; set; }
         public bool IsDeleted { get; set; }
         public DateTime? DeletedAt { get; set; }
 
-        public string KichThuocFormatted => FormatFileSize(KichThuoc ?? 0);
+        public string KichThuocFormatted => FormatFileSize(KichThuoc ?? 0m);
 
-        public static string FormatFileSize(double bytes)
+        public static string FormatFileSize(decimal bytes)
         {
             string[] Suffix = { "B", "KB", "MB", "GB", "TB" };
             int i;
-            for (i = 0; i < Suffix.Length - 1 && bytes >= 1024; i++)
+            for (i = 0; i < Suffix.Length - 1 && bytes >= 1024m; i++)
             {
-                bytes /= 1024.0;
+                bytes /= 1024.0m;
             }
 
             return String.Format("{0:0.##} {1}", bytes, Suffix[i]);

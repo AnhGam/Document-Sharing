@@ -25,15 +25,11 @@ namespace document_sharing_manager.Infrastructure.Persistence
         {
             var entries = ChangeTracker
                 .Entries()
-                .Where(e => e.Entity is BaseEntity && (e.State == EntityState.Added || e.State == EntityState.Modified));
+                .Where(e => e.Entity is BaseEntity && e.State == EntityState.Modified);
 
             foreach (var entityEntry in entries)
             {
-                var entity = (BaseEntity)entityEntry.Entity;
-                if (entityEntry.State == EntityState.Modified)
-                {
-                    entity.Update();
-                }
+                ((BaseEntity)entityEntry.Entity).Update();
             }
 
             return base.SaveChangesAsync(cancellationToken);

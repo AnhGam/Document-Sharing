@@ -201,10 +201,10 @@ namespace document_sharing_manager.Documents
 
             try
             {
-                double? kichThuoc = null;
+                decimal? kichThuoc = null;
                 if (!string.IsNullOrWhiteSpace(txtKichThuoc.Text))
                 {
-                    kichThuoc = Convert.ToDouble(txtKichThuoc.Text);
+                    kichThuoc = Convert.ToDecimal(txtKichThuoc.Text);
                 }
 
                 bool success = false;

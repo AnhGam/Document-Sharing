@@ -62,9 +62,7 @@ namespace document_sharing_manager_api.Controllers
         [HttpGet("search")]
         public async Task<ActionResult<IEnumerable<Document>>> Search([FromQuery] string keyword, CancellationToken ct)
         {
-            // Note: Currently calling synchronous Search from repo as placeholder
-            // In a real scenario, we should have SearchAsync
-            var results = _repository.Search(keyword);
+            var results = await _repository.SearchAsync(keyword, ct);
             return Ok(results);
         }
     }

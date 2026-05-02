@@ -10,8 +10,8 @@ namespace document_sharing_manager.Core.Interfaces
         string SelectedFormat { get; }
         DateTime? FilterFromDate { get; }
         DateTime? FilterToDate { get; }
-        double? FilterMinSize { get; }
-        double? FilterMaxSize { get; }
+        decimal? FilterMinSize { get; }
+        decimal? FilterMaxSize { get; }
         bool FilterIsImportant { get; }
 
         event EventHandler SearchRequested;

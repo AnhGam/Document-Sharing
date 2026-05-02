@@ -380,7 +380,7 @@ namespace document_sharing_manager.Documents
                         entry.FileType,
                         managedPath,
                         note,
-                        (double)entry.FileSize / (1024.0 * 1024.0),
+                        (decimal)entry.FileSize / (1024.0m * 1024.0m),
                         isImportant,
                         ""
                     );
