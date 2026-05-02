@@ -6,13 +6,14 @@ using document_sharing_manager.Core.Domain;
 
 namespace document_sharing_manager.Core.Interfaces
 {
-    public interface IDocumentRepository : IRepository<BaseEntity>
+    public interface IDocumentRepository : IRepository<Document>
     {
-        Task<IEnumerable<BaseEntity>> GetFilesByOwnerAsync(int ownerId, CancellationToken ct = default);
-        Task<BaseEntity?> GetByVersionAsync(int docId, int version, CancellationToken ct = default);
+        Task<IEnumerable<Document>> GetAllByUserIdAsync(int userId, CancellationToken ct = default);
+        Task<Document?> GetByIdAndUserIdAsync(int id, int userId, CancellationToken ct = default);
+        Task<Document?> GetByVersionAsync(int docId, int version, int userId, CancellationToken ct = default);
 
-        Task<List<Document>> SearchAsync(string keyword, CancellationToken ct = default);
-        Task<List<Document>> SearchAdvancedAsync(string keyword, string format, DateTime? fromDate, DateTime? toDate, decimal? minSize, decimal? maxSize, bool? isImportant, CancellationToken ct = default);
+        Task<List<Document>> SearchAsync(string keyword, int userId, CancellationToken ct = default);
+        Task<List<Document>> SearchAdvancedAsync(string keyword, string format, DateTime? fromDate, DateTime? toDate, decimal? minSize, decimal? maxSize, bool? isImportant, int userId, CancellationToken ct = default);
 
         // Synchronous Legacy methods for UI compatibility
         List<Document> GetAll();
