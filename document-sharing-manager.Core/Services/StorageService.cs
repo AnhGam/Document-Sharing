@@ -6,6 +6,7 @@ namespace document_sharing_manager.Core.Services
 {
     public static class FileStorageService
     {
+        public const string DefaultFolder = "documents";
         public static string ResolvePath(string relativePath)
         {
             if (string.IsNullOrEmpty(relativePath)) return "";

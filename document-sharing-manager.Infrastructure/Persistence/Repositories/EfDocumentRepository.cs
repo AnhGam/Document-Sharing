@@ -45,6 +45,7 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
             
             var entry = trackedEntry ?? _context.Entry(entity);
             entry.Property(x => x.CreatedAt).IsModified = false;
+            entry.Property(x => x.RemoteId).IsModified = false; // Never change RemoteId
             
             await _context.SaveChangesAsync(ct);
         }
@@ -77,6 +78,19 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
         {
             return await _context.Documents
                 .FirstOrDefaultAsync(d => d.Id == docId && d.Version == version && d.UserId == userId, ct);
+        }
+
+        public async Task<Document?> GetByPathAsync(string path, CancellationToken ct = default)
+        {
+            return await _context.Documents
+                .AsNoTracking()
+                .FirstOrDefaultAsync(d => d.DuongDan == path && !d.IsDeleted, ct);
+        }
+
+        public async Task<Document?> GetByRemoteIdAsync(Guid remoteId, CancellationToken ct = default)
+        {
+            return await _context.Documents
+                .FirstOrDefaultAsync(d => d.RemoteId == remoteId && !d.IsDeleted, ct);
         }
 
         public async Task<List<Document>> SearchAsync(string keyword, int userId, CancellationToken ct = default)
@@ -192,6 +206,31 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
                 .AsNoTracking()
                 .Select(d => d.DinhDang)
                 .Distinct()];
+        }
+        public async Task<List<Document>> GetPendingSyncDocumentsAsync(int userId, CancellationToken ct = default)
+        {
+            return await _context.Documents
+                .Where(d => d.UserId == userId && d.SyncStatus != 0 && !d.IsDeleted)
+                .OrderByDescending(d => d.CreatedAt)
+                .ToListAsync(ct);
+        }
+
+        public async Task UpdateSyncStatusAsync(int id, int syncStatus, int? newVersion = null, int? expectedVersion = null, int? newLocalVersion = null, CancellationToken ct = default)
+        {
+            var doc = await _context.Documents.FindAsync([id], ct);
+            if (doc != null)
+            {
+                if (expectedVersion.HasValue && doc.Version != expectedVersion.Value)
+                {
+                    return; 
+                }
+                
+                doc.SyncStatus = syncStatus;
+                if (newVersion.HasValue) doc.Version = newVersion.Value;
+                if (newLocalVersion.HasValue) doc.LocalVersion = newLocalVersion.Value;
+                
+                await _context.SaveChangesAsync(ct);
+            }
         }
     }
 }

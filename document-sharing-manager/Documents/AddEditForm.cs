@@ -6,6 +6,7 @@ using System;
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
+using System.Data.SQLite;
 using document_sharing_manager.UI;
 using document_sharing_manager.UI.Controls;
 
@@ -18,6 +19,7 @@ namespace document_sharing_manager.Documents
         private int _currentVersion = 1;
         private int _currentLocalVersion = 1;
         private int _currentSyncStatus = 0;
+        private Guid _remoteId = Guid.NewGuid();
 
         public AddEditForm()
         {
@@ -87,14 +89,12 @@ namespace document_sharing_manager.Documents
             {
                 var dt = DatabaseHelper.ExecuteQuery(
                     "SELECT * FROM tai_lieu WHERE id = @id",
-                    new System.Data.SQLite.SQLiteParameter[]
-                    {
-                        new System.Data.SQLite.SQLiteParameter("@id", _documentId.Value)
-                    });
+                    [new SQLiteParameter("@id", _documentId.Value)]);
 
                 if (dt.Rows.Count > 0)
                 {
                     var row = dt.Rows[0];
+                    if (row["remote_id"] != DBNull.Value) _remoteId = Guid.Parse(row["remote_id"].ToString());
                     txtTen.Text = row["ten"].ToString();
                     cboDinhDang.Text = row["dinh_dang"].ToString();
                     txtDuongDan.Text = row["duong_dan"].ToString();
@@ -142,7 +142,7 @@ namespace document_sharing_manager.Documents
         /// </summary>
         private void BtnChonFileClick(object sender, EventArgs e)
         {
-            using (OpenFileDialog openFileDialog = new OpenFileDialog
+            using OpenFileDialog openFileDialog = new()
             {
                 Filter = "Tất cả file hỗ trợ|*.pdf;*.doc;*.docx;*.ppt;*.pptx;*.txt;*.xlsx;*.xls;*.jpg;*.jpeg;*.png;*.gif;*.bmp;*.ico;*.tiff;*.webp;*.mp4;*.avi;*.mkv;*.mov;*.wmv;*.webm;*.flv;*.m4v|" +
                           "Tài liệu|*.pdf;*.doc;*.docx;*.ppt;*.pptx;*.txt;*.xlsx;*.xls|" +
@@ -153,42 +153,40 @@ namespace document_sharing_manager.Documents
                           "Excel (*.xlsx;*.xls)|*.xlsx;*.xls|" +
                           "PowerPoint (*.ppt;*.pptx)|*.ppt;*.pptx",
                 Title = "Chọn file"
-            })
+            };
+
+            if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
-                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                string duongDan = openFileDialog.FileName;
+                txtDuongDan.Text = duongDan;
+
+                // Tự động điền tên file nếu chưa có tên
+                if (string.IsNullOrWhiteSpace(txtTen.Text))
                 {
-                    string duongDan = openFileDialog.FileName;
-                    txtDuongDan.Text = duongDan;
+                    txtTen.Text = Path.GetFileNameWithoutExtension(duongDan);
+                }
 
-                    // Tự động điền tên file nếu chưa có tên
-                    if (string.IsNullOrWhiteSpace(txtTen.Text))
-                    {
-                        txtTen.Text = Path.GetFileNameWithoutExtension(duongDan);
-                    }
+                // Tự động nhận diện loại file
+                string ext = Path.GetExtension(duongDan).ToLowerInvariant();
+                string detectedType = DetectFileType(ext);
+                if (!string.IsNullOrEmpty(detectedType))
+                {
+                    cboDinhDang.SelectedItem = detectedType;
+                }
 
-                    // Tự động nhận diện loại file
-                    string ext = Path.GetExtension(duongDan).ToLowerInvariant();
-                    string detectedType = DetectFileType(ext);
-                    if (!string.IsNullOrEmpty(detectedType))
-                    {
-                        cboDinhDang.SelectedItem = detectedType;
-                    }
-
-                    // Tính kích thước file
-                    try
-                    {
-                        FileInfo fileInfo = new FileInfo(duongDan);
-                        double kichThuoc = fileInfo.Length / (1024.0 * 1024.0); // Convert to MB
-                        txtKichThuoc.Text = FormatFileSize(kichThuoc);
-                    }
-                    catch
-                    {
-                        txtKichThuoc.Text = "0.00";
-                    }
+                // Tính kích thước file
+                try
+                {
+                    FileInfo fileInfo = new(duongDan);
+                    double kichThuoc = fileInfo.Length / (1024.0 * 1024.0); // Convert to MB
+                    txtKichThuoc.Text = FormatFileSize(kichThuoc);
+                }
+                catch
+                {
+                    txtKichThuoc.Text = "0.00";
                 }
             }
         }
-
 
         /// <summary>
         /// Button lưu
@@ -248,6 +246,7 @@ namespace document_sharing_manager.Documents
                         kichThuoc,
                         chkQuanTrong.Checked,
                         UserSession.CurrentUserId,
+                        _remoteId,
                         _currentVersion,     // Server version stays the same during local edit
                         _currentVersion,     // Old version for atomic check
                         1,                   // SyncStatus: PendingUpload
@@ -273,6 +272,7 @@ namespace document_sharing_manager.Documents
                         kichThuoc,
                         chkQuanTrong.Checked,
                         UserSession.CurrentUserId,
+                        _remoteId,
                         1, // Version
                         tags
                     );
@@ -327,26 +327,13 @@ namespace document_sharing_manager.Documents
                 this.Icon = this.Owner.Icon;
         }
 
-        private static string DetectFileType(string ext)
+        private static string DetectFileType(string ext) => ext switch
         {
-            switch (ext)
-            {
-                case ".jpg": case ".jpeg": case ".png": case ".gif":
-                case ".bmp": case ".ico": case ".tiff": case ".webp":
-                    return "Hình ảnh";
-                case ".mp4": case ".avi": case ".mkv": case ".mov":
-                case ".wmv": case ".webm": case ".flv": case ".m4v":
-                    return "Video";
-                case ".pdf":
-                case ".doc": case ".docx":
-                case ".ppt": case ".pptx":
-                case ".xls": case ".xlsx":
-                case ".txt":
-                    return "Tài liệu";
-                default:
-                    return null;
-            }
-        }
+            ".jpg" or ".jpeg" or ".png" or ".gif" or ".bmp" or ".ico" or ".tiff" or ".webp" => "Hình ảnh",
+            ".mp4" or ".avi" or ".mkv" or ".mov" or ".wmv" or ".webm" or ".flv" or ".m4v" => "Video",
+            ".pdf" or ".doc" or ".docx" or ".ppt" or ".pptx" or ".xls" or ".xlsx" or ".txt" => "Tài liệu",
+            _ => null
+        };
 
         /// <summary>
         /// Recursively apply theme to all controls including those inside containers

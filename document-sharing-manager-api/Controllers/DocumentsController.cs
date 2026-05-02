@@ -5,6 +5,7 @@ using document_sharing_manager.Core.Domain;
 using document_sharing_manager.Core.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using document_sharing_manager.Core.DTOs;
 
 namespace document_sharing_manager_api.Controllers
@@ -95,12 +96,67 @@ namespace document_sharing_manager_api.Controllers
             return NoContent();
         }
 
+        [HttpPost("sync-stream")]
+        public async Task<ActionResult<SyncResponse>> SyncStream([FromForm] Guid remoteId, [FromForm] int localVersion, [FromForm] string? ten, [FromForm] string? ghiChu, IFormFile? file, CancellationToken ct)
+        {
+            var document = await _repository.GetByRemoteIdAsync(remoteId, ct);
+            if (document == null || document.UserId != CurrentUserId)
+                return NotFound(new SyncResponse { Success = false, Message = "Document not found or access denied." });
+
+            if (localVersion < document.Version)
+            {
+                return Conflict(new SyncResponse 
+                { 
+                    Success = false, 
+                    Conflict = true, 
+                    CurrentVersion = document.Version, 
+                    Message = "A newer version exists on the server." 
+                });
+            }
+
+            // Perform sync update
+            document.Version++;
+            if (!string.IsNullOrEmpty(ten)) document.Ten = ten!;
+            if (ghiChu != null) document.GhiChu = ghiChu;
+
+            // Handle file stream if provided
+            if (file != null && file.Length > 0)
+            {
+                using var stream = file.OpenReadStream();
+                string extension = System.IO.Path.GetExtension(file.FileName)?.TrimStart('.') ?? 
+                                   System.IO.Path.GetExtension(document.DuongDan)?.TrimStart('.') ?? "bin";
+
+                string safeName = SanitizeFileName(document.Ten);
+                if (safeName.Length > 200) safeName = safeName[..200];
+
+                string fileName = $"{safeName}_v{document.Version}.{extension}";
+                
+                document.DuongDan = await _storageService.UploadFileAsync(stream, fileName, "sync", ct);
+            }
+
+            try 
+            {
+                await _repository.UpdateAsync(document, ct);
+            }
+            catch (Exception ex) when (ex is System.Data.DBConcurrencyException || ex is DbUpdateConcurrencyException)
+            {
+                return Conflict(new SyncResponse { Success = false, Message = "A concurrency conflict occurred. Please refresh and try again." });
+            }
+
+            return Ok(new SyncResponse 
+            { 
+                Success = true, 
+                CurrentVersion = document.Version, 
+                Message = "Synchronized successfully via stream." 
+            });
+        }
+
         [HttpPost("sync")]
         public async Task<ActionResult<SyncResponse>> Sync([FromBody] SyncRequest request, CancellationToken ct)
         {
-            var document = await _repository.GetByIdAndUserIdAsync(request.DocumentId, CurrentUserId, ct);
-            if (document == null)
-                return NotFound(new SyncResponse { Success = false, Message = "Document not found." });
+            var document = await _repository.GetByRemoteIdAsync(request.RemoteId, ct);
+            if (document == null || document.UserId != CurrentUserId)
+                return NotFound(new SyncResponse { Success = false, Message = "Document not found or access denied." });
 
             if (request.LocalVersion < document.Version)
             {

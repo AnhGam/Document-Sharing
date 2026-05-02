@@ -14,5 +14,10 @@ namespace document_sharing_manager.Core.Data
         /// The username of the currently authenticated user.
         /// </summary>
         public static string Username { get; set; } = "LocalUser";
+
+        /// <summary>
+        /// The JWT access token for the current session.
+        /// </summary>
+        public static string? AccessToken { get; set; }
     }
 }

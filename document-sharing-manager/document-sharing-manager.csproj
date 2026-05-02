@@ -12,6 +12,7 @@
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
+    <LangVersion>latest</LangVersion>
     <TargetFrameworkProfile />
     <RuntimeIdentifier>win</RuntimeIdentifier>
     <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
@@ -42,6 +43,7 @@
     <Reference Include="System">
       <HintPath>C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\System.dll</HintPath>
     </Reference>
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.DirectoryServices" />
     <Reference Include="System.Numerics" />
@@ -143,6 +145,7 @@
     <Compile Include="Services\AppVersion.cs" />
     <Compile Include="Services\UpdateChecker.cs" />
     <Compile Include="Services\UpdateInstaller.cs" />
+    <Compile Include="Services\SyncWatcher.cs" />
     <Compile Include="Management\RecycleBinForm.cs">
       <SubType>Form</SubType>
     </Compile>

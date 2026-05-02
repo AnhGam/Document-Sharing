@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace document_sharing_manager.Core.DTOs
@@ -5,7 +6,7 @@ namespace document_sharing_manager.Core.DTOs
     public class SyncRequest
     {
         [Required]
-        public int DocumentId { get; set; }
+        public Guid RemoteId { get; set; }
 
         [Required]
         public int LocalVersion { get; set; }
