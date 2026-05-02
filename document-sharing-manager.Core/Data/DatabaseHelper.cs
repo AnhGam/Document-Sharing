@@ -1187,15 +1187,12 @@ namespace document_sharing_manager.Core.Data
         public static DataTable GetSuggestedRelatedDocuments(int docId)
         {
             string query = @"
-                SELECT id, ten, danh_muc, dinh_dang, tags
+                SELECT id, ten, dinh_dang, tags
                 FROM tai_lieu t
                 WHERE id != @docId 
                 AND is_deleted = 0
                 AND (
-                    -- Cùng danh mục
-                    danh_muc IN (SELECT danh_muc FROM tai_lieu WHERE id = @docId AND danh_muc IS NOT NULL AND danh_muc != '')
-                    OR 
-                    -- Hoặc có chung ít nhất 1 tag (giả sử tag cách nhau bởi dấu ;)
+                    -- Có chung ít nhất 1 tag (giả sử tag cách nhau bởi dấu ;)
                     EXISTS (
                         SELECT 1 FROM tai_lieu t2 
                         WHERE t2.id = @docId 

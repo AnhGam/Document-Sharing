@@ -49,36 +49,45 @@ namespace document_sharing_manager.Infrastructure.Storage
             var relativePath = Path.Combine(subDirectory, safeFileName);
             var fullPath = Path.Combine(_basePath, relativePath);
 
-            bool shouldDelete = false;
-            using (var fileStream = new FileStream(fullPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, useAsync: true))
+            try
             {
-                if (stream.CanSeek)
+                using (var fileStream = new FileStream(fullPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, useAsync: true))
                 {
-                    await stream.CopyToAsync(fileStream, 8192, ct);
-                }
-                else
-                {
-                    // For non-seekable streams, check size during copy
-                    var buffer = new byte[8192];
-                    long totalBytesRead = 0;
-                    int bytesRead;
-                    while ((bytesRead = await stream.ReadAsync(buffer.AsMemory(), ct)) > 0)
+                    if (stream.CanSeek)
                     {
-                        totalBytesRead += bytesRead;
-                        if (totalBytesRead > _maxFileSizeBytes)
+                        // Check size for seekable streams first
+                        if (stream.Length > _maxFileSizeBytes)
                         {
-                            shouldDelete = true;
-                            break;
+                            throw new InvalidOperationException($"File size exceeds the maximum limit of {_maxFileSizeBytes / (1024 * 1024)}MB");
                         }
-                        await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), ct);
+                        await stream.CopyToAsync(fileStream, 8192, ct);
+                    }
+                    else
+                    {
+                        // For non-seekable streams, check size during copy
+                        var buffer = new byte[8192];
+                        long totalBytesRead = 0;
+                        int bytesRead;
+                        while ((bytesRead = await stream.ReadAsync(buffer.AsMemory(), ct)) > 0)
+                        {
+                            totalBytesRead += bytesRead;
+                            if (totalBytesRead > _maxFileSizeBytes)
+                            {
+                                throw new InvalidOperationException($"File size exceeds the maximum limit of {_maxFileSizeBytes / (1024 * 1024)}MB");
+                            }
+                            await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), ct);
+                        }
                     }
                 }
             }
-
-            if (shouldDelete)
+            catch
             {
-                if (File.Exists(fullPath)) File.Delete(fullPath);
-                throw new InvalidOperationException($"File size exceeds the maximum limit of {_maxFileSizeBytes / (1024 * 1024)}MB");
+                // Cleanup partial file on ANY exception (disk error, cancellation, etc.)
+                if (File.Exists(fullPath))
+                {
+                    try { File.Delete(fullPath); } catch { /* Ignore cleanup errors */ }
+                }
+                throw;
             }
 
             return relativePath;
