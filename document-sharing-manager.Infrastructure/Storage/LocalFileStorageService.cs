@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using document_sharing_manager.Core.Interfaces;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 
 namespace document_sharing_manager.Infrastructure.Storage
 {
@@ -12,10 +13,10 @@ namespace document_sharing_manager.Infrastructure.Storage
         private readonly string _basePath;
         private readonly long _maxFileSizeBytes;
 
-        public LocalFileStorageService(IConfiguration configuration)
+        public LocalFileStorageService(IConfiguration configuration, IHostEnvironment env)
         {
             var configPath = configuration["Storage:LocalBasePath"];
-            _basePath = Path.GetFullPath(configPath ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "uploads"));
+            _basePath = Path.GetFullPath(configPath ?? Path.Combine(env.ContentRootPath, "uploads"));
             
             // Limit capacity: Default 500MB as per documentation
             var maxMb = configuration.GetValue<long>("Storage:MaxFileSizeMB", 500);

@@ -34,24 +34,19 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
 
         public async Task UpdateAsync(BaseEntity entity, CancellationToken ct = default)
         {
-            var entry = _context.Entry(entity);
-            if (entry.State == EntityState.Detached)
-            {
-                var tracked = _context.ChangeTracker.Entries<BaseEntity>()
-                    .FirstOrDefault(e => e.Entity.Id == entity.Id);
+            var trackedEntry = _context.ChangeTracker.Entries<BaseEntity>()
+                .FirstOrDefault(e => e.Entity.Id == entity.Id);
 
-                if (tracked != null)
-                {
-                    tracked.CurrentValues.SetValues(entity);
-                    entry = tracked;
-                }
-                else
-                {
-                    entry.State = EntityState.Modified;
-                }
+            if (trackedEntry != null && trackedEntry.Entity != entity)
+            {
+                _context.Entry(trackedEntry.Entity).CurrentValues.SetValues(entity);
+            }
+            else if (trackedEntry == null)
+            {
+                _context.Entry(entity).State = EntityState.Modified;
             }
             
-            // Prevent CreatedAt from being updated
+            var entry = trackedEntry ?? _context.Entry(entity);
             entry.Property(x => x.CreatedAt).IsModified = false;
             
             await _context.SaveChangesAsync(ct);
@@ -140,9 +135,13 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
             if (string.IsNullOrWhiteSpace(keyword))
                 return GetAll();
 
+            // Accuracy: Escape SQL wildcards to prevent incorrect search results
+            var escapedKeyword = keyword.Replace("%", "\\%").Replace("_", "\\_");
+            var searchPattern = $"%{escapedKeyword}%";
+
             return [.. _context.Documents
                 .AsNoTracking()
-                .Where(d => EF.Functions.ILike(d.Ten, $"%{keyword}%") || (d.GhiChu != null && EF.Functions.ILike(d.GhiChu, $"%{keyword}%")))];
+                .Where(d => EF.Functions.ILike(d.Ten, searchPattern) || (d.GhiChu != null && EF.Functions.ILike(d.GhiChu, searchPattern)))];
         }
 
         public List<Document> SearchAdvanced(string keyword, string format, DateTime? fromDate, DateTime? toDate, decimal? minSize, decimal? maxSize, bool? isImportant)
