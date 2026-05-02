@@ -55,21 +55,21 @@ Write-Host "Lead Time for Changes (CI Duration): $durationMin minutes ($doraRati
 # 4. Generate Enhanced Report
 # Note: Deployment Frequency and Change Failure Rate are TBD until history tracking is integrated.
 $report = @"
-### 🚀 DORA & Capacity Governance Report
+### DORA & Capacity Governance Report
 > Generated at $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
 
-#### 📈 DORA Metrics (Delivery Performance)
+#### DORA Metrics (Delivery Performance)
 | Metric | Value | Rating | Status |
 | :--- | :--- | :--- | :--- |
-| **Lead Time for Changes** | $durationMin min | $doraRating | 🟢 STABLE |
-| **Deployment Frequency** | TBD | N/A | 🟡 PENDING |
-| **Change Failure Rate** | TBD | N/A | 🟡 PENDING |
+| **Lead Time for Changes** | $durationMin min | $doraRating | [STABLE] |
+| **Deployment Frequency** | TBD | N/A | [PENDING] |
+| **Change Failure Rate** | TBD | N/A | [PENDING] |
 
-#### 📊 Capacity & FinOps
+#### Capacity & FinOps
 | Metric | Value | Limit | Status |
 | :--- | :--- | :--- | :--- |
-| **Installer Size** | $sizeMB MB | $MaxInstallerSizeMB MB | $(if($installerFail){"🔴 OVER_LIMIT"}else{"🔵 OPTIMAL"}) |
-| **Repo Source Size** | $totalSizeMB MB | $MaxRepoSizeMB MB | $(if($repoFail){"🔴 OVER_LIMIT"}else{"🔵 OPTIMAL"}) |
+| **Installer Size** | $sizeMB MB | $MaxInstallerSizeMB MB | $(if($installerFail){"[OVER_LIMIT]"}else{"[OPTIMAL]"}) |
+| **Repo Source Size** | $totalSizeMB MB | $MaxRepoSizeMB MB | $(if($repoFail){"[OVER_LIMIT]"}else{"[OPTIMAL]"}) |
 
 ---
 *Recommendation: Current build duration is within Elite/High threshold. Continue optimizing assets to maintain lead time.*
