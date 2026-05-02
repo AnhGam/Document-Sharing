@@ -67,6 +67,9 @@ namespace document_sharing_manager_api.Controllers
             if (id != document.Id)
                 return BadRequest();
 
+            if (document.Version != existing.Version)
+                return Conflict(new { Message = "Concurrency conflict: The document has been modified by another user." });
+
             document.UserId = CurrentUserId;
             document.Version = existing.Version + 1; // Increment version on update
             
@@ -111,9 +114,11 @@ namespace document_sharing_manager_api.Controllers
             // Handle content synchronization if provided
             if (!string.IsNullOrEmpty(request.Content))
             {
-                // Implementation note: In a real scenario, this would involve saving the file
-                // and potentially updating document.DuongDan. 
-                // For now, we update the metadata and acknowledge the content was received.
+                using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(request.Content));
+                string extension = string.IsNullOrEmpty(document.DinhDang) ? "txt" : document.DinhDang.ToLower();
+                string fileName = $"{document.Ten}_{document.Version}.{extension}";
+                
+                document.DuongDan = await _storageService.UploadFileAsync(stream, fileName, "sync", ct);
             }
 
             await _repository.UpdateAsync(document, ct);

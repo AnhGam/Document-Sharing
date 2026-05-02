@@ -156,8 +156,9 @@ namespace document_sharing_manager.Core.Data
             using var cmd = new SQLiteCommand(createTablesQuery, conn);
             cmd.ExecuteNonQuery();
 
-            // Các cột migration đã được tích hợp vào schema ban đầu
-            // Nếu cần thêm cột sau này, hãy sử dụng MigrateAddColumn tại đây
+            // Migration: Add user_id and version if missing in existing installations
+            MigrateAddColumn(conn, "tai_lieu", "user_id", "INTEGER NOT NULL DEFAULT 1");
+            MigrateAddColumn(conn, "tai_lieu", "version", "INTEGER DEFAULT 1");
 
             // Migration: fix personal_notes column names and add status if missing
             // Các cột này đã được tích hợp vào schema gốc ở trên

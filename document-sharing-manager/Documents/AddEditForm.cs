@@ -15,6 +15,7 @@ namespace document_sharing_manager.Documents
     {
         private readonly int? _documentId = null;
         private string _originalPath = null;
+        private int _currentVersion = 1;
 
         public AddEditForm()
         {
@@ -110,6 +111,11 @@ namespace document_sharing_manager.Documents
                     if (row["tags"] != DBNull.Value)
                     {
                         txtTags.Text = row["tags"].ToString();
+                    }
+
+                    if (row["version"] != DBNull.Value)
+                    {
+                        _currentVersion = Convert.ToInt32(row["version"]);
                     }
                 }
             }
@@ -230,7 +236,7 @@ namespace document_sharing_manager.Documents
                         kichThuoc,
                         chkQuanTrong.Checked,
                         UserSession.CurrentUserId,
-                        1, // Version
+                        _currentVersion, // Use preserved version
                         tags
                     );
 
