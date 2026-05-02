@@ -472,7 +472,7 @@ namespace document_sharing_manager.Core.Data
 
         public static bool InsertDocument(string ten, string dinhDang,
             string duongDan, string ghiChu, decimal? kichThuoc, bool quanTrong,
-            int userId, int version = 1, string? tags = null)
+            int userId, int version = 1, string? tags = null, int syncStatus = 1, int localVersion = 1)
         {
             string query = @"INSERT INTO tai_lieu
                 (ten, dinh_dang, duong_dan, ghi_chu, kich_thuoc, quan_trong, tags, user_id, version, sync_status, local_version)
@@ -490,8 +490,8 @@ namespace document_sharing_manager.Core.Data
                 new("@tags", string.IsNullOrEmpty(tags) ? DBNull.Value : (object)tags!),
                 new("@user_id", userId),
                 new("@version", version),
-                new("@sync_status", 0),
-                new("@local_version", 1)
+                new("@sync_status", syncStatus),
+                new("@local_version", localVersion)
             ];
 
             int result = ExecuteNonQuery(query, parameters);

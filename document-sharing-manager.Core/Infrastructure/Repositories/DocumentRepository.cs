@@ -133,9 +133,10 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
 
         public bool Update(Document doc)
         {
-             // For concurrency, we assume doc.Version was already incremented.
-             // We check against (doc.Version - 1)
-             return DatabaseHelper.UpdateDocument(doc.Id, doc.Ten, doc.DinhDang, doc.DuongDan, doc.GhiChu, doc.KichThuoc, doc.QuanTrong, doc.UserId, doc.Version, null, doc.SyncStatus, doc.LocalVersion, doc.Tags);
+             // We pass doc.Version as the expected version to ensure the record hasn't changed.
+             // If we intended to increment the version, the caller should have handled it or 
+             // we'd need to pass the old version separately.
+             return DatabaseHelper.UpdateDocument(doc.Id, doc.Ten, doc.DinhDang, doc.DuongDan, doc.GhiChu, doc.KichThuoc, doc.QuanTrong, doc.UserId, doc.Version, doc.Version, doc.SyncStatus, doc.LocalVersion, doc.Tags);
         }
 
         public bool Delete(int id)
