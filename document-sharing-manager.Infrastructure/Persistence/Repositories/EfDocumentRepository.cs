@@ -13,9 +13,9 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
     {
         private readonly AppDbContext _context = context;
 
-        public async Task<BaseEntity> GetByIdAsync(int id, CancellationToken ct = default)
+        public async Task<BaseEntity?> GetByIdAsync(int id, CancellationToken ct = default)
         {
-            return (await _context.Documents.FindAsync([id], ct))!;
+            return await _context.Documents.FindAsync([id], ct);
         }
 
         public async Task<IEnumerable<BaseEntity>> GetAllAsync(CancellationToken ct = default)
@@ -68,7 +68,7 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
             return await _context.Documents.AsNoTracking().ToListAsync(ct);
         }
 
-        public Task<BaseEntity> GetByVersionAsync(int docId, int version, CancellationToken ct = default)
+        public Task<BaseEntity?> GetByVersionAsync(int docId, int version, CancellationToken ct = default)
         {
             throw new NotImplementedException("Version control is in roadmap.");
         }
@@ -121,9 +121,9 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
             return [.. _context.Documents.AsNoTracking()];
         }
 
-        public Document GetById(int id)
+        public Document? GetById(int id)
         {
-            return _context.Documents.Find(id)!;
+            return _context.Documents.Find(id);
         }
 
         public List<Document> Search(string keyword)

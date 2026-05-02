@@ -1,5 +1,6 @@
 using System.Text;
 using document_sharing_manager.Core.Interfaces;
+using document_sharing_manager.Core.Configurations;
 using document_sharing_manager.Infrastructure.Persistence;
 using document_sharing_manager.Infrastructure.Persistence.Repositories;
 using document_sharing_manager.Infrastructure.Security;
@@ -47,18 +48,23 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 // Register Storage Services
 builder.Services.AddScoped<IStorageService, LocalFileStorageService>();
 
-// Configure JWT Authentication
-var jwtKey = builder.Configuration["JWT:Key"];
+// Resolve JWT Secret from Environment if placeholder is used
+var jwtSection = builder.Configuration.GetSection("JWT");
+var jwtKey = jwtSection["Key"];
 if (jwtKey != null && jwtKey.Contains("${JWT_SECRET_KEY}"))
 {
     jwtKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
     builder.Configuration["JWT:Key"] = jwtKey;
 }
 
-if (string.IsNullOrEmpty(jwtKey))
+if (string.IsNullOrEmpty(jwtKey) || jwtKey.Length < 32)
 {
-    throw new InvalidOperationException("JWT Key is missing or not configured properly. Ensure JWT:Key is in appsettings or JWT_SECRET_KEY environment variable is set.");
+    throw new InvalidOperationException("JWT Key must be at least 32 characters long and configured properly via environment variable (JWT_SECRET_KEY) or appsettings.");
 }
+
+// Bind Settings
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JWT"));
+builder.Services.Configure<SecuritySettings>(builder.Configuration.GetSection("Security"));
 
 builder.Services.AddAuthentication(options =>
 {

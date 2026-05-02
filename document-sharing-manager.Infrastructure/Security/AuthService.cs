@@ -7,15 +7,18 @@ using document_sharing_manager.Core.DTOs;
 using document_sharing_manager.Core.Interfaces;
 using document_sharing_manager.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using document_sharing_manager.Core.Configurations;
+using Microsoft.Extensions.Options;
 using BC = BCrypt.Net.BCrypt;
 
 namespace document_sharing_manager.Infrastructure.Security
 {
-    public class AuthService(AppDbContext context, ITokenService tokenService, Microsoft.Extensions.Configuration.IConfiguration config) : IAuthService
+    public class AuthService(AppDbContext context, ITokenService tokenService, IOptions<JwtSettings> jwtOptions, IOptions<SecuritySettings> securityOptions) : IAuthService
     {
         private readonly AppDbContext _context = context;
         private readonly ITokenService _tokenService = tokenService;
-        private readonly Microsoft.Extensions.Configuration.IConfiguration _config = config;
+        private readonly JwtSettings _jwtSettings = jwtOptions.Value;
+        private readonly SecuritySettings _securitySettings = securityOptions.Value;
 
         public async Task<AuthResponse> LoginAsync(LoginRequest request, CancellationToken ct = default)
         {
@@ -39,16 +42,17 @@ namespace document_sharing_manager.Infrastructure.Security
         public async Task<AuthResponse> RegisterAsync(RegisterRequest request, CancellationToken ct = default)
         {
             var normalizedUsername = request.Username.ToLower();
-            if (await _context.Users.AnyAsync(u => u.Username == normalizedUsername, ct))
+            
+            if (await _context.Users.AnyAsync(u => u.Username == normalizedUsername || u.Email == request.Email, ct))
             {
-                throw new InvalidOperationException("Username already exists.");
+                throw new InvalidOperationException("Username or Email already exists.");
             }
 
             var user = new User
             {
                 Username = normalizedUsername,
                 Email = request.Email,
-                PasswordHash = BC.HashPassword(request.Password, int.TryParse(_config["Security:BCryptWorkFactor"], out var factor) ? factor : 12),
+                PasswordHash = BC.HashPassword(request.Password, _securitySettings.BCryptWorkFactor),
                 Role = UserRole.User
             };
 
@@ -104,7 +108,7 @@ namespace document_sharing_manager.Infrastructure.Security
             {
                 Token = refreshToken,
                 UserId = user.Id,
-                ExpiryDate = DateTime.UtcNow.AddDays(int.TryParse(_config["JWT:RefreshTokenDurationInDays"], out var days) ? days : 7)
+                ExpiryDate = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenDurationInDays)
             };
 
             await _context.RefreshTokens.AddAsync(refreshTokenEntity, ct);

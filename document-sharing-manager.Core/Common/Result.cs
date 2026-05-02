@@ -16,8 +16,8 @@ namespace document_sharing_manager.Core.Common
             ErrorMessage = errorMessage;
         }
 
-        public static Result<T> Success(T value) => new Result<T>(true, value, null);
-        public static Result<T> Failure(string errorMessage) => new Result<T>(false, default, errorMessage);
+        public static Result<T> Success(T value) => new(true, value, string.Empty);
+        public static Result<T> Failure(string errorMessage) => new(false, default!, errorMessage);
     }
 
     public class Result
@@ -32,7 +32,7 @@ namespace document_sharing_manager.Core.Common
             ErrorMessage = errorMessage;
         }
 
-        public static Result Success() => new Result(true, null);
-        public static Result Failure(string errorMessage) => new Result(false, errorMessage);
+        public static Result Success() => new(true, string.Empty);
+        public static Result Failure(string errorMessage) => new(false, errorMessage);
     }
 }

@@ -13,8 +13,8 @@ namespace document_sharing_manager.Core.Data
     /// </summary>
     public partial class DatabaseHelper
     {
-        private static string _databasePath;
-        private static string _connectionString;
+        private static string _databasePath = string.Empty;
+        private static string _connectionString = string.Empty;
         public static bool SuppressPopups { get; set; } = false;
 
 
@@ -148,58 +148,48 @@ namespace document_sharing_manager.Core.Data
                 CREATE INDEX IF NOT EXISTS idx_collection_items_document ON collection_items(document_id);
             ";
 
-            using (SQLiteConnection conn = new SQLiteConnection(ConnectionString))
-            {
-                conn.Open();
-                using (SQLiteCommand cmd = new SQLiteCommand(createTablesQuery, conn))
-                {
-                    cmd.ExecuteNonQuery();
-                }
+            using var conn = new SQLiteConnection(ConnectionString);
+            conn.Open();
+            using var cmd = new SQLiteCommand(createTablesQuery, conn);
+            cmd.ExecuteNonQuery();
 
-                // Các cột migration đã được tích hợp vào schema ban đầu
-                // Nếu cần thêm cột sau này, hãy sử dụng MigrateAddColumn tại đây
+            // Các cột migration đã được tích hợp vào schema ban đầu
+            // Nếu cần thêm cột sau này, hãy sử dụng MigrateAddColumn tại đây
 
-                // Migration: fix personal_notes column names and add status if missing
-                // Các cột này đã được tích hợp vào schema gốc ở trên
+            // Migration: fix personal_notes column names and add status if missing
+            // Các cột này đã được tích hợp vào schema gốc ở trên
 
-                // Migration: bang recent_files
-                using (var cmd2 = new SQLiteCommand(@"
-                    CREATE TABLE IF NOT EXISTS recent_files (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        document_id INTEGER NOT NULL UNIQUE,
-                        opened_at DATETIME DEFAULT (datetime('now','localtime')),
-                        FOREIGN KEY (document_id) REFERENCES tai_lieu(id) ON DELETE CASCADE
-                    );", conn))
-                {
-                    cmd2.ExecuteNonQuery();
-                }
+            // Migration: bang recent_files
+            using var cmd2 = new SQLiteCommand(@"
+                CREATE TABLE IF NOT EXISTS recent_files (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    document_id INTEGER NOT NULL UNIQUE,
+                    opened_at DATETIME DEFAULT (datetime('now','localtime')),
+                    FOREIGN KEY (document_id) REFERENCES tai_lieu(id) ON DELETE CASCADE
+                );", conn);
+            cmd2.ExecuteNonQuery();
 
-                // Migration: bang document_relations
-                using (var cmd3 = new SQLiteCommand(@"
-                    CREATE TABLE IF NOT EXISTS document_relations (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        doc_id_1 INTEGER NOT NULL,
-                        doc_id_2 INTEGER NOT NULL,
-                        relation_type TEXT DEFAULT 'related',
-                        created_at DATETIME DEFAULT (datetime('now','localtime')),
-                        FOREIGN KEY (doc_id_1) REFERENCES tai_lieu(id) ON DELETE CASCADE,
-                        FOREIGN KEY (doc_id_2) REFERENCES tai_lieu(id) ON DELETE CASCADE,
-                        UNIQUE(doc_id_1, doc_id_2)
-                    );", conn))
-                {
-                    cmd3.ExecuteNonQuery();
-                }
-            }
+            // Migration: bang document_relations
+            using var cmd3 = new SQLiteCommand(@"
+                CREATE TABLE IF NOT EXISTS document_relations (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    doc_id_1 INTEGER NOT NULL,
+                    doc_id_2 INTEGER NOT NULL,
+                    relation_type TEXT DEFAULT 'related',
+                    created_at DATETIME DEFAULT (datetime('now','localtime')),
+                    FOREIGN KEY (doc_id_1) REFERENCES tai_lieu(id) ON DELETE CASCADE,
+                    FOREIGN KEY (doc_id_2) REFERENCES tai_lieu(id) ON DELETE CASCADE,
+                    UNIQUE(doc_id_1, doc_id_2)
+                );", conn);
+            cmd3.ExecuteNonQuery();
         }
 
         private static void MigrateAddColumn(SQLiteConnection conn, string table, string column, string type)
         {
             try
             {
-                using (var cmd = new SQLiteCommand($"ALTER TABLE {table} ADD COLUMN {column} {type}", conn))
-                {
-                    cmd.ExecuteNonQuery();
-                }
+                using var cmd = new SQLiteCommand($"ALTER TABLE {table} ADD COLUMN {column} {type}", conn);
+                cmd.ExecuteNonQuery();
             }
             catch (SQLiteException)
             {
@@ -212,10 +202,8 @@ namespace document_sharing_manager.Core.Data
             try
             {
                 // SQLite 3.25.0+ supports RENAME COLUMN
-                using (var cmd = new SQLiteCommand($"ALTER TABLE {table} RENAME COLUMN {oldColumn} TO {newColumn}", conn))
-                {
-                    cmd.ExecuteNonQuery();
-                }
+                using var cmd = new SQLiteCommand($"ALTER TABLE {table} RENAME COLUMN {oldColumn} TO {newColumn}", conn);
+                cmd.ExecuteNonQuery();
             }
             catch (SQLiteException)
             {
@@ -232,11 +220,9 @@ namespace document_sharing_manager.Core.Data
         {
             try
             {
-                using (SQLiteConnection conn = new SQLiteConnection(ConnectionString))
-                {
-                    conn.Open();
-                    return true;
-                }
+                using var conn = new SQLiteConnection(ConnectionString);
+                conn.Open();
+                return true;
             }
             catch (Exception)
             {
@@ -248,25 +234,21 @@ namespace document_sharing_manager.Core.Data
         /// <summary>
         /// Thực hiện câu lệnh SELECT và trả về DataTable
         /// </summary>
-        public static DataTable ExecuteQuery(string query, System.Data.SQLite.SQLiteParameter[] parameters = null)
+        public static DataTable ExecuteQuery(string query, System.Data.SQLite.SQLiteParameter[]? parameters = null)
         {
-            DataTable dt = new DataTable();
+            DataTable dt = new();
             try
             {
-                using (SQLiteConnection conn = new SQLiteConnection(ConnectionString))
+                using var conn = new SQLiteConnection(ConnectionString);
+                conn.Open();
+                using var cmd = new SQLiteCommand(query, conn);
+                if (parameters != null)
                 {
-                    conn.Open();
-                    using (SQLiteCommand cmd = new SQLiteCommand(query, conn))
-                    {
-                        if (parameters != null)
-                        {
-                            cmd.Parameters.AddRange(parameters);
-                        }
-
-                        SQLiteDataAdapter adapter = new SQLiteDataAdapter(cmd);
-                        adapter.Fill(dt);
-                    }
+                    cmd.Parameters.AddRange(parameters);
                 }
+
+                SQLiteDataAdapter adapter = new(cmd);
+                adapter.Fill(dt);
             }
             catch (Exception ex)
             {
@@ -278,23 +260,19 @@ namespace document_sharing_manager.Core.Data
         /// <summary>
         /// Thực hiện câu lệnh INSERT, UPDATE, DELETE
         /// </summary>
-        public static int ExecuteNonQuery(string query, System.Data.SQLite.SQLiteParameter[] parameters = null)
+        public static int ExecuteNonQuery(string query, System.Data.SQLite.SQLiteParameter[]? parameters = null)
         {
             int affectedRows = 0;
             try
             {
-                using (SQLiteConnection conn = new SQLiteConnection(ConnectionString))
+                using var conn = new SQLiteConnection(ConnectionString);
+                conn.Open();
+                using var cmd = new SQLiteCommand(query, conn);
+                if (parameters != null)
                 {
-                    conn.Open();
-                    using (SQLiteCommand cmd = new SQLiteCommand(query, conn))
-                    {
-                        if (parameters != null)
-                        {
-                            cmd.Parameters.AddRange(parameters);
-                        }
-                        affectedRows = cmd.ExecuteNonQuery();
-                    }
+                    cmd.Parameters.AddRange(parameters);
                 }
+                affectedRows = cmd.ExecuteNonQuery();
             }
             catch (Exception ex)
             {
@@ -306,23 +284,19 @@ namespace document_sharing_manager.Core.Data
         /// <summary>
         /// Thực hiện câu lệnh trả về giá trị đơn (COUNT, SUM, v.v.)
         /// </summary>
-        public static object ExecuteScalar(string query, System.Data.SQLite.SQLiteParameter[] parameters = null)
+        public static object? ExecuteScalar(string query, System.Data.SQLite.SQLiteParameter[]? parameters = null)
         {
-            object result = null;
+            object? result = null;
             try
             {
-                using (SQLiteConnection conn = new SQLiteConnection(ConnectionString))
+                using var conn = new SQLiteConnection(ConnectionString);
+                conn.Open();
+                using var cmd = new SQLiteCommand(query, conn);
+                if (parameters != null)
                 {
-                    conn.Open();
-                    using (SQLiteCommand cmd = new SQLiteCommand(query, conn))
-                    {
-                        if (parameters != null)
-                        {
-                            cmd.Parameters.AddRange(parameters);
-                        }
-                        result = cmd.ExecuteScalar();
-                    }
+                    cmd.Parameters.AddRange(parameters);
                 }
+                result = cmd.ExecuteScalar();
             }
             catch (Exception ex)
             {
@@ -359,10 +333,10 @@ namespace document_sharing_manager.Core.Data
                            OR ghi_chu LIKE @keyword)
                            ORDER BY ngay_them DESC";
 
-            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
-            {
-                new System.Data.SQLite.SQLiteParameter("@keyword", "%" + keyword + "%")
-            };
+            System.Data.SQLite.SQLiteParameter[] parameters = 
+            [
+                new("@keyword", "%" + keyword + "%")
+            ];
 
             return ExecuteQuery(query, parameters);
         }
@@ -383,10 +357,10 @@ namespace document_sharing_manager.Core.Data
 
             query += " ORDER BY ngay_them DESC";
 
-            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
-            {
-                new System.Data.SQLite.SQLiteParameter("@dinh_dang", string.IsNullOrEmpty(dinhDang) ? DBNull.Value : (object)dinhDang)
-            };
+            System.Data.SQLite.SQLiteParameter[] parameters = 
+            [
+                new("@dinh_dang", string.IsNullOrEmpty(dinhDang) ? DBNull.Value : (object)dinhDang)
+            ];
 
             return ExecuteQuery(query, parameters);
         }
@@ -395,8 +369,8 @@ namespace document_sharing_manager.Core.Data
         /// Tìm kiếm và lọc tài liệu nâng cao
         /// </summary>
         public static DataTable SearchDocumentsAdvanced(
-            string keyword = null,
-            string dinhDang = null,
+            string? keyword = null,
+            string? dinhDang = null,
             DateTime? fromDate = null,
             DateTime? toDate = null,
             decimal? minSize = null,
@@ -405,13 +379,13 @@ namespace document_sharing_manager.Core.Data
         {
             string baseQuery = @"SELECT * FROM tai_lieu WHERE (is_deleted IS NULL OR is_deleted = 0)";
 
-            List<System.Data.SQLite.SQLiteParameter> parameterList = new List<System.Data.SQLite.SQLiteParameter>();
+            List<System.Data.SQLite.SQLiteParameter> parameterList = [];
 
             // Keyword search
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 baseQuery += " AND (ten LIKE @keyword OR ghi_chu LIKE @keyword OR tags LIKE @keyword)";
-                parameterList.Add(new System.Data.SQLite.SQLiteParameter("@keyword", "%" + keyword + "%"));
+                parameterList.Add(new("@keyword", "%" + keyword + "%"));
             }
 
             // Danh mục removed
@@ -420,35 +394,35 @@ namespace document_sharing_manager.Core.Data
             if (!string.IsNullOrEmpty(dinhDang) && dinhDang != "Tất cả")
             {
                 baseQuery += " AND dinh_dang = @dinh_dang";
-                parameterList.Add(new System.Data.SQLite.SQLiteParameter("@dinh_dang", dinhDang));
+                parameterList.Add(new("@dinh_dang", dinhDang));
             }
 
             // Ngày từ
             if (fromDate.HasValue)
             {
                 baseQuery += " AND date(ngay_them) >= date(@fromDate)";
-                parameterList.Add(new System.Data.SQLite.SQLiteParameter("@fromDate", fromDate.Value.ToString("yyyy-MM-dd")));
+                parameterList.Add(new("@fromDate", fromDate.Value.ToString("yyyy-MM-dd")));
             }
 
             // Ngày đến
             if (toDate.HasValue)
             {
                 baseQuery += " AND date(ngay_them) <= date(@toDate)";
-                parameterList.Add(new System.Data.SQLite.SQLiteParameter("@toDate", toDate.Value.ToString("yyyy-MM-dd")));
+                parameterList.Add(new("@toDate", toDate.Value.ToString("yyyy-MM-dd")));
             }
 
             // Kích thước min
             if (minSize.HasValue)
             {
                 baseQuery += " AND kich_thuoc >= @minSize";
-                parameterList.Add(new System.Data.SQLite.SQLiteParameter("@minSize", minSize.Value));
+                parameterList.Add(new("@minSize", minSize.Value));
             }
 
-            // Kích thước max
+            // Ngày đến
             if (maxSize.HasValue)
             {
                 baseQuery += " AND kich_thuoc <= @maxSize";
-                parameterList.Add(new System.Data.SQLite.SQLiteParameter("@maxSize", maxSize.Value));
+                parameterList.Add(new("@maxSize", maxSize.Value));
             }
 
             // Quan trọng
@@ -459,7 +433,7 @@ namespace document_sharing_manager.Core.Data
 
             baseQuery += " ORDER BY ngay_them DESC";
 
-            return ExecuteQuery(baseQuery, parameterList.ToArray());
+            return ExecuteQuery(baseQuery, [.. parameterList]);
         }
 
         /// <summary>
@@ -471,40 +445,36 @@ namespace document_sharing_manager.Core.Data
             
             try
             {
-                using (var conn = new SQLiteConnection(ConnectionString))
-                {
-                    conn.Open();
-                    string query = "SELECT COUNT(*) FROM tai_lieu WHERE duong_dan = @path AND (is_deleted IS NULL OR is_deleted = 0)";
-                    using (var cmd = new SQLiteCommand(query, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@path", duongDan);
-                        int count = Convert.ToInt32(cmd.ExecuteScalar());
-                        return count > 0;
-                    }
-                }
+                using var conn = new SQLiteConnection(ConnectionString);
+                conn.Open();
+                string query = "SELECT COUNT(*) FROM tai_lieu WHERE duong_dan = @path AND (is_deleted IS NULL OR is_deleted = 0)";
+                using var cmd = new SQLiteCommand(query, conn);
+                cmd.Parameters.AddWithValue("@path", duongDan);
+                int count = Convert.ToInt32(cmd.ExecuteScalar());
+                return count > 0;
             }
             catch { return false; }
         }
 
         public static bool InsertDocument(string ten, string dinhDang,
             string duongDan, string ghiChu, decimal? kichThuoc, bool quanTrong,
-            string tags = null)
+            string? tags = null)
         {
             string query = @"INSERT INTO tai_lieu
                 (ten, dinh_dang, duong_dan, ghi_chu, kich_thuoc, quan_trong, tags)
                 VALUES
                 (@ten, @dinh_dang, @duong_dan, @ghi_chu, @kich_thuoc, @quan_trong, @tags)";
 
-            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
-            {
-                new System.Data.SQLite.SQLiteParameter("@ten", ten),
-                new System.Data.SQLite.SQLiteParameter("@dinh_dang", string.IsNullOrEmpty(dinhDang) ? DBNull.Value : (object)dinhDang),
-                new System.Data.SQLite.SQLiteParameter("@duong_dan", duongDan ?? (object)DBNull.Value),
-                new System.Data.SQLite.SQLiteParameter("@ghi_chu", string.IsNullOrEmpty(ghiChu) ? DBNull.Value : (object)ghiChu),
-                new System.Data.SQLite.SQLiteParameter("@kich_thuoc", kichThuoc.HasValue ? (object)kichThuoc.Value : DBNull.Value),
-                new System.Data.SQLite.SQLiteParameter("@quan_trong", quanTrong ? 1 : 0),
-                new System.Data.SQLite.SQLiteParameter("@tags", string.IsNullOrEmpty(tags) ? DBNull.Value : (object)tags)
-            };
+            System.Data.SQLite.SQLiteParameter[] parameters = 
+            [
+                new("@ten", ten),
+                new("@dinh_dang", string.IsNullOrEmpty(dinhDang) ? DBNull.Value : (object)dinhDang),
+                new("@duong_dan", duongDan ?? (object)DBNull.Value),
+                new("@ghi_chu", string.IsNullOrEmpty(ghiChu) ? DBNull.Value : (object)ghiChu),
+                new("@kich_thuoc", kichThuoc.HasValue ? (object)kichThuoc.Value : DBNull.Value),
+                new("@quan_trong", quanTrong ? 1 : 0),
+                new("@tags", (object?)tags ?? DBNull.Value)
+            ];
 
             int result = ExecuteNonQuery(query, parameters);
             return result > 0;
@@ -518,48 +488,46 @@ namespace document_sharing_manager.Core.Data
             if (documents == null || documents.Count == 0) return 0;
 
             int successCount = 0;
-            using (var conn = new SQLiteConnection(ConnectionString))
+            using var conn = new SQLiteConnection(ConnectionString);
+            conn.Open();
+            using (var transaction = conn.BeginTransaction())
             {
-                conn.Open();
-                using (var transaction = conn.BeginTransaction())
+                try
                 {
-                    try
-                    {
-                        string query = @"INSERT INTO tai_lieu
-                            (ten, dinh_dang, duong_dan, ghi_chu, kich_thuoc, quan_trong, tags)
-                            VALUES
-                            (@ten, @dinh_dang, @duong_dan, @ghi_chu, @kich_thuoc, @quan_trong, @tags)";
+                    string query = @"INSERT INTO tai_lieu
+                        (ten, dinh_dang, duong_dan, ghi_chu, kich_thuoc, quan_trong, tags)
+                        VALUES
+                        (@ten, @dinh_dang, @duong_dan, @ghi_chu, @kich_thuoc, @quan_trong, @tags)";
 
-                        using (var cmd = new SQLiteCommand(query, conn, transaction))
+                    using (var cmd = new SQLiteCommand(query, conn, transaction))
+                    {
+                        cmd.Parameters.Add("@ten", System.Data.DbType.String);
+                        cmd.Parameters.Add("@dinh_dang", System.Data.DbType.String);
+                        cmd.Parameters.Add("@duong_dan", System.Data.DbType.String);
+                        cmd.Parameters.Add("@ghi_chu", System.Data.DbType.String);
+                        cmd.Parameters.Add("@kich_thuoc", System.Data.DbType.Decimal);
+                        cmd.Parameters.Add("@quan_trong", System.Data.DbType.Int32);
+                        cmd.Parameters.Add("@tags", System.Data.DbType.String);
+
+                        foreach (var doc in documents)
                         {
-                            cmd.Parameters.Add("@ten", System.Data.DbType.String);
-                            cmd.Parameters.Add("@dinh_dang", System.Data.DbType.String);
-                            cmd.Parameters.Add("@duong_dan", System.Data.DbType.String);
-                            cmd.Parameters.Add("@ghi_chu", System.Data.DbType.String);
-                            cmd.Parameters.Add("@kich_thuoc", System.Data.DbType.Decimal);
-                            cmd.Parameters.Add("@quan_trong", System.Data.DbType.Int32);
-                            cmd.Parameters.Add("@tags", System.Data.DbType.String);
+                            cmd.Parameters["@ten"].Value = doc.Ten;
+                            cmd.Parameters["@dinh_dang"].Value = string.IsNullOrEmpty(doc.DinhDang) ? DBNull.Value : (object)doc.DinhDang;
+                            cmd.Parameters["@duong_dan"].Value = doc.DuongDan ?? (object)DBNull.Value;
+                            cmd.Parameters["@ghi_chu"].Value = string.IsNullOrEmpty(doc.GhiChu) ? DBNull.Value : (object)doc.GhiChu;
+                            cmd.Parameters["@kich_thuoc"].Value = doc.KichThuoc.HasValue ? (object)doc.KichThuoc.Value : DBNull.Value;
+                            cmd.Parameters["@quan_trong"].Value = doc.QuanTrong ? 1 : 0;
+                            cmd.Parameters["@tags"].Value = string.IsNullOrEmpty(doc.Tags) ? DBNull.Value : (object)doc.Tags;
 
-                            foreach (var doc in documents)
-                            {
-                                cmd.Parameters["@ten"].Value = doc.Ten;
-                                cmd.Parameters["@dinh_dang"].Value = string.IsNullOrEmpty(doc.DinhDang) ? DBNull.Value : (object)doc.DinhDang;
-                                cmd.Parameters["@duong_dan"].Value = doc.DuongDan ?? (object)DBNull.Value;
-                                cmd.Parameters["@ghi_chu"].Value = string.IsNullOrEmpty(doc.GhiChu) ? DBNull.Value : (object)doc.GhiChu;
-                                cmd.Parameters["@kich_thuoc"].Value = doc.KichThuoc.HasValue ? (object)doc.KichThuoc.Value : DBNull.Value;
-                                cmd.Parameters["@quan_trong"].Value = doc.QuanTrong ? 1 : 0;
-                                cmd.Parameters["@tags"].Value = string.IsNullOrEmpty(doc.Tags) ? DBNull.Value : (object)doc.Tags;
-
-                                if (cmd.ExecuteNonQuery() > 0) successCount++;
-                            }
+                            if (cmd.ExecuteNonQuery() > 0) successCount++;
                         }
-                        transaction.Commit();
                     }
-                    catch
-                    {
-                        transaction.Rollback();
-                        throw;
-                    }
+                    transaction.Commit();
+                }
+                catch
+                {
+                    transaction.Rollback();
+                    throw;
                 }
             }
             return successCount;
@@ -570,7 +538,7 @@ namespace document_sharing_manager.Core.Data
         /// </summary>
         public static bool UpdateDocument(int id, string ten, string dinhDang,
             string duongDan, string ghiChu, decimal? kichThuoc, bool quanTrong,
-            string tags = null)
+            string? tags = null)
         {
             string query = @"UPDATE tai_lieu SET
                 ten = @ten,
@@ -582,17 +550,17 @@ namespace document_sharing_manager.Core.Data
                 tags = @tags
                 WHERE id = @id";
 
-            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
-            {
-                new System.Data.SQLite.SQLiteParameter("@id", id),
-                new System.Data.SQLite.SQLiteParameter("@ten", ten),
-                new System.Data.SQLite.SQLiteParameter("@dinh_dang", string.IsNullOrEmpty(dinhDang) ? DBNull.Value : (object)dinhDang),
-                new System.Data.SQLite.SQLiteParameter("@duong_dan", duongDan ?? (object)DBNull.Value),
-                new System.Data.SQLite.SQLiteParameter("@ghi_chu", string.IsNullOrEmpty(ghiChu) ? DBNull.Value : (object)ghiChu),
-                new System.Data.SQLite.SQLiteParameter("@kich_thuoc", kichThuoc.HasValue ? (object)kichThuoc.Value : DBNull.Value),
-                new System.Data.SQLite.SQLiteParameter("@quan_trong", quanTrong ? 1 : 0),
-                new System.Data.SQLite.SQLiteParameter("@tags", string.IsNullOrEmpty(tags) ? DBNull.Value : (object)tags)
-            };
+            System.Data.SQLite.SQLiteParameter[] parameters = 
+            [
+                new("@id", id),
+                new("@ten", ten),
+                new("@dinh_dang", string.IsNullOrEmpty(dinhDang) ? DBNull.Value : (object)dinhDang),
+                new("@duong_dan", duongDan ?? (object)DBNull.Value),
+                new("@ghi_chu", string.IsNullOrEmpty(ghiChu) ? DBNull.Value : (object)ghiChu),
+                new("@kich_thuoc", kichThuoc.HasValue ? (object)kichThuoc.Value : DBNull.Value),
+                new("@quan_trong", quanTrong ? 1 : 0),
+                new("@tags", (object?)tags ?? DBNull.Value)
+            ];
 
             int result = ExecuteNonQuery(query, parameters);
             return result > 0;
@@ -605,10 +573,10 @@ namespace document_sharing_manager.Core.Data
         {
             string query = "UPDATE tai_lieu SET is_deleted = 1, deleted_at = datetime('now','localtime') WHERE id = @id";
 
-            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
-            {
-                new System.Data.SQLite.SQLiteParameter("@id", id)
-            };
+            System.Data.SQLite.SQLiteParameter[] parameters = 
+            [
+                new("@id", id)
+            ];
 
             int result = ExecuteNonQuery(query, parameters);
             return result > 0;
@@ -627,12 +595,12 @@ namespace document_sharing_manager.Core.Data
                             WHERE tags IS NOT NULL AND tags != ''";
 
             DataTable dt = ExecuteQuery(query);
-            List<string> allTags = new List<string>();
+            List<string> allTags = [];
 
             foreach (DataRow row in dt.Rows)
             {
                 string tagsString = row["tags"].ToString();
-                string[] tags = tagsString.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                string[] tags = tagsString.Split([';'], StringSplitOptions.RemoveEmptyEntries);
                 foreach (string tag in tags)
                 {
                     string trimmedTag = tag.Trim().ToLower();
@@ -669,36 +637,36 @@ namespace document_sharing_manager.Core.Data
         /// <summary>
         /// Tạo collection mới
         /// </summary>
-        public static int CreateCollection(string name, string description = null)
+        public static int CreateCollection(string name, string? description = null)
         {
             string query = @"INSERT INTO collections (name, description)
                             VALUES (@name, @description);
                             SELECT last_insert_rowid();";
 
-            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
-            {
-                new System.Data.SQLite.SQLiteParameter("@name", name),
-                new System.Data.SQLite.SQLiteParameter("@description", string.IsNullOrEmpty(description) ? DBNull.Value : (object)description)
-            };
+            System.Data.SQLite.SQLiteParameter[] parameters = 
+            [
+                new("@name", name),
+                new("@description", (object?)description ?? DBNull.Value)
+            ];
 
-            object result = ExecuteScalar(query, parameters);
+            object? result = ExecuteScalar(query, parameters);
             return result != null ? Convert.ToInt32(result) : 0;
         }
 
         /// <summary>
         /// Cập nhật collection
         /// </summary>
-        public static bool UpdateCollection(int collectionId, string name, string description = null)
+        public static bool UpdateCollection(int collectionId, string name, string? description = null)
         {
             string query = @"UPDATE collections SET name = @name, description = @description
                             WHERE id = @id";
 
-            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
-            {
-                new System.Data.SQLite.SQLiteParameter("@id", collectionId),
-                new System.Data.SQLite.SQLiteParameter("@name", name),
-                new System.Data.SQLite.SQLiteParameter("@description", string.IsNullOrEmpty(description) ? DBNull.Value : (object)description)
-            };
+            System.Data.SQLite.SQLiteParameter[] parameters = 
+            [
+                new("@id", collectionId),
+                new("@name", name),
+                new("@description", (object?)description ?? DBNull.Value)
+            ];
 
             return ExecuteNonQuery(query, parameters) > 0;
         }
@@ -710,14 +678,14 @@ namespace document_sharing_manager.Core.Data
         {
             // Xóa items trước
             string deleteItems = "DELETE FROM collection_items WHERE collection_id = @id";
-            ExecuteNonQuery(deleteItems, new System.Data.SQLite.SQLiteParameter[] { new System.Data.SQLite.SQLiteParameter("@id", collectionId) });
+            ExecuteNonQuery(deleteItems, [new("@id", collectionId)]);
 
             // Xóa collection
             string query = "DELETE FROM collections WHERE id = @id";
-            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
-            {
-                new System.Data.SQLite.SQLiteParameter("@id", collectionId)
-            };
+            System.Data.SQLite.SQLiteParameter[] parameters = 
+            [
+                new("@id", collectionId)
+            ];
 
             return ExecuteNonQuery(query, parameters) > 0;
         }
@@ -733,10 +701,10 @@ namespace document_sharing_manager.Core.Data
                             WHERE ci.collection_id = @collectionId
                             ORDER BY ci.added_at DESC";
 
-            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
-            {
-                new System.Data.SQLite.SQLiteParameter("@collectionId", collectionId)
-            };
+            System.Data.SQLite.SQLiteParameter[] parameters = 
+            [
+                new("@collectionId", collectionId)
+            ];
 
             return ExecuteQuery(query, parameters);
         }
@@ -748,24 +716,24 @@ namespace document_sharing_manager.Core.Data
         {
             // Kiểm tra đã tồn tại chưa
             string checkQuery = "SELECT COUNT(*) FROM collection_items WHERE collection_id = @colId AND document_id = @docId";
-            System.Data.SQLite.SQLiteParameter[] checkParams = new System.Data.SQLite.SQLiteParameter[]
-            {
-                new System.Data.SQLite.SQLiteParameter("@colId", collectionId),
-                new System.Data.SQLite.SQLiteParameter("@docId", documentId)
-            };
+            System.Data.SQLite.SQLiteParameter[] checkParams = 
+            [
+                new("@colId", collectionId),
+                new("@docId", documentId)
+            ];
 
-            object exists = ExecuteScalar(checkQuery, checkParams);
+            object? exists = ExecuteScalar(checkQuery, checkParams);
             if (exists != null && Convert.ToInt32(exists) > 0)
             {
                 return false; // Đã tồn tại
             }
 
             string query = "INSERT INTO collection_items (collection_id, document_id) VALUES (@colId, @docId)";
-            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
-            {
-                new System.Data.SQLite.SQLiteParameter("@colId", collectionId),
-                new System.Data.SQLite.SQLiteParameter("@docId", documentId)
-            };
+            System.Data.SQLite.SQLiteParameter[] parameters = 
+            [
+                new("@colId", collectionId),
+                new("@docId", documentId)
+            ];
 
             return ExecuteNonQuery(query, parameters) > 0;
         }
@@ -776,11 +744,11 @@ namespace document_sharing_manager.Core.Data
         public static bool RemoveDocumentFromCollection(int collectionId, int documentId)
         {
             string query = "DELETE FROM collection_items WHERE collection_id = @colId AND document_id = @docId";
-            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
-            {
-                new System.Data.SQLite.SQLiteParameter("@colId", collectionId),
-                new System.Data.SQLite.SQLiteParameter("@docId", documentId)
-            };
+            System.Data.SQLite.SQLiteParameter[] parameters = 
+            [
+                new("@colId", collectionId),
+                new("@docId", documentId)
+            ];
 
             return ExecuteNonQuery(query, parameters) > 0;
         }
@@ -808,7 +776,7 @@ namespace document_sharing_manager.Core.Data
         public static int GetTotalDocumentCount()
         {
             string query = "SELECT COUNT(*) FROM tai_lieu WHERE (is_deleted IS NULL OR is_deleted = 0)";
-            object result = ExecuteScalar(query);
+            object? result = ExecuteScalar(query);
             return result != null ? Convert.ToInt32(result) : 0;
         }
 
@@ -823,23 +791,23 @@ namespace document_sharing_manager.Core.Data
 
             // Tổng tài liệu
             string totalQuery = "SELECT COUNT(*) FROM tai_lieu WHERE (is_deleted IS NULL OR is_deleted = 0)";
-            object totalResult = ExecuteScalar(totalQuery);
+            object? totalResult = ExecuteScalar(totalQuery);
             stats.TotalDocuments = totalResult != null ? Convert.ToInt32(totalResult) : 0;
 
             // Tài liệu quan trọng
             string importantQuery = "SELECT COUNT(*) FROM tai_lieu WHERE quan_trong = 1 AND (is_deleted IS NULL OR is_deleted = 0)";
-            object importantResult = ExecuteScalar(importantQuery);
+            object? importantResult = ExecuteScalar(importantQuery);
             stats.ImportantDocuments = importantResult != null ? Convert.ToInt32(importantResult) : 0;
 
             // Tài liệu chưa có file
             string noFileQuery = "SELECT COUNT(*) FROM tai_lieu WHERE (is_deleted IS NULL OR is_deleted = 0) AND (duong_dan IS NULL OR duong_dan = '')";
-            object noFileResult = ExecuteScalar(noFileQuery);
+            object? noFileResult = ExecuteScalar(noFileQuery);
             stats.NoFileDocuments = noFileResult != null ? Convert.ToInt32(noFileResult) : 0;
 
 
             // Số collections
             string collectionQuery = "SELECT COUNT(*) FROM collections";
-            object collectionResult = ExecuteScalar(collectionQuery);
+            object? collectionResult = ExecuteScalar(collectionQuery);
             stats.TotalCollections = collectionResult != null ? Convert.ToInt32(collectionResult) : 0;
 
             return stats;
@@ -869,10 +837,10 @@ namespace document_sharing_manager.Core.Data
                 GROUP BY ds.ngay
                 ORDER BY ds.ngay ASC";
 
-            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
-            {
-                new System.Data.SQLite.SQLiteParameter("@days", days)
-            };
+            System.Data.SQLite.SQLiteParameter[] parameters = 
+            [
+                new("@days", days)
+            ];
 
             return ExecuteQuery(query, parameters);
         }
@@ -900,10 +868,10 @@ namespace document_sharing_manager.Core.Data
                 GROUP BY ms.thang
                 ORDER BY ms.thang ASC";
 
-            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
-            {
-                new System.Data.SQLite.SQLiteParameter("@months", months)
-            };
+            System.Data.SQLite.SQLiteParameter[] parameters = 
+            [
+                new("@months", months)
+            ];
 
             return ExecuteQuery(query, parameters);
         }
@@ -935,11 +903,11 @@ namespace document_sharing_manager.Core.Data
         {
             string query = "UPDATE tai_lieu SET dinh_dang = @newName WHERE dinh_dang = @oldName";
 
-            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
-            {
-                new System.Data.SQLite.SQLiteParameter("@oldName", oldName),
-                new System.Data.SQLite.SQLiteParameter("@newName", newName)
-            };
+            System.Data.SQLite.SQLiteParameter[] parameters = 
+            [
+                new("@oldName", oldName),
+                new("@newName", newName)
+            ];
 
             int result = ExecuteNonQuery(query, parameters);
             return result > 0;
@@ -953,10 +921,10 @@ namespace document_sharing_manager.Core.Data
         {
             string query = "DELETE FROM tai_lieu WHERE dinh_dang = @typeName";
 
-            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
-            {
-                new System.Data.SQLite.SQLiteParameter("@typeName", typeName)
-            };
+            System.Data.SQLite.SQLiteParameter[] parameters = 
+            [
+                new("@typeName", typeName)
+            ];
 
             int result = ExecuteNonQuery(query, parameters);
             return result > 0;
@@ -973,10 +941,10 @@ namespace document_sharing_manager.Core.Data
         {
             string query = "SELECT * FROM personal_notes WHERE document_id = @documentId";
 
-            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
-            {
-                new System.Data.SQLite.SQLiteParameter("@documentId", documentId)
-            };
+            System.Data.SQLite.SQLiteParameter[] parameters = 
+            [
+                new("@documentId", documentId)
+            ];
 
             return ExecuteQuery(query, parameters);
         }
@@ -988,12 +956,12 @@ namespace document_sharing_manager.Core.Data
         {
             // Kiểm tra đã có note chưa
             string checkQuery = "SELECT COUNT(*) FROM personal_notes WHERE document_id = @documentId";
-            System.Data.SQLite.SQLiteParameter[] checkParams = new System.Data.SQLite.SQLiteParameter[]
-            {
-                new System.Data.SQLite.SQLiteParameter("@documentId", documentId)
-            };
+            System.Data.SQLite.SQLiteParameter[] checkParams = 
+            [
+                new("@documentId", documentId)
+            ];
 
-            object exists = ExecuteScalar(checkQuery, checkParams);
+            object? exists = ExecuteScalar(checkQuery, checkParams);
             bool hasNote = exists != null && Convert.ToInt32(exists) > 0;
 
             if (hasNote)
@@ -1002,11 +970,11 @@ namespace document_sharing_manager.Core.Data
                 string updateQuery = @"UPDATE personal_notes
                                       SET content = @content, updated_at = datetime('now', 'localtime')
                                       WHERE document_id = @documentId";
-                System.Data.SQLite.SQLiteParameter[] updateParams = new System.Data.SQLite.SQLiteParameter[]
-                {
-                    new System.Data.SQLite.SQLiteParameter("@documentId", documentId),
-                    new System.Data.SQLite.SQLiteParameter("@content", string.IsNullOrEmpty(content) ? DBNull.Value : (object)content)
-                };
+                System.Data.SQLite.SQLiteParameter[] updateParams = 
+                [
+                    new("@documentId", documentId),
+                    new("@content", string.IsNullOrEmpty(content) ? DBNull.Value : (object)content)
+                ];
                 return ExecuteNonQuery(updateQuery, updateParams) > 0;
             }
             else
@@ -1014,11 +982,11 @@ namespace document_sharing_manager.Core.Data
                 // Insert
                 string insertQuery = @"INSERT INTO personal_notes (document_id, content)
                                       VALUES (@documentId, @content)";
-                System.Data.SQLite.SQLiteParameter[] insertParams = new System.Data.SQLite.SQLiteParameter[]
-                {
-                    new System.Data.SQLite.SQLiteParameter("@documentId", documentId),
-                    new System.Data.SQLite.SQLiteParameter("@content", string.IsNullOrEmpty(content) ? DBNull.Value : (object)content)
-                };
+                System.Data.SQLite.SQLiteParameter[] insertParams = 
+                [
+                    new("@documentId", documentId),
+                    new("@content", string.IsNullOrEmpty(content) ? DBNull.Value : (object)content)
+                ];
                 return ExecuteNonQuery(insertQuery, insertParams) > 0;
             }
         }
@@ -1030,10 +998,10 @@ namespace document_sharing_manager.Core.Data
         {
             string query = "DELETE FROM personal_notes WHERE document_id = @documentId";
 
-            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
-            {
-                new System.Data.SQLite.SQLiteParameter("@documentId", documentId)
-            };
+            System.Data.SQLite.SQLiteParameter[] parameters = 
+            [
+                new("@documentId", documentId)
+            ];
 
             return ExecuteNonQuery(query, parameters) > 0;
         }
@@ -1051,13 +1019,13 @@ namespace document_sharing_manager.Core.Data
         public static bool RestoreDocument(int id)
         {
             string query = "UPDATE tai_lieu SET is_deleted = 0, deleted_at = NULL WHERE id = @id";
-            return ExecuteNonQuery(query, new System.Data.SQLite.SQLiteParameter[] { new System.Data.SQLite.SQLiteParameter("@id", id) }) > 0;
+            return ExecuteNonQuery(query, [new("@id", id)]) > 0;
         }
 
         public static bool PermanentDeleteDocument(int id)
         {
             string query = "DELETE FROM tai_lieu WHERE id = @id";
-            return ExecuteNonQuery(query, new System.Data.SQLite.SQLiteParameter[] { new System.Data.SQLite.SQLiteParameter("@id", id) }) > 0;
+            return ExecuteNonQuery(query, [new("@id", id)]) > 0;
         }
 
         public static int EmptyRecycleBin()
@@ -1069,7 +1037,7 @@ namespace document_sharing_manager.Core.Data
         public static int GetDeletedDocumentCount()
         {
             string query = "SELECT COUNT(*) FROM tai_lieu WHERE is_deleted = 1";
-            object result = ExecuteScalar(query);
+            object? result = ExecuteScalar(query);
             return result != null ? Convert.ToInt32(result) : 0;
         }
 
@@ -1091,7 +1059,7 @@ namespace document_sharing_manager.Core.Data
             if (ids == null || ids.Count == 0) return 0;
             string idList = string.Join(",", ids);
             string query = $"UPDATE tai_lieu SET quan_trong = @val WHERE id IN ({idList})";
-            return ExecuteNonQuery(query, new System.Data.SQLite.SQLiteParameter[] { new System.Data.SQLite.SQLiteParameter("@val", important ? 1 : 0) });
+            return ExecuteNonQuery(query, [new("@val", important ? 1 : 0)]);
         }
 
         #endregion
@@ -1102,7 +1070,7 @@ namespace document_sharing_manager.Core.Data
         {
             string upsert = @"INSERT OR REPLACE INTO recent_files (document_id, opened_at)
                               VALUES (@docId, datetime('now','localtime'))";
-            ExecuteNonQuery(upsert, new System.Data.SQLite.SQLiteParameter[] { new System.Data.SQLite.SQLiteParameter("@docId", documentId) });
+            ExecuteNonQuery(upsert, [new("@docId", documentId)]);
 
             // Keep only 20 most recent
             string trim = @"DELETE FROM recent_files WHERE id NOT IN
@@ -1124,7 +1092,7 @@ namespace document_sharing_manager.Core.Data
         public static void RemoveRecentFile(int documentId)
         {
             ExecuteNonQuery("DELETE FROM recent_files WHERE document_id = @docId",
-                new System.Data.SQLite.SQLiteParameter[] { new System.Data.SQLite.SQLiteParameter("@docId", documentId) });
+                [new("@docId", documentId)]);
         }
 
         public static void ClearRecentFiles()
@@ -1156,12 +1124,12 @@ namespace document_sharing_manager.Core.Data
             int hi = Math.Max(docId1, docId2);
             string query = @"INSERT OR IGNORE INTO document_relations (doc_id_1, doc_id_2, relation_type)
                              VALUES (@d1, @d2, @type)";
-            ExecuteNonQuery(query, new System.Data.SQLite.SQLiteParameter[]
-            {
-                new System.Data.SQLite.SQLiteParameter("@d1", lo),
-                new System.Data.SQLite.SQLiteParameter("@d2", hi),
-                new System.Data.SQLite.SQLiteParameter("@type", relationType)
-            });
+            ExecuteNonQuery(query, 
+            [
+                new("@d1", lo),
+                new("@d2", hi),
+                new("@type", relationType)
+            ]);
         }
 
         public static DataTable GetRelatedDocuments(int docId)
@@ -1172,13 +1140,13 @@ namespace document_sharing_manager.Core.Data
                              WHERE (r.doc_id_1 = @docId OR r.doc_id_2 = @docId)
                              AND t.is_deleted = 0
                              ORDER BY t.ten";
-            return ExecuteQuery(query, new System.Data.SQLite.SQLiteParameter[] { new System.Data.SQLite.SQLiteParameter("@docId", docId) });
+            return ExecuteQuery(query, [new("@docId", docId)]);
         }
 
         public static void RemoveDocumentRelation(int relationId)
         {
             ExecuteNonQuery("DELETE FROM document_relations WHERE id = @id",
-                new System.Data.SQLite.SQLiteParameter[] { new System.Data.SQLite.SQLiteParameter("@id", relationId) });
+                [new("@id", relationId)]);
         }
 
         /// <summary>
@@ -1208,7 +1176,7 @@ namespace document_sharing_manager.Core.Data
                 )
                 LIMIT 5";
             
-            return ExecuteQuery(query, new System.Data.SQLite.SQLiteParameter[] { new System.Data.SQLite.SQLiteParameter("@docId", docId) });
+            return ExecuteQuery(query, [new("@docId", docId)]);
         }
 
         #endregion

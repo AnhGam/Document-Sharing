@@ -6,14 +6,15 @@ using System.Security.Cryptography;
 using System.Text;
 using document_sharing_manager.Core.Domain;
 using document_sharing_manager.Core.Interfaces;
-using Microsoft.Extensions.Configuration;
+using document_sharing_manager.Core.Configurations;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace document_sharing_manager.Infrastructure.Security
 {
-    public class TokenService(IConfiguration config) : ITokenService
+    public class TokenService(IOptions<JwtSettings> jwtOptions) : ITokenService
     {
-        private readonly IConfiguration _config = config;
+        private readonly JwtSettings _jwtSettings = jwtOptions.Value;
 
         public string GenerateAccessToken(User user)
         {
@@ -25,16 +26,16 @@ namespace document_sharing_manager.Infrastructure.Security
                 new(ClaimTypes.Role, user.Role.ToString())
             };
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["JWT:Key"] ?? throw new InvalidOperationException("JWT Key is missing")));
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Key));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.AddMinutes(double.TryParse(_config["JWT:DurationInMinutes"], out var duration) ? duration : 15),
+                Expires = DateTime.UtcNow.AddMinutes(_jwtSettings.DurationInMinutes),
                 SigningCredentials = creds,
-                Issuer = _config["JWT:Issuer"],
-                Audience = _config["JWT:Audience"]
+                Issuer = _jwtSettings.Issuer,
+                Audience = _jwtSettings.Audience
             };
 
             var tokenHandler = new JwtSecurityTokenHandler();
