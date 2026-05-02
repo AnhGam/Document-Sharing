@@ -87,7 +87,7 @@ namespace document_sharing_manager.Core.Services
             try
             {
                 var documents = await _repository.GetPendingSyncDocumentsAsync(UserSession.CurrentUserId, ct);
-                foreach (var doc in documents.Where(d => d.SyncStatus == 1 || d.SyncStatus == 3))
+                foreach (var doc in documents.Where(d => d.SyncStatus == 1)) // 1: PendingUpload
                 {
                     Enqueue(doc, SyncType.Upload);
                 }
@@ -217,7 +217,7 @@ namespace document_sharing_manager.Core.Services
 
                         if (_syncContext != null)
                         {
-                            _syncContext.Send(_ => UpdateLocal(), null);
+                            _syncContext.Post(_ => UpdateLocal(), null);
                         }
                         else
                         {

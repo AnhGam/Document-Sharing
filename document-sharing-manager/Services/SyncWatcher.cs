@@ -109,7 +109,7 @@ namespace document_sharing_manager.Services
 
                         if (_syncContext != null)
                         {
-                            _syncContext.Send(_ => UpdateLocal(), null);
+                            _syncContext.Post(_ => UpdateLocal(), null);
                         }
                         else
                         {

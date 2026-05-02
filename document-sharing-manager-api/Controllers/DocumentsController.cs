@@ -100,8 +100,8 @@ namespace document_sharing_manager_api.Controllers
         public async Task<ActionResult<SyncResponse>> SyncStream([FromForm] Guid remoteId, [FromForm] int localVersion, [FromForm] string? ten, [FromForm] string? ghiChu, IFormFile? file, CancellationToken ct)
         {
             var document = await _repository.GetByRemoteIdAsync(remoteId, ct);
-            if (document == null)
-                return NotFound(new SyncResponse { Success = false, Message = "Document not found." });
+            if (document == null || document.UserId != CurrentUserId)
+                return NotFound(new SyncResponse { Success = false, Message = "Document not found or access denied." });
 
             if (localVersion < document.Version)
             {
@@ -155,8 +155,8 @@ namespace document_sharing_manager_api.Controllers
         public async Task<ActionResult<SyncResponse>> Sync([FromBody] SyncRequest request, CancellationToken ct)
         {
             var document = await _repository.GetByRemoteIdAsync(request.RemoteId, ct);
-            if (document == null)
-                return NotFound(new SyncResponse { Success = false, Message = "Document not found." });
+            if (document == null || document.UserId != CurrentUserId)
+                return NotFound(new SyncResponse { Success = false, Message = "Document not found or access denied." });
 
             if (request.LocalVersion < document.Version)
             {
