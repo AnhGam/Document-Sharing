@@ -14,7 +14,7 @@ namespace document_sharing_manager_api.Controllers
     [Authorize]
     public class DocumentsController(IDocumentRepository repository, IStorageService storageService) : ControllerBase
     {
-        private string SanitizeFileName(string fileName)
+        private static string SanitizeFileName(string fileName)
         {
             var invalidChars = System.IO.Path.GetInvalidFileNameChars();
             return string.Join("_", fileName.Split(invalidChars, StringSplitOptions.RemoveEmptyEntries));

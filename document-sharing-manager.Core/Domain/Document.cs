@@ -34,7 +34,7 @@ namespace document_sharing_manager.Core.Domain
 
         public static string FormatFileSize(decimal bytes)
         {
-            string[] Suffix = { "B", "KB", "MB", "GB", "TB" };
+            string[] Suffix = ["B", "KB", "MB", "GB", "TB"];
             int i;
             for (i = 0; i < Suffix.Length - 1 && bytes >= 1024m; i++)
             {
