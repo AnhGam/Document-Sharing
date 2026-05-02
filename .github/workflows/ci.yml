@@ -161,6 +161,6 @@ jobs:
             MSG="$MSG[View Full Report](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
 
             curl -H "Content-Type: application/json" \
-              -d "{\"embeds\": [{\"title\": \"🚀 CI/CD Pipeline Performance: $STATUS\", \"description\": \"$MSG\", \"color\": $COLOR}]}" \
+              -d "{\"embeds\": [{\"title\": \"CI/CD Pipeline Performance: $STATUS\", \"description\": \"$MSG\", \"color\": $COLOR}]}" \
               $DISCORD_WEBHOOK
           fi

@@ -9,18 +9,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace document_sharing_manager.Infrastructure.Persistence.Repositories
 {
-    public class EfDocumentRepository : IDocumentRepository
+    public class EfDocumentRepository(AppDbContext context) : IDocumentRepository
     {
-        private readonly AppDbContext _context;
-
-        public EfDocumentRepository(AppDbContext context)
-        {
-            _context = context;
-        }
+        private readonly AppDbContext _context = context;
 
         public async Task<BaseEntity> GetByIdAsync(int id, CancellationToken ct = default)
         {
-            return (await _context.Documents.FindAsync(new object[] { id }, ct))!;
+            return (await _context.Documents.FindAsync([id], ct))!;
         }
 
         public async Task<IEnumerable<BaseEntity>> GetAllAsync(CancellationToken ct = default)
@@ -39,13 +34,27 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
 
         public async Task UpdateAsync(BaseEntity entity, CancellationToken ct = default)
         {
-            _context.Entry(entity).State = EntityState.Modified;
+            var trackedEntry = _context.ChangeTracker.Entries<BaseEntity>()
+                .FirstOrDefault(e => e.Entity.Id == entity.Id);
+
+            if (trackedEntry != null && trackedEntry.Entity != entity)
+            {
+                _context.Entry(trackedEntry.Entity).CurrentValues.SetValues(entity);
+            }
+            else if (trackedEntry == null)
+            {
+                _context.Entry(entity).State = EntityState.Modified;
+            }
+            
+            var entry = trackedEntry ?? _context.Entry(entity);
+            entry.Property(x => x.CreatedAt).IsModified = false;
+            
             await _context.SaveChangesAsync(ct);
         }
 
         public async Task DeleteAsync(int id, CancellationToken ct = default)
         {
-            var entity = await _context.Documents.FindAsync(new object[] { id }, ct);
+            var entity = await _context.Documents.FindAsync([id], ct);
             if (entity != null)
             {
                 entity.SoftDelete();
@@ -66,9 +75,14 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
 
         public async Task<List<Document>> SearchAsync(string keyword, CancellationToken ct = default)
         {
+            if (string.IsNullOrEmpty(keyword))
+            {
+                return await _context.Documents.AsNoTracking().ToListAsync(ct);
+            }
+
             return await _context.Documents
                 .AsNoTracking()
-                .Where(d => d.Ten.Contains(keyword) || d.GhiChu.Contains(keyword))
+                .Where(d => d.Ten.Contains(keyword) || (d.GhiChu != null && d.GhiChu.Contains(keyword)))
                 .ToListAsync(ct);
         }
 
@@ -104,7 +118,7 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
 
         public List<Document> GetAll()
         {
-            return _context.Documents.AsNoTracking().ToList();
+            return [.. _context.Documents.AsNoTracking()];
         }
 
         public Document GetById(int id)
@@ -114,10 +128,12 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
 
         public List<Document> Search(string keyword)
         {
-            return _context.Documents
+            if (string.IsNullOrWhiteSpace(keyword))
+                return GetAll();
+
+            return [.. _context.Documents
                 .AsNoTracking()
-                .Where(d => d.Ten.Contains(keyword) || d.GhiChu.Contains(keyword))
-                .ToList();
+                .Where(d => d.Ten.Contains(keyword) || (d.GhiChu != null && d.GhiChu.Contains(keyword)))];
         }
 
         public List<Document> SearchAdvanced(string keyword, string format, DateTime? fromDate, DateTime? toDate, decimal? minSize, decimal? maxSize, bool? isImportant)
@@ -145,7 +161,7 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
             if (isImportant.HasValue)
                 query = query.Where(d => d.QuanTrong == isImportant.Value);
 
-            return query.ToList();
+            return [.. query];
         }
 
         public bool Update(Document doc)
@@ -167,11 +183,10 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
 
         public List<string> GetDistinctFormats()
         {
-            return _context.Documents
+            return [.. _context.Documents
                 .AsNoTracking()
                 .Select(d => d.DinhDang)
-                .Distinct()
-                .ToList();
+                .Distinct()];
         }
     }
 }

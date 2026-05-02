@@ -4,6 +4,7 @@ using System.Data;
 using System.Data.SQLite;
 using System.IO;
 // using System.Windows.Forms; // Removed for Backend-Frontend Decoupling
+using document_sharing_manager.Core.Domain;
 
 namespace document_sharing_manager.Core.Data
 {
@@ -102,7 +103,7 @@ namespace document_sharing_manager.Core.Data
                     duong_dan TEXT,
                     ghi_chu TEXT,
                     ngay_them DATETIME DEFAULT (datetime('now', 'localtime')),
-                    kich_thuoc REAL,
+                    kich_thuoc NUMERIC,
                     quan_trong INTEGER DEFAULT 0,
                     tags TEXT,
                     is_deleted INTEGER DEFAULT 0,
@@ -510,6 +511,61 @@ namespace document_sharing_manager.Core.Data
         }
 
         /// <summary>
+        /// Insert multiple documents in a single transaction for high performance.
+        /// </summary>
+        public static int InsertDocumentsBatch(List<Document> documents)
+        {
+            if (documents == null || documents.Count == 0) return 0;
+
+            int successCount = 0;
+            using (var conn = new SQLiteConnection(ConnectionString))
+            {
+                conn.Open();
+                using (var transaction = conn.BeginTransaction())
+                {
+                    try
+                    {
+                        string query = @"INSERT INTO tai_lieu
+                            (ten, dinh_dang, duong_dan, ghi_chu, kich_thuoc, quan_trong, tags)
+                            VALUES
+                            (@ten, @dinh_dang, @duong_dan, @ghi_chu, @kich_thuoc, @quan_trong, @tags)";
+
+                        using (var cmd = new SQLiteCommand(query, conn, transaction))
+                        {
+                            cmd.Parameters.Add("@ten", System.Data.DbType.String);
+                            cmd.Parameters.Add("@dinh_dang", System.Data.DbType.String);
+                            cmd.Parameters.Add("@duong_dan", System.Data.DbType.String);
+                            cmd.Parameters.Add("@ghi_chu", System.Data.DbType.String);
+                            cmd.Parameters.Add("@kich_thuoc", System.Data.DbType.Decimal);
+                            cmd.Parameters.Add("@quan_trong", System.Data.DbType.Int32);
+                            cmd.Parameters.Add("@tags", System.Data.DbType.String);
+
+                            foreach (var doc in documents)
+                            {
+                                cmd.Parameters["@ten"].Value = doc.Ten;
+                                cmd.Parameters["@dinh_dang"].Value = string.IsNullOrEmpty(doc.DinhDang) ? DBNull.Value : (object)doc.DinhDang;
+                                cmd.Parameters["@duong_dan"].Value = doc.DuongDan ?? (object)DBNull.Value;
+                                cmd.Parameters["@ghi_chu"].Value = string.IsNullOrEmpty(doc.GhiChu) ? DBNull.Value : (object)doc.GhiChu;
+                                cmd.Parameters["@kich_thuoc"].Value = doc.KichThuoc.HasValue ? (object)doc.KichThuoc.Value : DBNull.Value;
+                                cmd.Parameters["@quan_trong"].Value = doc.QuanTrong ? 1 : 0;
+                                cmd.Parameters["@tags"].Value = string.IsNullOrEmpty(doc.Tags) ? DBNull.Value : (object)doc.Tags;
+
+                                if (cmd.ExecuteNonQuery() > 0) successCount++;
+                            }
+                        }
+                        transaction.Commit();
+                    }
+                    catch
+                    {
+                        transaction.Rollback();
+                        throw;
+                    }
+                }
+            }
+            return successCount;
+        }
+
+        /// <summary>
         /// Cập nhật tài liệu
         /// </summary>
         public static bool UpdateDocument(int id, string ten, string dinhDang,
@@ -856,19 +912,6 @@ namespace document_sharing_manager.Core.Data
 
         #region Quản lý Danh mục và Định dạng tài liệu
 
-        /// <summary>
-        /// Lấy danh sách danh mục DISTINCT kèm số lượng tài liệu
-        /// </summary>
-        public static DataTable GetDistinctSubjects()
-        {
-            string query = @"SELECT danh_muc, COUNT(*) as so_luong
-                           FROM tai_lieu
-                           WHERE danh_muc IS NOT NULL AND danh_muc != ''
-                           GROUP BY danh_muc
-                           ORDER BY danh_muc";
-
-            return ExecuteQuery(query);
-        }
 
         /// <summary>
         /// Lấy danh sách định dạng DISTINCT kèm số lượng
@@ -884,22 +927,6 @@ namespace document_sharing_manager.Core.Data
             return ExecuteQuery(query);
         }
 
-        /// <summary>
-        /// Cập nhật tên danh mục
-        /// </summary>
-        public static bool UpdateSubjectName(string oldName, string newName)
-        {
-            string query = "UPDATE tai_lieu SET danh_muc = @newName WHERE danh_muc = @oldName";
-
-            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
-            {
-                new System.Data.SQLite.SQLiteParameter("@oldName", oldName),
-                new System.Data.SQLite.SQLiteParameter("@newName", newName)
-            };
-
-            int result = ExecuteNonQuery(query, parameters);
-            return result > 0;
-        }
 
         /// <summary>
         /// Cập nhật tên định dạng
@@ -918,21 +945,6 @@ namespace document_sharing_manager.Core.Data
             return result > 0;
         }
 
-        /// <summary>
-        /// Xóa tài liệu có danh mục này
-        /// </summary>
-        public static bool DeleteDocumentsBySubject(string subjectName)
-        {
-            string query = "DELETE FROM tai_lieu WHERE danh_muc = @subjectName";
-
-            System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
-            {
-                new System.Data.SQLite.SQLiteParameter("@subjectName", subjectName)
-            };
-
-            int result = ExecuteNonQuery(query, parameters);
-            return result > 0;
-        }
 
         /// <summary>
         /// Xóa tài liệu có loại này
@@ -1073,13 +1085,6 @@ namespace document_sharing_manager.Core.Data
             return ExecuteNonQuery(query);
         }
 
-        public static int BulkUpdateSubject(List<int> ids, string subject)
-        {
-            if (ids == null || ids.Count == 0) return 0;
-            string idList = string.Join(",", ids);
-            string query = $"UPDATE tai_lieu SET danh_muc = @subject WHERE id IN ({idList})";
-            return ExecuteNonQuery(query, new System.Data.SQLite.SQLiteParameter[] { new System.Data.SQLite.SQLiteParameter("@subject", subject ?? "") });
-        }
 
         public static int BulkToggleImportant(List<int> ids, bool important)
         {
@@ -1107,7 +1112,7 @@ namespace document_sharing_manager.Core.Data
 
         public static DataTable GetRecentFiles()
         {
-            string query = @"SELECT t.id, t.ten, t.danh_muc, t.dinh_dang, t.duong_dan, r.opened_at
+            string query = @"SELECT t.id, t.ten, t.dinh_dang, t.duong_dan, r.opened_at
                              FROM recent_files r
                              INNER JOIN tai_lieu t ON r.document_id = t.id
                              WHERE (t.is_deleted IS NULL OR t.is_deleted = 0)
@@ -1161,7 +1166,7 @@ namespace document_sharing_manager.Core.Data
 
         public static DataTable GetRelatedDocuments(int docId)
         {
-            string query = @"SELECT t.id, t.ten, t.danh_muc, t.dinh_dang, t.duong_dan, r.relation_type, r.id as relation_id
+            string query = @"SELECT t.id, t.ten, t.dinh_dang, t.duong_dan, r.relation_type, r.id as relation_id
                              FROM document_relations r
                              INNER JOIN tai_lieu t ON (t.id = CASE WHEN r.doc_id_1 = @docId THEN r.doc_id_2 ELSE r.doc_id_1 END)
                              WHERE (r.doc_id_1 = @docId OR r.doc_id_2 = @docId)
@@ -1182,15 +1187,12 @@ namespace document_sharing_manager.Core.Data
         public static DataTable GetSuggestedRelatedDocuments(int docId)
         {
             string query = @"
-                SELECT id, ten, danh_muc, dinh_dang, tags
+                SELECT id, ten, dinh_dang, tags
                 FROM tai_lieu t
                 WHERE id != @docId 
                 AND is_deleted = 0
                 AND (
-                    -- Cùng danh mục
-                    danh_muc IN (SELECT danh_muc FROM tai_lieu WHERE id = @docId AND danh_muc IS NOT NULL AND danh_muc != '')
-                    OR 
-                    -- Hoặc có chung ít nhất 1 tag (giả sử tag cách nhau bởi dấu ;)
+                    -- Có chung ít nhất 1 tag (giả sử tag cách nhau bởi dấu ;)
                     EXISTS (
                         SELECT 1 FROM tai_lieu t2 
                         WHERE t2.id = @docId 
