@@ -137,7 +137,7 @@ namespace document_sharing_manager_api.Controllers
                 if (string.IsNullOrEmpty(extension)) extension = "bin";
 
                 string safeName = SanitizeFileName(document.Ten);
-                if (safeName.Length > 200) safeName = safeName.Substring(0, 200);
+                if (safeName.Length > 200) safeName = safeName[..200];
 
                 string fileName = $"{safeName}_v{document.Version}.{extension}";
                 
