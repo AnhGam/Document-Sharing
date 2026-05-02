@@ -73,10 +73,10 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
                 .FirstOrDefaultAsync(d => d.Id == id && d.UserId == userId && !d.IsDeleted, ct);
         }
 
-        public async Task<Document?> GetByVersionAsync(int docId, int version, CancellationToken ct = default)
+        public async Task<Document?> GetByVersionAsync(int docId, int version, int userId, CancellationToken ct = default)
         {
             return await _context.Documents
-                .FirstOrDefaultAsync(d => d.Id == docId && d.Version == version, ct);
+                .FirstOrDefaultAsync(d => d.Id == docId && d.Version == version && d.UserId == userId, ct);
         }
 
         public async Task<List<Document>> SearchAsync(string keyword, int userId, CancellationToken ct = default)

@@ -173,7 +173,10 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
 
         public async Task UpdateAsync(Document entity, CancellationToken ct = default)
         {
-            await Task.Run(() => Update(entity));
+            if (!await Task.Run(() => Update(entity), ct))
+            {
+                throw new System.Data.DBConcurrencyException("The document has been modified by another user or does not exist.");
+            }
         }
 
         public async Task DeleteAsync(int id, CancellationToken ct = default)
@@ -200,13 +203,14 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
             return list.Count > 0 ? list[0] : null;
         }
 
-        public async Task<Document?> GetByVersionAsync(int docId, int version, CancellationToken ct = default)
+        public async Task<Document?> GetByVersionAsync(int docId, int version, int userId, CancellationToken ct = default)
         {
-            string query = "SELECT * FROM tai_lieu WHERE id = @id AND version = @version";
+            string query = "SELECT * FROM tai_lieu WHERE id = @id AND version = @version AND user_id = @userId";
             SQLiteParameter[] parameters = 
             [
                 new("@id", docId),
-                new("@version", version)
+                new("@version", version),
+                new("@userId", userId)
             ];
             var list = await Task.Run(() => ExecuteAndMap(query, parameters));
             return list.Count > 0 ? list[0] : null;

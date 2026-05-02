@@ -10,7 +10,7 @@ namespace document_sharing_manager.Core.Interfaces
     {
         Task<IEnumerable<Document>> GetAllByUserIdAsync(int userId, CancellationToken ct = default);
         Task<Document?> GetByIdAndUserIdAsync(int id, int userId, CancellationToken ct = default);
-        Task<Document?> GetByVersionAsync(int docId, int version, CancellationToken ct = default);
+        Task<Document?> GetByVersionAsync(int docId, int version, int userId, CancellationToken ct = default);
 
         Task<List<Document>> SearchAsync(string keyword, int userId, CancellationToken ct = default);
         Task<List<Document>> SearchAdvancedAsync(string keyword, string format, DateTime? fromDate, DateTime? toDate, decimal? minSize, decimal? maxSize, bool? isImportant, int userId, CancellationToken ct = default);

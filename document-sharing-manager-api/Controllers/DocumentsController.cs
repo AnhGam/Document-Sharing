@@ -123,13 +123,12 @@ namespace document_sharing_manager_api.Controllers
                 byte[] data;
                 try
                 {
-                    // standard practice to transmit binary data as Base64-encoded string
+                    // For security and binary safety, we strictly expect Base64-encoded string
                     data = Convert.FromBase64String(request.Content);
                 }
                 catch (FormatException)
                 {
-                    // Fallback to UTF-8 if legacy or plain text
-                    data = System.Text.Encoding.UTF8.GetBytes(request.Content);
+                    return BadRequest(new { Message = "Content must be a valid Base64-encoded string for binary safety." });
                 }
 
                 using var stream = new MemoryStream(data);
