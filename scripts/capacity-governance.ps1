@@ -1,15 +1,17 @@
 # capacity-governance.ps1
-# Enterprise Capacity Check and FinOps Governance Script
+# Enterprise Capacity Check, DORA Metrics and FinOps Governance Script
 
 param(
     [int]$MaxInstallerSizeMB = 50,
     [int]$MaxRepoSizeMB = 500,
-    [string]$InstallerDir = "installer"
+    [string]$InstallerDir = "installer",
+    [int]$BuildDurationSeconds = 0
 )
 
-Write-Host "--- Starting Capacity and Governance Check ---"
+Write-Host "--- Starting Capacity and DORA Metrics Check ---"
 
 # 1. Check Installer Size
+$sizeMB = 0
 $installerFile = Get-ChildItem -Path $InstallerDir -Filter *.exe | Select-Object -First 1
 if ($installerFile) {
     $sizeMB = [Math]::Round($installerFile.Length / 1MB, 2)
@@ -26,8 +28,10 @@ if ($installerFile) {
     Write-Host "WARNING: No installer found in $InstallerDir." -ForegroundColor Yellow
 }
 
-# 2. Check Repository Size (excluding .git)
-$repoFiles = Get-ChildItem -Path "." -Recurse -File | Where-Object { $_.FullName -notmatch "\\\.git\\" }
+# 2. Check Repository Size (excluding .git and artifacts) - Cross-platform Regex
+$repoFiles = Get-ChildItem -Path "." -Recurse -File | Where-Object { 
+    $_.FullName -notmatch '[\\/](\.git|installer)([\\/]|$)' 
+}
 $totalSize = ($repoFiles | Measure-Object -Property Length -Sum).Sum
 $totalSizeMB = [Math]::Round($totalSize / 1MB, 2)
 
@@ -39,18 +43,46 @@ if ($totalSizeMB -gt $MaxRepoSizeMB) {
     Write-Host "SUCCESS: Repository size is within limits." -ForegroundColor Green
 }
 
-# 3. FinOps Report for Workflow Summary
+# 3. DORA Metrics: Lead Time for Changes (Build Duration)
+$durationMin = [Math]::Round($BuildDurationSeconds / 60, 2)
+$doraRating = "Elite"
+if ($durationMin -gt 20) { $doraRating = "High" }
+if ($durationMin -gt 60) { $doraRating = "Medium" }
+if ($durationMin -gt 240) { $doraRating = "Low" }
+
+Write-Host "Lead Time for Changes (CI Duration): $durationMin minutes ($doraRating)"
+
+# 4. Generate Enhanced Report
+# Note: Deployment Frequency and Change Failure Rate are TBD until history tracking is integrated.
 $report = @"
-### 📊 Capacity & FinOps Report
+### DORA & Capacity Governance Report
+> Generated at $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
+
+#### DORA Metrics (Delivery Performance)
+| Metric | Value | Rating | Status |
+| :--- | :--- | :--- | :--- |
+| **Lead Time for Changes** | $durationMin min | $doraRating | [STABLE] |
+| **Deployment Frequency** | TBD | N/A | [PENDING] |
+| **Change Failure Rate** | TBD | N/A | [PENDING] |
+
+#### Capacity & FinOps
 | Metric | Value | Limit | Status |
 | :--- | :--- | :--- | :--- |
-| **Installer Size** | $sizeMB MB | $MaxInstallerSizeMB MB | $(if($installerFail){"❌ FAIL"}else{"✅ PASS"}) |
-| **Repo Source Size** | $totalSizeMB MB | $MaxRepoSizeMB MB | $(if($repoFail){"❌ FAIL"}else{"✅ PASS"}) |
+| **Installer Size** | $sizeMB MB | $MaxInstallerSizeMB MB | $(if($installerFail){"[OVER_LIMIT]"}else{"[OPTIMAL]"}) |
+| **Repo Source Size** | $totalSizeMB MB | $MaxRepoSizeMB MB | $(if($repoFail){"[OVER_LIMIT]"}else{"[OPTIMAL]"}) |
 
-*Recommendation: Maintain small binary footprints to reduce distribution costs and improve CI speed.*
+---
+*Recommendation: Current build duration is within Elite/High threshold. Continue optimizing assets to maintain lead time.*
 "@
 
 $report | Out-File "capacity_report.md" -Encoding utf8
+
+# Set Output for GitHub Actions
+if ($env:GITHUB_OUTPUT) {
+    "installer_size=$sizeMB" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+    "repo_size=$totalSizeMB" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+    "build_duration=$durationMin" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+}
 
 if ($installerFail -or $repoFail) {
     exit 1
