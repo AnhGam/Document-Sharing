@@ -34,16 +34,25 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
 
         public async Task UpdateAsync(BaseEntity entity, CancellationToken ct = default)
         {
-            var tracked = _context.ChangeTracker.Entries<BaseEntity>()
-                .FirstOrDefault(e => e.Entity.Id == entity.Id);
-
-            if (tracked == null)
+            var entry = _context.Entry(entity);
+            if (entry.State == EntityState.Detached)
             {
-                _context.Entry(entity).State = EntityState.Modified;
+                var tracked = _context.ChangeTracker.Entries<BaseEntity>()
+                    .FirstOrDefault(e => e.Entity.Id == entity.Id);
+
+                if (tracked != null)
+                {
+                    tracked.CurrentValues.SetValues(entity);
+                    entry = tracked;
+                }
+                else
+                {
+                    entry.State = EntityState.Modified;
+                }
             }
             
             // Prevent CreatedAt from being updated
-            _context.Entry(entity).Property(x => x.CreatedAt).IsModified = false;
+            entry.Property(x => x.CreatedAt).IsModified = false;
             
             await _context.SaveChangesAsync(ct);
         }

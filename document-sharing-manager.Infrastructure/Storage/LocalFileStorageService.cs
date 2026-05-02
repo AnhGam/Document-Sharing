@@ -14,7 +14,8 @@ namespace document_sharing_manager.Infrastructure.Storage
 
         public LocalFileStorageService(IConfiguration configuration)
         {
-            _basePath = configuration["Storage:LocalBasePath"] ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "uploads");
+            var configPath = configuration["Storage:LocalBasePath"];
+            _basePath = Path.GetFullPath(configPath ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "uploads"));
             
             // Limit capacity: Default 500MB as per documentation
             var maxMb = configuration.GetValue<long>("Storage:MaxFileSizeMB", 500);

@@ -486,8 +486,8 @@ namespace document_sharing_manager.Core.Data
             catch { return false; }
         }
 
-        public static bool InsertDocument(string ten, string dinh_dang,
-            string duong_dan, string ghi_chu, decimal? kich_thuoc, bool quan_trong,
+        public static bool InsertDocument(string ten, string dinhDang,
+            string duongDan, string ghiChu, decimal? kichThuoc, bool quanTrong,
             string tags = null)
         {
             string query = @"INSERT INTO tai_lieu
@@ -498,11 +498,11 @@ namespace document_sharing_manager.Core.Data
             System.Data.SQLite.SQLiteParameter[] parameters = new System.Data.SQLite.SQLiteParameter[]
             {
                 new System.Data.SQLite.SQLiteParameter("@ten", ten),
-                new System.Data.SQLite.SQLiteParameter("@dinh_dang", string.IsNullOrEmpty(dinh_dang) ? DBNull.Value : (object)dinh_dang),
-                new System.Data.SQLite.SQLiteParameter("@duong_dan", duong_dan ?? (object)DBNull.Value),
-                new System.Data.SQLite.SQLiteParameter("@ghi_chu", string.IsNullOrEmpty(ghi_chu) ? DBNull.Value : (object)ghi_chu),
-                new System.Data.SQLite.SQLiteParameter("@kich_thuoc", kich_thuoc.HasValue ? (object)kich_thuoc.Value : DBNull.Value),
-                new System.Data.SQLite.SQLiteParameter("@quan_trong", quan_trong ? 1 : 0),
+                new System.Data.SQLite.SQLiteParameter("@dinh_dang", string.IsNullOrEmpty(dinhDang) ? DBNull.Value : (object)dinhDang),
+                new System.Data.SQLite.SQLiteParameter("@duong_dan", duongDan ?? (object)DBNull.Value),
+                new System.Data.SQLite.SQLiteParameter("@ghi_chu", string.IsNullOrEmpty(ghiChu) ? DBNull.Value : (object)ghiChu),
+                new System.Data.SQLite.SQLiteParameter("@kich_thuoc", kichThuoc.HasValue ? (object)kichThuoc.Value : DBNull.Value),
+                new System.Data.SQLite.SQLiteParameter("@quan_trong", quanTrong ? 1 : 0),
                 new System.Data.SQLite.SQLiteParameter("@tags", string.IsNullOrEmpty(tags) ? DBNull.Value : (object)tags)
             };
 
