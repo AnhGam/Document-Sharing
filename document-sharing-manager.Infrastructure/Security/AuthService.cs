@@ -20,7 +20,7 @@ namespace document_sharing_manager.Infrastructure.Security
         public async Task<AuthResponse> LoginAsync(LoginRequest request, CancellationToken ct = default)
         {
             var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.Username == request.Username, ct);
+                .FirstOrDefaultAsync(u => u.Username.ToLower() == request.Username.ToLower(), ct);
 
             if (user == null || !BC.Verify(request.Password, user.PasswordHash))
             {
@@ -57,7 +57,7 @@ namespace document_sharing_manager.Infrastructure.Security
 
         public async Task<AuthResponse> RegisterAsync(RegisterRequest request, CancellationToken ct = default)
         {
-            if (await _context.Users.AnyAsync(u => u.Username == request.Username, ct))
+            if (await _context.Users.AnyAsync(u => u.Username.ToLower() == request.Username.ToLower(), ct))
             {
                 throw new InvalidOperationException("Username already exists.");
             }
@@ -66,7 +66,7 @@ namespace document_sharing_manager.Infrastructure.Security
             {
                 Username = request.Username,
                 Email = request.Email,
-                PasswordHash = BC.HashPassword(request.Password, 10),
+                PasswordHash = BC.HashPassword(request.Password, int.TryParse(_config["Security:BCryptWorkFactor"], out var factor) ? factor : 10),
                 Role = UserRole.User
             };
 
@@ -82,9 +82,30 @@ namespace document_sharing_manager.Infrastructure.Security
                 .Include(u => u.User)
                 .FirstOrDefaultAsync(t => t.Token == request.RefreshToken, ct);
 
-            if (tokenEntity == null || !tokenEntity.IsActive)
+            if (tokenEntity == null)
             {
-                throw new UnauthorizedAccessException("Invalid or expired refresh token.");
+                throw new UnauthorizedAccessException("Invalid refresh token.");
+            }
+
+            if (tokenEntity.IsRevoked)
+            {
+                // Reuse detection: revoke all tokens for this user
+                var activeTokens = await _context.RefreshTokens
+                    .Where(t => t.UserId == tokenEntity.UserId && !t.IsRevoked)
+                    .ToListAsync(ct);
+
+                foreach (var token in activeTokens)
+                {
+                    token.IsRevoked = true;
+                }
+
+                await _context.SaveChangesAsync(ct);
+                throw new UnauthorizedAccessException("Refresh token reuse detected. All sessions revoked.");
+            }
+
+            if (tokenEntity.IsExpired)
+            {
+                throw new UnauthorizedAccessException("Refresh token has expired.");
             }
 
             var user = tokenEntity.User!;
@@ -95,6 +116,7 @@ namespace document_sharing_manager.Infrastructure.Security
 
             // Revoke old token
             tokenEntity.IsRevoked = true;
+            
             var newAccessToken = _tokenService.GenerateAccessToken(user);
             var newRefreshToken = _tokenService.GenerateRefreshToken();
 
