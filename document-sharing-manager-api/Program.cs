@@ -11,6 +11,22 @@ builder.Services.AddControllers();
 
 // Configure Entity Framework Core with PostgreSQL
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+if (string.IsNullOrEmpty(connectionString))
+{
+    throw new InvalidOperationException("Connection string 'DefaultConnection' not found in configuration.");
+}
+
+if (connectionString.Contains("${POSTGRES_PASSWORD}"))
+{
+    var postgresPassword = Environment.GetEnvironmentVariable("POSTGRES_PASSWORD");
+    if (string.IsNullOrEmpty(postgresPassword))
+    {
+        throw new InvalidOperationException("Database connection string is not configured properly. Ensure POSTGRES_PASSWORD environment variable is set.");
+    }
+    connectionString = connectionString.Replace("${POSTGRES_PASSWORD}", postgresPassword);
+}
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
 

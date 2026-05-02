@@ -39,7 +39,17 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
 
         public async Task UpdateAsync(BaseEntity entity, CancellationToken ct = default)
         {
-            _context.Entry(entity).State = EntityState.Modified;
+            var tracked = _context.ChangeTracker.Entries<BaseEntity>()
+                .FirstOrDefault(e => e.Entity.Id == entity.Id);
+
+            if (tracked == null)
+            {
+                _context.Entry(entity).State = EntityState.Modified;
+            }
+            
+            // Prevent CreatedAt from being updated
+            _context.Entry(entity).Property(x => x.CreatedAt).IsModified = false;
+            
             await _context.SaveChangesAsync(ct);
         }
 
@@ -66,9 +76,12 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
 
         public async Task<List<Document>> SearchAsync(string keyword, CancellationToken ct = default)
         {
+            if (string.IsNullOrWhiteSpace(keyword))
+                return await _context.Documents.AsNoTracking().ToListAsync(ct);
+
             return await _context.Documents
                 .AsNoTracking()
-                .Where(d => d.Ten.Contains(keyword) || d.GhiChu.Contains(keyword))
+                .Where(d => EF.Functions.ILike(d.Ten, $"%{keyword}%") || (d.GhiChu != null && EF.Functions.ILike(d.GhiChu, $"%{keyword}%")))
                 .ToListAsync(ct);
         }
 
@@ -114,9 +127,12 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
 
         public List<Document> Search(string keyword)
         {
+            if (string.IsNullOrWhiteSpace(keyword))
+                return GetAll();
+
             return _context.Documents
                 .AsNoTracking()
-                .Where(d => d.Ten.Contains(keyword) || d.GhiChu.Contains(keyword))
+                .Where(d => EF.Functions.ILike(d.Ten, $"%{keyword}%") || (d.GhiChu != null && EF.Functions.ILike(d.GhiChu, $"%{keyword}%")))
                 .ToList();
         }
 

@@ -7,13 +7,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace document_sharing_manager.Infrastructure.Persistence
 {
-    public class AppDbContext : DbContext
+    public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
     {
-        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
-        {
-        }
 
-        public DbSet<Document> Documents { get; set; }
+        public DbSet<Document> Documents { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -23,13 +20,18 @@ namespace document_sharing_manager.Infrastructure.Persistence
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            var entries = ChangeTracker
-                .Entries()
-                .Where(e => e.Entity is BaseEntity && e.State == EntityState.Modified);
+            var entries = ChangeTracker.Entries<BaseEntity>();
 
-            foreach (var entityEntry in entries)
+            foreach (var entry in entries)
             {
-                ((BaseEntity)entityEntry.Entity).Update();
+                if (entry.State == EntityState.Added)
+                {
+                    // CreatedAt is already set in constructor, but we could enforce it here if needed
+                }
+                else if (entry.State == EntityState.Modified)
+                {
+                    entry.Entity.Update();
+                }
             }
 
             return base.SaveChangesAsync(cancellationToken);
