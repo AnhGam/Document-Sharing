@@ -5,6 +5,7 @@ using document_sharing_manager.Core.Domain;
 using document_sharing_manager.Core.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using document_sharing_manager.Core.DTOs;
 
 namespace document_sharing_manager_api.Controllers
@@ -137,7 +138,7 @@ namespace document_sharing_manager_api.Controllers
             {
                 await _repository.UpdateAsync(document, ct);
             }
-            catch (Exception ex) when (ex is System.Data.DBConcurrencyException || ex.GetType().Name == "DbUpdateConcurrencyException")
+            catch (Exception ex) when (ex is System.Data.DBConcurrencyException || ex is DbUpdateConcurrencyException)
             {
                 return Conflict(new SyncResponse { Success = false, Message = "A concurrency conflict occurred. Please refresh and try again." });
             }

@@ -46,7 +46,7 @@ namespace document_sharing_manager.Core.Services
         private readonly SemaphoreSlim _signal = new(0);
         private readonly string _apiUrl; 
         private readonly CancellationTokenSource _cts = new();
-        private readonly SynchronizationContext? _syncContext;
+        private readonly SynchronizationContext _syncContext;
         private bool _isRunning = false;
 
         public SyncEngine(IDocumentRepository repository, string apiUrl)
@@ -87,7 +87,7 @@ namespace document_sharing_manager.Core.Services
             try
             {
                 var documents = await _repository.GetPendingSyncDocumentsAsync(UserSession.CurrentUserId, ct);
-                foreach (var doc in documents)
+                foreach (var doc in documents.Where(d => d.SyncStatus == 1 || d.SyncStatus == 3))
                 {
                     Enqueue(doc, SyncType.Upload);
                 }
@@ -107,14 +107,15 @@ namespace document_sharing_manager.Core.Services
 
         public async Task<Result<IEnumerable<DocumentDto>>> GetPendingUploadsAsync(CancellationToken ct = default)
         {
-             var docs = await _repository.GetAllByUserIdAsync(UserSession.CurrentUserId, ct);
-             var dtos = docs.Where(d => d.SyncStatus == 1).Select(d => new DocumentDto { Id = d.Id, FileName = d.Ten });
+             var docs = await _repository.GetPendingSyncDocumentsAsync(UserSession.CurrentUserId, ct);
+             var dtos = docs.Where(d => d.SyncStatus == 1 || d.SyncStatus == 3)
+                            .Select(d => new DocumentDto { Id = d.Id, FileName = d.Ten });
              return Result<IEnumerable<DocumentDto>>.Success(dtos);
         }
 
         public async Task<Result<IEnumerable<DocumentDto>>> GetPendingDownloadsAsync(CancellationToken ct = default)
         {
-             var docs = await _repository.GetAllByUserIdAsync(UserSession.CurrentUserId, ct);
+             var docs = await _repository.GetPendingSyncDocumentsAsync(UserSession.CurrentUserId, ct);
              var dtos = docs.Where(d => d.SyncStatus == 2).Select(d => new DocumentDto { Id = d.Id, FileName = d.Ten });
              return Result<IEnumerable<DocumentDto>>.Success(dtos);
         }
@@ -216,7 +217,7 @@ namespace document_sharing_manager.Core.Services
 
                         if (_syncContext != null)
                         {
-                            _syncContext.Post(_ => UpdateLocal(), null);
+                            _syncContext.Send(_ => UpdateLocal(), null);
                         }
                         else
                         {
@@ -229,7 +230,7 @@ namespace document_sharing_manager.Core.Services
                 }
                 else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
                 {
-                    await HandleConflictAsync(doc);
+                    await HandleConflictAsync(doc, ct);
                 }
             }
             catch (Exception ex)
@@ -238,7 +239,7 @@ namespace document_sharing_manager.Core.Services
             }
         }
 
-        private async Task HandleConflictAsync(Document doc)
+        private async Task HandleConflictAsync(Document doc, CancellationToken ct)
         {
             try
             {
@@ -258,7 +259,7 @@ namespace document_sharing_manager.Core.Services
 
                 doc.SyncStatus = 3; // 3: Conflict
                 doc.GhiChu += $"\n[CONFLICT] Bản sao lưu tại: {conflictFileName}";
-                await _repository.UpdateAsync(doc);
+                await _repository.UpdateAsync(doc, ct);
             }
             catch (Exception ex)
             {

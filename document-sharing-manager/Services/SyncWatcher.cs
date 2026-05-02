@@ -19,6 +19,7 @@ namespace document_sharing_manager.Services
         private readonly SyncEngine _engine;
         private readonly IDocumentRepository _repository;
         private readonly FileSystemWatcher _watcher;
+        private readonly SynchronizationContext _syncContext;
         private readonly ConcurrentDictionary<string, System.Timers.Timer> _debouncers = new();
         private readonly CancellationTokenSource _cts = new();
         private const double DebounceInterval = 3000; // 3 seconds wait after last change
@@ -27,6 +28,7 @@ namespace document_sharing_manager.Services
         {
             _engine = engine;
             _repository = repository;
+            _syncContext = SynchronizationContext.Current;
 
             string path = FileStorageService.ResolvePath(FileStorageService.DefaultFolder);
             if (!Directory.Exists(path)) Directory.CreateDirectory(path);
@@ -99,13 +101,25 @@ namespace document_sharing_manager.Services
 
                     if (doc != null)
                     {
-                        // Update metadata to trigger sync
-                        doc.SyncStatus = 1; // 1: PendingUpload
-                        doc.LocalVersion++;
+                        void UpdateLocal()
+                        {
+                            doc.SyncStatus = 1; // 1: PendingUpload
+                            doc.LocalVersion++;
+                        }
+
+                        if (_syncContext != null)
+                        {
+                            _syncContext.Send(_ => UpdateLocal(), null);
+                        }
+                        else
+                        {
+                            UpdateLocal();
+                        }
+
                         await _repository.UpdateAsync(doc, _cts.Token);
 
-                    // Signal engine to process
-                    _engine.Enqueue(doc, SyncType.Upload);
+                        // Signal engine to process
+                        _engine.Enqueue(doc, SyncType.Upload);
                     
                     System.Diagnostics.Debug.WriteLine($"File change detected and enqueued: {fileName}");
                 }
