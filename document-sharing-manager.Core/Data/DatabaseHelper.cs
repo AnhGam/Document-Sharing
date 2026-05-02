@@ -111,7 +111,8 @@ namespace document_sharing_manager.Core.Data
                     user_id INTEGER NOT NULL,
                     version INTEGER DEFAULT 1,
                     sync_status INTEGER DEFAULT 0, -- 0: Synced, 1: PendingUpload, 2: PendingDownload, 3: Conflict
-                    local_version INTEGER DEFAULT 1
+                    local_version INTEGER DEFAULT 1,
+                    remote_id TEXT NOT NULL
                 );
 
                 -- Bảng collections (bộ sưu tập)
@@ -163,6 +164,13 @@ namespace document_sharing_manager.Core.Data
             MigrateAddColumn(conn, "tai_lieu", "version", "INTEGER DEFAULT 1");
             MigrateAddColumn(conn, "tai_lieu", "sync_status", "INTEGER DEFAULT 0");
             MigrateAddColumn(conn, "tai_lieu", "local_version", "INTEGER DEFAULT 1");
+            MigrateAddColumn(conn, "tai_lieu", "remote_id", "TEXT");
+            
+            // Ensure all documents have a remote_id if they don't
+            using (var cmdFill = new SQLiteCommand("UPDATE tai_lieu SET remote_id = lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-' || '4' || substr(hex(randomblob(2)), 2) || '-' || substr('89ab', abs(random()) % 4 + 1, 1) || substr(hex(randomblob(2)), 2) || '-' || hex(randomblob(6))) WHERE remote_id IS NULL OR remote_id = ''", conn))
+            {
+                cmdFill.ExecuteNonQuery();
+            }
 
             // Enable WAL mode for better concurrency
             using (var walCmd = new SQLiteCommand("PRAGMA journal_mode=WAL;", conn))
@@ -472,12 +480,12 @@ namespace document_sharing_manager.Core.Data
 
         public static bool InsertDocument(string ten, string dinhDang,
             string duongDan, string ghiChu, decimal? kichThuoc, bool quanTrong,
-            int userId, int version = 1, string? tags = null, int syncStatus = 1, int localVersion = 1)
+            int userId, Guid remoteId, int version = 1, string? tags = null, int syncStatus = 1, int localVersion = 1)
         {
             string query = @"INSERT INTO tai_lieu
-                (ten, dinh_dang, duong_dan, ghi_chu, kich_thuoc, quan_trong, tags, user_id, version, sync_status, local_version)
+                (ten, dinh_dang, duong_dan, ghi_chu, kich_thuoc, quan_trong, tags, user_id, version, sync_status, local_version, remote_id)
                 VALUES
-                (@ten, @dinh_dang, @duong_dan, @ghi_chu, @kich_thuoc, @quan_trong, @tags, @user_id, @version, @sync_status, @local_version)";
+                (@ten, @dinh_dang, @duong_dan, @ghi_chu, @kich_thuoc, @quan_trong, @tags, @user_id, @version, @sync_status, @local_version, @remote_id)";
 
             System.Data.SQLite.SQLiteParameter[] parameters = 
             [
@@ -491,7 +499,8 @@ namespace document_sharing_manager.Core.Data
                 new("@user_id", userId),
                 new("@version", version),
                 new("@sync_status", syncStatus),
-                new("@local_version", localVersion)
+                new("@local_version", localVersion),
+                new("@remote_id", remoteId.ToString())
             ];
 
             int result = ExecuteNonQuery(query, parameters);
@@ -564,7 +573,7 @@ namespace document_sharing_manager.Core.Data
         /// </summary>
         public static bool UpdateDocument(int id, string ten, string dinhDang,
             string duongDan, string ghiChu, decimal? kichThuoc, bool quanTrong,
-            int userId, int newVersion, int? expectedVersion, int syncStatus, int localVersion, string? tags = null)
+            int userId, Guid remoteId, int newVersion, int? expectedVersion, int syncStatus, int localVersion, string? tags = null)
         {
             string query = @"UPDATE tai_lieu SET
                 ten = @ten,
@@ -577,7 +586,8 @@ namespace document_sharing_manager.Core.Data
                 user_id = @user_id,
                 version = @new_version,
                 sync_status = @sync_status,
-                local_version = @local_version
+                local_version = @local_version,
+                remote_id = @remote_id
                 WHERE id = @id AND (@expected_version IS NULL OR version = @expected_version)";
 
             System.Data.SQLite.SQLiteParameter[] parameters = 
@@ -594,7 +604,8 @@ namespace document_sharing_manager.Core.Data
                 new("@new_version", newVersion),
                 new("@expected_version", (object?)expectedVersion ?? DBNull.Value),
                 new("@sync_status", syncStatus),
-                new("@local_version", localVersion)
+                new("@local_version", localVersion),
+                new("@remote_id", remoteId.ToString())
             ];
 
             int result = ExecuteNonQuery(query, parameters);

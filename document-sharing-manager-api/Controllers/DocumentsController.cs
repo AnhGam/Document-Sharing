@@ -96,9 +96,9 @@ namespace document_sharing_manager_api.Controllers
         }
 
         [HttpPost("sync-stream")]
-        public async Task<ActionResult<SyncResponse>> SyncStream([FromForm] int documentId, [FromForm] int localVersion, [FromForm] string? ten, [FromForm] string? ghiChu, IFormFile? file, CancellationToken ct)
+        public async Task<ActionResult<SyncResponse>> SyncStream([FromForm] Guid remoteId, [FromForm] int localVersion, [FromForm] string? ten, [FromForm] string? ghiChu, IFormFile? file, CancellationToken ct)
         {
-            var document = await _repository.GetByIdAndUserIdAsync(documentId, CurrentUserId, ct);
+            var document = await _repository.GetByRemoteIdAsync(remoteId, ct);
             if (document == null)
                 return NotFound(new SyncResponse { Success = false, Message = "Document not found." });
 
@@ -153,7 +153,7 @@ namespace document_sharing_manager_api.Controllers
         [HttpPost("sync")]
         public async Task<ActionResult<SyncResponse>> Sync([FromBody] SyncRequest request, CancellationToken ct)
         {
-            var document = await _repository.GetByIdAndUserIdAsync(request.DocumentId, CurrentUserId, ct);
+            var document = await _repository.GetByRemoteIdAsync(request.RemoteId, ct);
             if (document == null)
                 return NotFound(new SyncResponse { Success = false, Message = "Document not found." });
 

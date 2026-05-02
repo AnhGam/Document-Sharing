@@ -33,7 +33,7 @@ namespace document_sharing_manager.Documents
         private Panel pnlActions;
         private CheckBox chkRecursive;
 
-        private readonly List<FileEntry> fileEntries = new List<FileEntry>();
+        private readonly List<FileEntry> fileEntries = [];
 
         public BatchImportForm()
         {
@@ -89,7 +89,7 @@ namespace document_sharing_manager.Documents
                 Checked = true
             };
 
-            pnlHeader.Controls.AddRange(new Control[] { lblTitle, btnSelect, lblFolder, chkRecursive });
+            pnlHeader.Controls.AddRange([lblTitle, btnSelect, lblFolder, chkRecursive]);
             this.Controls.Add(pnlHeader);
 
             // DataGridView
@@ -128,11 +128,10 @@ namespace document_sharing_manager.Documents
             btnClose = new Button { Text = "Đóng", Size = new Size(90, 35), Location = new Point(778, 8) };
             btnClose.Click += (s, e) => this.Close();
 
-            pnlActions.Controls.AddRange(new Control[]
-            {
+            pnlActions.Controls.AddRange([
                 btnSelectAll, btnDeselectAll,
                 progressBar, lblStatus, btnImport, btnClose
-            });
+            ]);
             this.Controls.Add(pnlActions);
 
             dgvFiles.BringToFront();
@@ -215,28 +214,24 @@ namespace document_sharing_manager.Documents
 
         private void BtnSelectFolderClick(object sender, EventArgs e)
         {
-            using (var dialog = new FolderBrowserDialog())
+            using var dialog = new FolderBrowserDialog();
+            dialog.Description = "Chọn thư mục chứa tài liệu cần import";
+            dialog.ShowNewFolderButton = false;
+            if (dialog.ShowDialog() == DialogResult.OK)
             {
-                dialog.Description = "Chọn thư mục chứa tài liệu cần import";
-                dialog.ShowNewFolderButton = false;
-                if (dialog.ShowDialog() == DialogResult.OK)
-                {
-                    ScanFolder(dialog.SelectedPath);
-                }
+                ScanFolder(dialog.SelectedPath);
             }
         }
 
         private void BtnSelectFilesClick(object sender, EventArgs e)
         {
-            using (var dialog = new OpenFileDialog())
+            using var dialog = new OpenFileDialog();
+            dialog.Multiselect = true;
+            dialog.Title = "Chọn các file cần import";
+            dialog.Filter = "Tất cả các file|*.*";
+            if (dialog.ShowDialog() == DialogResult.OK)
             {
-                dialog.Multiselect = true;
-                dialog.Title = "Chọn các file cần import";
-                dialog.Filter = "Tất cả các file|*.*";
-                if (dialog.ShowDialog() == DialogResult.OK)
-                {
-                    AddFilesToGrid(dialog.FileNames);
-                }
+                AddFilesToGrid(dialog.FileNames);
             }
         }
 
@@ -383,6 +378,7 @@ namespace document_sharing_manager.Documents
                         (decimal)entry.FileSize / (1024.0m * 1024.0m),
                         isImportant,
                         UserSession.CurrentUserId,
+                        Guid.NewGuid(),
                         1, // Version
                         ""
                     );
@@ -427,24 +423,21 @@ namespace document_sharing_manager.Documents
             }
         }
 
-        private static string DetectFileType(string extension)
+        private static string DetectFileType(string extension) => extension.ToLowerInvariant() switch
         {
-            switch (extension.ToLowerInvariant())
-            {
-                case ".pdf": return "PDF";
-                case ".doc": case ".docx": return "Word";
-                case ".xls": case ".xlsx": return "Excel";
-                case ".ppt": case ".pptx": return "PowerPoint";
-                case ".txt": return "Text";
-                case ".jpg": case ".jpeg": case ".png": case ".gif": case ".bmp": return "Hình ảnh";
-                case ".mp4": case ".avi": case ".mkv": case ".mov": return "Video";
-                case ".mp3": case ".wav": case ".flac": return "Audio";
-                case ".zip": case ".rar": case ".7z": return "Nén";
-                case ".html": case ".htm": return "HTML";
-                case ".cs": case ".java": case ".py": case ".js": case ".ts": return "Code";
-                default: return extension.TrimStart('.').ToUpper();
-            }
-        }
+            ".pdf" => "PDF",
+            ".doc" or ".docx" => "Word",
+            ".xls" or ".xlsx" => "Excel",
+            ".ppt" or ".pptx" => "PowerPoint",
+            ".txt" => "Text",
+            ".jpg" or ".jpeg" or ".png" or ".gif" or ".bmp" => "Hình ảnh",
+            ".mp4" or ".avi" or ".mkv" or ".mov" => "Video",
+            ".mp3" or ".wav" or ".flac" => "Audio",
+            ".zip" or ".rar" or ".7z" => "Nén",
+            ".html" or ".htm" => "HTML",
+            ".cs" or ".java" or ".py" or ".js" or ".ts" => "Code",
+            _ => extension.TrimStart('.').ToUpper()
+        };
 
 
         private void DgvFilesCellPainting(object sender, DataGridViewCellPaintingEventArgs e)
@@ -460,36 +453,30 @@ namespace document_sharing_manager.Documents
                 
                 e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
                 
-                using (GraphicsPath path = new GraphicsPath())
+                using GraphicsPath path = new();
+                float emSize = e.Graphics.DpiY * 16 / 72; 
+                path.AddString(star, e.CellStyle.Font.FontFamily, (int)FontStyle.Bold, emSize, 
+                    new Point(0, 0), StringFormat.GenericDefault);
+
+                RectangleF bounds = path.GetBounds();
+                float x = e.CellBounds.Left + (e.CellBounds.Width - bounds.Width) / 2 - bounds.Left;
+                float y = e.CellBounds.Top + (e.CellBounds.Height - bounds.Height) / 2 - bounds.Top;
+
+                using Matrix m = new();
+                m.Translate(x, y);
+                path.Transform(m);
+
+                if (isImportant)
                 {
-                    float emSize = e.Graphics.DpiY * 16 / 72; 
-                    path.AddString(star, e.CellStyle.Font.FontFamily, (int)FontStyle.Bold, emSize, 
-                        new Point(0, 0), StringFormat.GenericDefault);
-
-                    RectangleF bounds = path.GetBounds();
-                    float x = e.CellBounds.Left + (e.CellBounds.Width - bounds.Width) / 2 - bounds.Left;
-                    float y = e.CellBounds.Top + (e.CellBounds.Height - bounds.Height) / 2 - bounds.Top;
-
-                    Matrix m = new Matrix();
-                    m.Translate(x, y);
-                    path.Transform(m);
-
-                    if (isImportant)
-                    {
-                        using (Brush goldBrush = new SolidBrush(Color.Gold))
-                        using (Pen borderPen = new Pen(Color.FromArgb(160, 160, 160), 1f))
-                        {
-                            e.Graphics.FillPath(goldBrush, path);
-                            e.Graphics.DrawPath(borderPen, path);
-                        }
-                    }
-                    else
-                    {
-                        using (Pen grayPen = new Pen(Color.LightGray, 1.5f))
-                        {
-                            e.Graphics.DrawPath(grayPen, path);
-                        }
-                    }
+                    using Brush goldBrush = new SolidBrush(Color.Gold);
+                    using Pen borderPen = new(Color.FromArgb(160, 160, 160), 1f);
+                    e.Graphics.FillPath(goldBrush, path);
+                    e.Graphics.DrawPath(borderPen, path);
+                }
+                else
+                {
+                    using Pen grayPen = new(Color.LightGray, 1.5f);
+                    e.Graphics.DrawPath(grayPen, path);
                 }
                 e.Handled = true;
             }

@@ -35,7 +35,8 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
                 UserId = row["user_id"] != DBNull.Value ? Convert.ToInt32(row["user_id"]) : 0,
                 Version = row["version"] != DBNull.Value ? Convert.ToInt32(row["version"]) : 1,
                 SyncStatus = row["sync_status"] != DBNull.Value ? Convert.ToInt32(row["sync_status"]) : 0,
-                LocalVersion = row["local_version"] != DBNull.Value ? Convert.ToInt32(row["local_version"]) : 1
+                LocalVersion = row["local_version"] != DBNull.Value ? Convert.ToInt32(row["local_version"]) : 1,
+                RemoteId = row["remote_id"] != DBNull.Value ? Guid.Parse(row["remote_id"].ToString()) : Guid.NewGuid()
             };
         }
 
@@ -139,15 +140,13 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
 
         public bool Add(Document doc)
         {
-            return DatabaseHelper.InsertDocument(doc.Ten, doc.DinhDang, doc.DuongDan, doc.GhiChu, doc.KichThuoc, doc.QuanTrong, doc.UserId, doc.Version, doc.Tags);
+            return DatabaseHelper.InsertDocument(doc.Ten, doc.DinhDang, doc.DuongDan, doc.GhiChu, doc.KichThuoc, doc.QuanTrong, doc.UserId, doc.RemoteId, doc.Version, doc.Tags);
         }
 
         public bool Update(Document doc)
         {
              // We pass doc.Version as the expected version to ensure the record hasn't changed.
-             // If we intended to increment the version, the caller should have handled it or 
-             // we'd need to pass the old version separately.
-             return DatabaseHelper.UpdateDocument(doc.Id, doc.Ten, doc.DinhDang, doc.DuongDan, doc.GhiChu, doc.KichThuoc, doc.QuanTrong, doc.UserId, doc.Version, doc.Version, doc.SyncStatus, doc.LocalVersion, doc.Tags);
+             return DatabaseHelper.UpdateDocument(doc.Id, doc.Ten, doc.DinhDang, doc.DuongDan, doc.GhiChu, doc.KichThuoc, doc.QuanTrong, doc.UserId, doc.RemoteId, doc.Version, doc.Version, doc.SyncStatus, doc.LocalVersion, doc.Tags);
         }
 
         public bool Delete(int id)
@@ -228,6 +227,16 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
             ];
             var list = await Task.Run(() => ExecuteAndMap(query, parameters));
             return list.Count > 0 ? list[0] : null;
+        }
+        public async Task<Document?> GetByRemoteIdAsync(Guid remoteId, CancellationToken ct = default)
+        {
+            return await Task.Run(() => 
+            {
+                string query = "SELECT * FROM tai_lieu WHERE remote_id = @remoteId AND (is_deleted IS NULL OR is_deleted = 0)";
+                SQLiteParameter[] parameters = [new("@remoteId", remoteId.ToString())];
+                var list = ExecuteAndMap(query, parameters);
+                return list.Count > 0 ? list[0] : null;
+            }, ct);
         }
 
         public async Task<List<Document>> SearchAsync(string keyword, int userId, CancellationToken ct = default)

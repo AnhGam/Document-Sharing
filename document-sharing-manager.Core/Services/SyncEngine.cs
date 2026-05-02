@@ -146,10 +146,11 @@ namespace document_sharing_manager.Core.Services
 
         private async Task ProcessTaskAsync(SyncTask task)
         {
+            var ct = _cts.Token;
             switch (task.Type)
             {
                 case SyncType.Upload:
-                    await HandleUploadAsync(task.Document);
+                    await HandleUploadAsync(task.Document, ct);
                     break;
                 case SyncType.Download:
                     // TODO: Implement Download
@@ -157,7 +158,7 @@ namespace document_sharing_manager.Core.Services
             }
         }
 
-        private async Task HandleUploadAsync(Document doc)
+        private async Task HandleUploadAsync(Document doc, CancellationToken ct)
         {
             try
             {
@@ -166,7 +167,7 @@ namespace document_sharing_manager.Core.Services
 
                 // Use MultipartFormDataContent and StreamContent for large file safety (OOM prevention)
                 using MultipartFormDataContent content = new();
-                content.Add(new StringContent(doc.Id.ToString()), "documentId");
+                content.Add(new StringContent(doc.RemoteId.ToString()), "remoteId");
                 content.Add(new StringContent(doc.Version.ToString()), "localVersion");
                 if (!string.IsNullOrEmpty(doc.Ten)) content.Add(new StringContent(doc.Ten), "ten");
                 if (doc.GhiChu != null) content.Add(new StringContent(doc.GhiChu), "ghiChu");
@@ -176,19 +177,19 @@ namespace document_sharing_manager.Core.Services
                 fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
                 content.Add(fileContent, "file", Path.GetFileName(fullPath));
 
-                var response = await _httpClient.PostAsync($"{_apiUrl}/sync-stream", content);
+                var response = await _httpClient.PostAsync($"{_apiUrl}/sync-stream", content, ct);
                 
                 if (response.IsSuccessStatusCode)
                 {
                     var resultJson = await response.Content.ReadAsStringAsync();
                     var result = JsonConvert.DeserializeObject<SyncResponse>(resultJson);
                     
-                    if (result != null && result.Success)
+                    if (result?.Success == true)
                     {
                         doc.Version = result.CurrentVersion;
                         doc.SyncStatus = 0; // 0: Synced
                         doc.LocalVersion = doc.Version; 
-                        await _repository.UpdateAsync(doc);
+                        await _repository.UpdateAsync(doc, ct);
                     }
                 }
                 else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)

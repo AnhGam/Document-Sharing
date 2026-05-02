@@ -26,7 +26,7 @@ namespace document_sharing_manager.Services
             _engine = engine;
             _repository = repository;
 
-            string path = FileStorageService.ResolvePath("documents");
+            string path = FileStorageService.ResolvePath(FileStorageService.DefaultFolder);
             if (!Directory.Exists(path)) Directory.CreateDirectory(path);
 
             _watcher = new(path)
@@ -88,7 +88,7 @@ namespace document_sharing_manager.Services
             {
                 // Normalize path to match DB entries (which use relative paths like 'documents\file.ext')
                 string fileName = Path.GetFileName(fullPath);
-                string relativePath = Path.Combine("documents", fileName);
+                string relativePath = Path.Combine(FileStorageService.DefaultFolder, fileName);
                 
                 // Find document in SQLite using single targeted query
                 var doc = await _repository.GetByPathAsync(relativePath);

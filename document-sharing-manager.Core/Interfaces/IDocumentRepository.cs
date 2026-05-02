@@ -12,6 +12,7 @@ namespace document_sharing_manager.Core.Interfaces
         Task<Document?> GetByIdAndUserIdAsync(int id, int userId, CancellationToken ct = default);
         Task<Document?> GetByVersionAsync(int docId, int version, int userId, CancellationToken ct = default);
         Task<Document?> GetByPathAsync(string path, CancellationToken ct = default);
+        Task<Document?> GetByRemoteIdAsync(Guid remoteId, CancellationToken ct = default);
 
         Task<List<Document>> SearchAsync(string keyword, int userId, CancellationToken ct = default);
         Task<List<Document>> SearchAdvancedAsync(string keyword, string format, DateTime? fromDate, DateTime? toDate, decimal? minSize, decimal? maxSize, bool? isImportant, int userId, CancellationToken ct = default);

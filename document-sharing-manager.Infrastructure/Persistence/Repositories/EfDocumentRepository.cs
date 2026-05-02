@@ -45,6 +45,7 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
             
             var entry = trackedEntry ?? _context.Entry(entity);
             entry.Property(x => x.CreatedAt).IsModified = false;
+            entry.Property(x => x.RemoteId).IsModified = false; // Never change RemoteId
             
             await _context.SaveChangesAsync(ct);
         }
@@ -84,6 +85,12 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
             return await _context.Documents
                 .AsNoTracking()
                 .FirstOrDefaultAsync(d => d.DuongDan == path && !d.IsDeleted, ct);
+        }
+
+        public async Task<Document?> GetByRemoteIdAsync(Guid remoteId, CancellationToken ct = default)
+        {
+            return await _context.Documents
+                .FirstOrDefaultAsync(d => d.RemoteId == remoteId && !d.IsDeleted, ct);
         }
 
         public async Task<List<Document>> SearchAsync(string keyword, int userId, CancellationToken ct = default)
