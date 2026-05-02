@@ -214,5 +214,23 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
                 .OrderByDescending(d => d.CreatedAt)
                 .ToListAsync(ct);
         }
+
+        public async Task UpdateSyncStatusAsync(int id, int syncStatus, int? newVersion = null, int? expectedVersion = null, int? newLocalVersion = null, CancellationToken ct = default)
+        {
+            var doc = await _context.Documents.FindAsync([id], ct);
+            if (doc != null)
+            {
+                if (expectedVersion.HasValue && doc.Version != expectedVersion.Value)
+                {
+                    return; 
+                }
+                
+                doc.SyncStatus = syncStatus;
+                if (newVersion.HasValue) doc.Version = newVersion.Value;
+                if (newLocalVersion.HasValue) doc.LocalVersion = newLocalVersion.Value;
+                
+                await _context.SaveChangesAsync(ct);
+            }
+        }
     }
 }

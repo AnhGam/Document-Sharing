@@ -140,9 +140,14 @@ namespace document_sharing_manager.Core.Services
                     if (_taskQueue.TryDequeue(out var task))
                     {
                         string key = $"{task.Document.Id}_{task.Type}";
-                        _enqueuedTasks.TryRemove(key, out _);
-                        
-                        await ProcessTaskAsync(task);
+                        try
+                        {
+                            await ProcessTaskAsync(task);
+                        }
+                        finally
+                        {
+                            _enqueuedTasks.TryRemove(key, out _);
+                        }
                     }
                 }
                 catch (OperationCanceledException) { break; }
@@ -208,11 +213,18 @@ namespace document_sharing_manager.Core.Services
                     
                     if (result?.Success == true)
                     {
+                        int oldVersion = doc.Version;
+                        int newVersion = result.CurrentVersion;
+
+                        // 1. Update DB synchronously on background thread to avoid race condition
+                        await _repository.UpdateSyncStatusAsync(doc.Id, 0, newVersion, oldVersion, newVersion, ct);
+
+                        // 2. Update object on UI thread via Post for UI thread safety
                         void UpdateLocal()
                         {
-                            doc.Version = result.CurrentVersion;
+                            doc.Version = newVersion;
                             doc.SyncStatus = 0; // 0: Synced
-                            doc.LocalVersion = doc.Version; 
+                            doc.LocalVersion = newVersion; 
                         }
 
                         if (_syncContext != null)
@@ -223,9 +235,6 @@ namespace document_sharing_manager.Core.Services
                         {
                             UpdateLocal();
                         }
-
-                        // Background DB update
-                        await _repository.UpdateAsync(doc, ct);
                     }
                 }
                 else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
@@ -257,9 +266,31 @@ namespace document_sharing_manager.Core.Services
                 
                 File.Copy(fullPath, conflictPath, true);
 
-                doc.SyncStatus = 3; // 3: Conflict
-                doc.GhiChu += $"\n[CONFLICT] Bản sao lưu tại: {conflictFileName}";
-                await _repository.UpdateAsync(doc, ct);
+                int oldStatus = doc.SyncStatus;
+                string conflictMsg = $"\n[CONFLICT] Bản sao lưu tại: {conflictFileName}";
+                
+                // Update DB first
+                await _repository.UpdateSyncStatusAsync(doc.Id, 3, null, null, null, ct);
+
+                // Update object on UI thread
+                if (_syncContext != null)
+                {
+                    _syncContext.Post(_ => {
+                        doc.SyncStatus = 3; // 3: Conflict
+                        if ((doc.GhiChu?.Length ?? 0) + conflictMsg.Length < 2000)
+                        {
+                            doc.GhiChu += conflictMsg;
+                        }
+                    }, null);
+                }
+                else
+                {
+                    doc.SyncStatus = 3;
+                    if ((doc.GhiChu?.Length ?? 0) + conflictMsg.Length < 2000)
+                    {
+                        doc.GhiChu += conflictMsg;
+                    }
+                }
             }
             catch (Exception ex)
             {

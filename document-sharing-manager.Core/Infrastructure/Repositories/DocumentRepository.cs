@@ -312,5 +312,36 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
             SQLiteParameter[] parameters = [new("@userId", userId)];
             return await Task.Run(() => ExecuteAndMap(query, parameters), ct);
         }
+
+        public async Task UpdateSyncStatusAsync(int id, int syncStatus, int? newVersion = null, int? expectedVersion = null, int? newLocalVersion = null, CancellationToken ct = default)
+        {
+            await Task.Run(() => 
+            {
+                string query = @"UPDATE tai_lieu SET sync_status = @sync_status";
+                List<SQLiteParameter> parameters = [new("@sync_status", syncStatus), new("@id", id)];
+                
+                if (newVersion.HasValue)
+                {
+                    query += ", version = @version";
+                    parameters.Add(new("@version", newVersion.Value));
+                }
+                
+                if (newLocalVersion.HasValue)
+                {
+                    query += ", local_version = @local_version";
+                    parameters.Add(new("@local_version", newLocalVersion.Value));
+                }
+                
+                query += " WHERE id = @id";
+                
+                if (expectedVersion.HasValue)
+                {
+                    query += " AND version = @expected_version";
+                    parameters.Add(new("@expected_version", expectedVersion.Value));
+                }
+                
+                DatabaseHelper.ExecuteNonQuery(query, [.. parameters]);
+            }, ct);
+        }
     }
 }
