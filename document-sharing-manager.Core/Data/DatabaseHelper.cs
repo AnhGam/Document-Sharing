@@ -43,7 +43,7 @@ namespace document_sharing_manager.Core.Data
             {
                 if (string.IsNullOrEmpty(_connectionString))
                 {
-                    _connectionString = $"Data Source={DatabasePath};Version=3;";
+                    _connectionString = $"Data Source={DatabasePath};Version=3;Pooling=True;";
                 }
                 return _connectionString;
             }
@@ -109,7 +109,9 @@ namespace document_sharing_manager.Core.Data
                     is_deleted INTEGER DEFAULT 0,
                     deleted_at DATETIME,
                     user_id INTEGER NOT NULL,
-                    version INTEGER DEFAULT 1
+                    version INTEGER DEFAULT 1,
+                    sync_status INTEGER DEFAULT 0, -- 0: Synced, 1: PendingUpload, 2: PendingDownload, 3: Conflict
+                    local_version INTEGER DEFAULT 1
                 );
 
                 -- Bảng collections (bộ sưu tập)
@@ -159,6 +161,14 @@ namespace document_sharing_manager.Core.Data
             // Migration: Add user_id and version if missing in existing installations
             MigrateAddColumn(conn, "tai_lieu", "user_id", "INTEGER NOT NULL DEFAULT 1");
             MigrateAddColumn(conn, "tai_lieu", "version", "INTEGER DEFAULT 1");
+            MigrateAddColumn(conn, "tai_lieu", "sync_status", "INTEGER DEFAULT 0");
+            MigrateAddColumn(conn, "tai_lieu", "local_version", "INTEGER DEFAULT 1");
+
+            // Enable WAL mode for better concurrency
+            using (var walCmd = new SQLiteCommand("PRAGMA journal_mode=WAL;", conn))
+            {
+                walCmd.ExecuteNonQuery();
+            }
 
             // Migration: fix personal_notes column names and add status if missing
             // Các cột này đã được tích hợp vào schema gốc ở trên
@@ -462,12 +472,12 @@ namespace document_sharing_manager.Core.Data
 
         public static bool InsertDocument(string ten, string dinhDang,
             string duongDan, string ghiChu, decimal? kichThuoc, bool quanTrong,
-            int userId, int version = 1, string? tags = null)
+            int userId, int version = 1, string? tags = null, int syncStatus = 1, int localVersion = 1)
         {
             string query = @"INSERT INTO tai_lieu
-                (ten, dinh_dang, duong_dan, ghi_chu, kich_thuoc, quan_trong, tags, user_id, version)
+                (ten, dinh_dang, duong_dan, ghi_chu, kich_thuoc, quan_trong, tags, user_id, version, sync_status, local_version)
                 VALUES
-                (@ten, @dinh_dang, @duong_dan, @ghi_chu, @kich_thuoc, @quan_trong, @tags, @user_id, @version)";
+                (@ten, @dinh_dang, @duong_dan, @ghi_chu, @kich_thuoc, @quan_trong, @tags, @user_id, @version, @sync_status, @local_version)";
 
             System.Data.SQLite.SQLiteParameter[] parameters = 
             [
@@ -479,7 +489,9 @@ namespace document_sharing_manager.Core.Data
                 new("@quan_trong", quanTrong ? 1 : 0),
                 new("@tags", string.IsNullOrEmpty(tags) ? DBNull.Value : (object)tags!),
                 new("@user_id", userId),
-                new("@version", version)
+                new("@version", version),
+                new("@sync_status", syncStatus),
+                new("@local_version", localVersion)
             ];
 
             int result = ExecuteNonQuery(query, parameters);
@@ -501,9 +513,9 @@ namespace document_sharing_manager.Core.Data
                 try
                 {
                     string query = @"INSERT INTO tai_lieu
-                        (ten, dinh_dang, duong_dan, ghi_chu, kich_thuoc, quan_trong, tags, user_id, version)
+                        (ten, dinh_dang, duong_dan, ghi_chu, kich_thuoc, quan_trong, tags, user_id, version, sync_status, local_version)
                         VALUES
-                        (@ten, @dinh_dang, @duong_dan, @ghi_chu, @kich_thuoc, @quan_trong, @tags, @user_id, @version)";
+                        (@ten, @dinh_dang, @duong_dan, @ghi_chu, @kich_thuoc, @quan_trong, @tags, @user_id, @version, @sync_status, @local_version)";
 
                     using (var cmd = new SQLiteCommand(query, conn, transaction))
                     {
@@ -516,6 +528,8 @@ namespace document_sharing_manager.Core.Data
                         cmd.Parameters.Add("@tags", System.Data.DbType.String);
                         cmd.Parameters.Add("@user_id", System.Data.DbType.Int32);
                         cmd.Parameters.Add("@version", System.Data.DbType.Int32);
+                        cmd.Parameters.Add("@sync_status", System.Data.DbType.Int32);
+                        cmd.Parameters.Add("@local_version", System.Data.DbType.Int32);
 
                         foreach (var doc in documents)
                         {
@@ -528,6 +542,8 @@ namespace document_sharing_manager.Core.Data
                             cmd.Parameters["@tags"].Value = string.IsNullOrEmpty(doc.Tags) ? DBNull.Value : (object)doc.Tags!;
                             cmd.Parameters["@user_id"].Value = doc.UserId;
                             cmd.Parameters["@version"].Value = doc.Version;
+                            cmd.Parameters["@sync_status"].Value = doc.SyncStatus;
+                            cmd.Parameters["@local_version"].Value = doc.LocalVersion;
 
                             if (cmd.ExecuteNonQuery() > 0) successCount++;
                         }
@@ -548,7 +564,7 @@ namespace document_sharing_manager.Core.Data
         /// </summary>
         public static bool UpdateDocument(int id, string ten, string dinhDang,
             string duongDan, string ghiChu, decimal? kichThuoc, bool quanTrong,
-            int userId, int newVersion, int expectedVersion, string? tags = null)
+            int userId, int newVersion, int? expectedVersion, int syncStatus, int localVersion, string? tags = null)
         {
             string query = @"UPDATE tai_lieu SET
                 ten = @ten,
@@ -559,8 +575,10 @@ namespace document_sharing_manager.Core.Data
                 quan_trong = @quan_trong,
                 tags = @tags,
                 user_id = @user_id,
-                version = @new_version
-                WHERE id = @id AND version = @expected_version";
+                version = @new_version,
+                sync_status = @sync_status,
+                local_version = @local_version
+                WHERE id = @id AND (@expected_version IS NULL OR version = @expected_version)";
 
             System.Data.SQLite.SQLiteParameter[] parameters = 
             [
@@ -574,7 +592,9 @@ namespace document_sharing_manager.Core.Data
                 new("@tags", string.IsNullOrEmpty(tags) ? DBNull.Value : (object)tags!),
                 new("@user_id", userId),
                 new("@new_version", newVersion),
-                new("@expected_version", expectedVersion)
+                new("@expected_version", (object?)expectedVersion ?? DBNull.Value),
+                new("@sync_status", syncStatus),
+                new("@local_version", localVersion)
             ];
 
             int result = ExecuteNonQuery(query, parameters);

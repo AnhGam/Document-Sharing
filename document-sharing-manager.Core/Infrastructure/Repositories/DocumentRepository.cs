@@ -33,7 +33,9 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
                 QuanTrong = Convert.ToInt32(row["quan_trong"]) == 1,
                 Tags = row["tags"].ToString(),
                 UserId = row["user_id"] != DBNull.Value ? Convert.ToInt32(row["user_id"]) : 0,
-                Version = row["version"] != DBNull.Value ? Convert.ToInt32(row["version"]) : 1
+                Version = row["version"] != DBNull.Value ? Convert.ToInt32(row["version"]) : 1,
+                SyncStatus = row["sync_status"] != DBNull.Value ? Convert.ToInt32(row["sync_status"]) : 0,
+                LocalVersion = row["local_version"] != DBNull.Value ? Convert.ToInt32(row["local_version"]) : 1
             };
         }
 
@@ -131,9 +133,10 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
 
         public bool Update(Document doc)
         {
-             // For concurrency, we assume doc.Version was already incremented.
-             // We check against (doc.Version - 1)
-             return DatabaseHelper.UpdateDocument(doc.Id, doc.Ten, doc.DinhDang, doc.DuongDan, doc.GhiChu, doc.KichThuoc, doc.QuanTrong, doc.UserId, doc.Version, doc.Version - 1, doc.Tags);
+             // We pass doc.Version as the expected version to ensure the record hasn't changed.
+             // If we intended to increment the version, the caller should have handled it or 
+             // we'd need to pass the old version separately.
+             return DatabaseHelper.UpdateDocument(doc.Id, doc.Ten, doc.DinhDang, doc.DuongDan, doc.GhiChu, doc.KichThuoc, doc.QuanTrong, doc.UserId, doc.Version, doc.Version, doc.SyncStatus, doc.LocalVersion, doc.Tags);
         }
 
         public bool Delete(int id)

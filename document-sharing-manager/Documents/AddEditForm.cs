@@ -16,6 +16,8 @@ namespace document_sharing_manager.Documents
         private readonly int? _documentId = null;
         private string _originalPath = null;
         private int _currentVersion = 1;
+        private int _currentLocalVersion = 1;
+        private int _currentSyncStatus = 0;
 
         public AddEditForm()
         {
@@ -116,6 +118,16 @@ namespace document_sharing_manager.Documents
                     if (row["version"] != DBNull.Value)
                     {
                         _currentVersion = Convert.ToInt32(row["version"]);
+                    }
+
+                    if (row["local_version"] != DBNull.Value)
+                    {
+                        _currentLocalVersion = Convert.ToInt32(row["local_version"]);
+                    }
+
+                    if (row["sync_status"] != DBNull.Value)
+                    {
+                        _currentSyncStatus = Convert.ToInt32(row["sync_status"]);
                     }
                 }
             }
@@ -236,8 +248,10 @@ namespace document_sharing_manager.Documents
                         kichThuoc,
                         chkQuanTrong.Checked,
                         UserSession.CurrentUserId,
-                        _currentVersion + 1, // New version
-                        _currentVersion,     // Old version
+                        _currentVersion,     // Server version stays the same during local edit
+                        _currentVersion,     // Old version for atomic check
+                        1,                   // SyncStatus: PendingUpload
+                        _currentLocalVersion + 1, // Increment local version
                         tags
                     );
 
