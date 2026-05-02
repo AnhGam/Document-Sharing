@@ -8,6 +8,5 @@ namespace document_sharing_manager.Core.Interfaces
     {
         string GenerateAccessToken(User user);
         string GenerateRefreshToken();
-        ClaimsPrincipal GetPrincipalFromExpiredToken(string token);
     }
 }

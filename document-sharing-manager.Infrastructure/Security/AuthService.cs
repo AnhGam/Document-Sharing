@@ -24,12 +24,12 @@ namespace document_sharing_manager.Infrastructure.Security
 
             if (user == null || !BC.Verify(request.Password, user.PasswordHash))
             {
-                throw new UnauthorizedAccessException("Tên đăng nhập hoặc mật khẩu không chính xác.");
+                throw new UnauthorizedAccessException("Invalid username or password.");
             }
 
             if (!user.IsActive)
             {
-                throw new UnauthorizedAccessException("Tài khoản đã bị khóa.");
+                throw new UnauthorizedAccessException("User account is deactivated.");
             }
 
             var accessToken = _tokenService.GenerateAccessToken(user);
@@ -59,7 +59,7 @@ namespace document_sharing_manager.Infrastructure.Security
         {
             if (await _context.Users.AnyAsync(u => u.Username == request.Username, ct))
             {
-                throw new InvalidOperationException("Tên đăng nhập đã tồn tại.");
+                throw new InvalidOperationException("Username already exists.");
             }
 
             var user = new User
@@ -84,13 +84,13 @@ namespace document_sharing_manager.Infrastructure.Security
 
             if (tokenEntity == null || !tokenEntity.IsActive)
             {
-                throw new UnauthorizedAccessException("Refresh token không hợp lệ hoặc đã hết hạn.");
+                throw new UnauthorizedAccessException("Invalid or expired refresh token.");
             }
 
             var user = tokenEntity.User!;
             if (!user.IsActive)
             {
-                throw new UnauthorizedAccessException("Tài khoản đã bị khóa.");
+                throw new UnauthorizedAccessException("User account is deactivated.");
             }
 
             // Revoke old token
