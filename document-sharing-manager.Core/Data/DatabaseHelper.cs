@@ -418,7 +418,7 @@ namespace document_sharing_manager.Core.Data
                 parameterList.Add(new("@minSize", minSize.Value));
             }
 
-            // Ngày đến
+            // Kích thước max
             if (maxSize.HasValue)
             {
                 baseQuery += " AND kich_thuoc <= @maxSize";
@@ -473,7 +473,7 @@ namespace document_sharing_manager.Core.Data
                 new("@ghi_chu", string.IsNullOrEmpty(ghiChu) ? DBNull.Value : (object)ghiChu),
                 new("@kich_thuoc", kichThuoc.HasValue ? (object)kichThuoc.Value : DBNull.Value),
                 new("@quan_trong", quanTrong ? 1 : 0),
-                new("@tags", (object?)tags ?? DBNull.Value)
+                new("@tags", string.IsNullOrEmpty(tags) ? DBNull.Value : (object)tags!)
             ];
 
             int result = ExecuteNonQuery(query, parameters);
@@ -517,7 +517,7 @@ namespace document_sharing_manager.Core.Data
                             cmd.Parameters["@ghi_chu"].Value = string.IsNullOrEmpty(doc.GhiChu) ? DBNull.Value : (object)doc.GhiChu;
                             cmd.Parameters["@kich_thuoc"].Value = doc.KichThuoc.HasValue ? (object)doc.KichThuoc.Value : DBNull.Value;
                             cmd.Parameters["@quan_trong"].Value = doc.QuanTrong ? 1 : 0;
-                            cmd.Parameters["@tags"].Value = string.IsNullOrEmpty(doc.Tags) ? DBNull.Value : (object)doc.Tags;
+                            cmd.Parameters["@tags"].Value = string.IsNullOrEmpty(doc.Tags) ? DBNull.Value : (object)doc.Tags!;
 
                             if (cmd.ExecuteNonQuery() > 0) successCount++;
                         }
@@ -559,7 +559,7 @@ namespace document_sharing_manager.Core.Data
                 new("@ghi_chu", string.IsNullOrEmpty(ghiChu) ? DBNull.Value : (object)ghiChu),
                 new("@kich_thuoc", kichThuoc.HasValue ? (object)kichThuoc.Value : DBNull.Value),
                 new("@quan_trong", quanTrong ? 1 : 0),
-                new("@tags", (object?)tags ?? DBNull.Value)
+                new("@tags", string.IsNullOrEmpty(tags) ? DBNull.Value : (object)tags!)
             ];
 
             int result = ExecuteNonQuery(query, parameters);
@@ -646,7 +646,7 @@ namespace document_sharing_manager.Core.Data
             System.Data.SQLite.SQLiteParameter[] parameters = 
             [
                 new("@name", name),
-                new("@description", (object?)description ?? DBNull.Value)
+                new("@description", string.IsNullOrEmpty(description) ? DBNull.Value : (object)description!)
             ];
 
             object? result = ExecuteScalar(query, parameters);
@@ -665,7 +665,7 @@ namespace document_sharing_manager.Core.Data
             [
                 new("@id", collectionId),
                 new("@name", name),
-                new("@description", (object?)description ?? DBNull.Value)
+                new("@description", string.IsNullOrEmpty(description) ? DBNull.Value : (object)description!)
             ];
 
             return ExecuteNonQuery(query, parameters) > 0;

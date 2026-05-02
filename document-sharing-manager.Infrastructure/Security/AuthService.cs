@@ -22,7 +22,7 @@ namespace document_sharing_manager.Infrastructure.Security
 
         public async Task<AuthResponse> LoginAsync(LoginRequest request, CancellationToken ct = default)
         {
-            var normalizedUsername = request.Username.ToLower();
+            var normalizedUsername = request.Username?.ToLowerInvariant() ?? string.Empty;
             var user = await _context.Users
                 .FirstOrDefaultAsync(u => u.Username == normalizedUsername, ct);
 
@@ -41,9 +41,10 @@ namespace document_sharing_manager.Infrastructure.Security
 
         public async Task<AuthResponse> RegisterAsync(RegisterRequest request, CancellationToken ct = default)
         {
-            var normalizedUsername = request.Username.ToLower();
+            var normalizedUsername = request.Username?.ToLowerInvariant() ?? string.Empty;
+            var normalizedEmail = request.Email?.ToLowerInvariant() ?? string.Empty;
             
-            if (await _context.Users.AnyAsync(u => u.Username == normalizedUsername || u.Email == request.Email, ct))
+            if (await _context.Users.AnyAsync(u => u.Username == normalizedUsername || u.Email.ToLower() == normalizedEmail, ct))
             {
                 throw new InvalidOperationException("Username or Email already exists.");
             }
@@ -51,8 +52,8 @@ namespace document_sharing_manager.Infrastructure.Security
             var user = new User
             {
                 Username = normalizedUsername,
-                Email = request.Email,
-                PasswordHash = BC.HashPassword(request.Password, _securitySettings.BCryptWorkFactor),
+                Email = normalizedEmail,
+                PasswordHash = BC.HashPassword(request.Password!, _securitySettings.BCryptWorkFactor),
                 Role = UserRole.User
             };
 
