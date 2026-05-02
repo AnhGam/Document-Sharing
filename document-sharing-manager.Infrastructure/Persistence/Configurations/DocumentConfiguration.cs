@@ -31,12 +31,20 @@ namespace document_sharing_manager.Infrastructure.Persistence.Configurations
             builder.Property(d => d.KichThuoc)
                 .HasColumnType("decimal(18,2)");
 
+            builder.Property(d => d.Version)
+                .IsRequired()
+                .HasDefaultValue(1);
+
+            builder.Property(d => d.UserId)
+                .IsRequired();
+
             // Global Query Filter for Soft Delete
             builder.HasQueryFilter(d => !d.IsDeleted);
 
             // Indexing for performance
             builder.HasIndex(d => d.Ten);
             builder.HasIndex(d => d.IsDeleted);
+            builder.HasIndex(d => d.UserId);
         }
     }
 }

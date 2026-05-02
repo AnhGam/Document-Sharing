@@ -13,28 +13,25 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
     {
         private readonly AppDbContext _context = context;
 
-        public async Task<BaseEntity?> GetByIdAsync(int id, CancellationToken ct = default)
+        public async Task<Document?> GetByIdAsync(int id, CancellationToken ct = default)
         {
             return await _context.Documents.FindAsync([id], ct);
         }
 
-        public async Task<IEnumerable<BaseEntity>> GetAllAsync(CancellationToken ct = default)
+        public async Task<IEnumerable<Document>> GetAllAsync(CancellationToken ct = default)
         {
             return await _context.Documents.AsNoTracking().ToListAsync(ct);
         }
 
-        public async Task AddAsync(BaseEntity entity, CancellationToken ct = default)
+        public async Task AddAsync(Document entity, CancellationToken ct = default)
         {
-            if (entity is not Document doc)
-                throw new ArgumentException("Entity must be of type Document", nameof(entity));
-
-            await _context.Documents.AddAsync(doc, ct);
+            await _context.Documents.AddAsync(entity, ct);
             await _context.SaveChangesAsync(ct);
         }
 
-        public async Task UpdateAsync(BaseEntity entity, CancellationToken ct = default)
+        public async Task UpdateAsync(Document entity, CancellationToken ct = default)
         {
-            var trackedEntry = _context.ChangeTracker.Entries<BaseEntity>()
+            var trackedEntry = _context.ChangeTracker.Entries<Document>()
                 .FirstOrDefault(e => e.Entity.Id == entity.Id);
 
             if (trackedEntry != null && trackedEntry.Entity != entity)
@@ -62,33 +59,41 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
             }
         }
 
-        public async Task<IEnumerable<BaseEntity>> GetFilesByOwnerAsync(int ownerId, CancellationToken ct = default)
+        public async Task<IEnumerable<Document>> GetAllByUserIdAsync(int userId, CancellationToken ct = default)
         {
-            // Note: Currently Document doesn't have OwnerId, placeholder for future
-            return await _context.Documents.AsNoTracking().ToListAsync(ct);
-        }
-
-        public Task<BaseEntity?> GetByVersionAsync(int docId, int version, CancellationToken ct = default)
-        {
-            throw new NotImplementedException("Version control is in roadmap.");
-        }
-
-        public async Task<List<Document>> SearchAsync(string keyword, CancellationToken ct = default)
-        {
-            if (string.IsNullOrEmpty(keyword))
-            {
-                return await _context.Documents.AsNoTracking().ToListAsync(ct);
-            }
-
             return await _context.Documents
                 .AsNoTracking()
-                .Where(d => d.Ten.Contains(keyword) || (d.GhiChu != null && d.GhiChu.Contains(keyword)))
+                .Where(d => d.UserId == userId && !d.IsDeleted)
                 .ToListAsync(ct);
         }
 
-        public async Task<List<Document>> SearchAdvancedAsync(string keyword, string format, DateTime? fromDate, DateTime? toDate, decimal? minSize, decimal? maxSize, bool? isImportant, CancellationToken ct = default)
+        public async Task<Document?> GetByIdAndUserIdAsync(int id, int userId, CancellationToken ct = default)
         {
-            var query = _context.Documents.AsNoTracking().AsQueryable();
+            return await _context.Documents
+                .FirstOrDefaultAsync(d => d.Id == id && d.UserId == userId && !d.IsDeleted, ct);
+        }
+
+        public async Task<Document?> GetByVersionAsync(int docId, int version, CancellationToken ct = default)
+        {
+            return await _context.Documents
+                .FirstOrDefaultAsync(d => d.Id == docId && d.Version == version, ct);
+        }
+
+        public async Task<List<Document>> SearchAsync(string keyword, int userId, CancellationToken ct = default)
+        {
+            var query = _context.Documents.AsNoTracking().Where(d => d.UserId == userId);
+
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                query = query.Where(d => d.Ten.Contains(keyword) || (d.GhiChu != null && d.GhiChu.Contains(keyword)));
+            }
+
+            return await query.ToListAsync(ct);
+        }
+
+        public async Task<List<Document>> SearchAdvancedAsync(string keyword, string format, DateTime? fromDate, DateTime? toDate, decimal? minSize, decimal? maxSize, bool? isImportant, int userId, CancellationToken ct = default)
+        {
+            var query = _context.Documents.AsNoTracking().Where(d => d.UserId == userId).AsQueryable();
 
             if (!string.IsNullOrEmpty(keyword))
                 query = query.Where(d => d.Ten.Contains(keyword));

@@ -107,7 +107,9 @@ namespace document_sharing_manager.Core.Data
                     quan_trong INTEGER DEFAULT 0,
                     tags TEXT,
                     is_deleted INTEGER DEFAULT 0,
-                    deleted_at DATETIME
+                    deleted_at DATETIME,
+                    user_id INTEGER,
+                    version INTEGER DEFAULT 1
                 );
 
                 -- Bảng collections (bộ sưu tập)
@@ -146,6 +148,7 @@ namespace document_sharing_manager.Core.Data
                 CREATE INDEX IF NOT EXISTS idx_tai_lieu_ngay_them ON tai_lieu(ngay_them);
                 CREATE INDEX IF NOT EXISTS idx_collection_items_collection ON collection_items(collection_id);
                 CREATE INDEX IF NOT EXISTS idx_collection_items_document ON collection_items(document_id);
+                CREATE INDEX IF NOT EXISTS idx_tai_lieu_user_id ON tai_lieu(user_id);
             ";
 
             using var conn = new SQLiteConnection(ConnectionString);

@@ -31,14 +31,16 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
                 NgayThem = Convert.ToDateTime(row["ngay_them"]),
                 KichThuoc = row["kich_thuoc"] != DBNull.Value ? Convert.ToDecimal(row["kich_thuoc"]) : (decimal?)null,
                 QuanTrong = Convert.ToInt32(row["quan_trong"]) == 1,
-                Tags = row["tags"].ToString()
+                Tags = row["tags"].ToString(),
+                UserId = row["user_id"] != DBNull.Value ? Convert.ToInt32(row["user_id"]) : 0,
+                Version = row["version"] != DBNull.Value ? Convert.ToInt32(row["version"]) : 1
             };
         }
 
         private List<Document> ExecuteAndMap(string query, System.Data.SQLite.SQLiteParameter[]? parameters = null)
         {
             DataTable dt = DatabaseHelper.ExecuteQuery(query, parameters);
-            List<Document> list = new List<Document>();
+            List<Document> list = [];
             foreach (DataRow row in dt.Rows)
             {
                 list.Add(MapRowToEntity(row));
@@ -54,7 +56,7 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
         public Document? GetById(int id)
         {
             string query = "SELECT * FROM tai_lieu WHERE id = @id";
-            var parameters = new System.Data.SQLite.SQLiteParameter[] { new System.Data.SQLite.SQLiteParameter("@id", id) };
+            SQLiteParameter[] parameters = [new("@id", id)];
             var list = ExecuteAndMap(query, parameters);
             return list.Count > 0 ? list[0] : null;
         }
@@ -67,49 +69,49 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
                            OR ghi_chu LIKE @keyword)
                            ORDER BY ngay_them DESC";
 
-             var parameters = new System.Data.SQLite.SQLiteParameter[] { new System.Data.SQLite.SQLiteParameter("@keyword", "%" + keyword + "%") };
+             SQLiteParameter[] parameters = [new("@keyword", "%" + keyword + "%")];
              return ExecuteAndMap(query, parameters);
         }
 
         public List<Document> SearchAdvanced(string keyword, string format, DateTime? fromDate, DateTime? toDate, decimal? minSize, decimal? maxSize, bool? isImportant)
         {
             string baseQuery = @"SELECT * FROM tai_lieu WHERE (is_deleted IS NULL OR is_deleted = 0)";
-            List<System.Data.SQLite.SQLiteParameter> parameterList = new List<System.Data.SQLite.SQLiteParameter>();
+            List<SQLiteParameter> parameterList = [];
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 baseQuery += " AND (ten LIKE @keyword OR ghi_chu LIKE @keyword OR tags LIKE @keyword)";
-                parameterList.Add(new System.Data.SQLite.SQLiteParameter("@keyword", "%" + keyword + "%"));
+                parameterList.Add(new("@keyword", "%" + keyword + "%"));
             }
 
             if (!string.IsNullOrEmpty(format) && format != "Tất cả")
             {
                 baseQuery += " AND dinh_dang = @dinh_dang";
-                parameterList.Add(new System.Data.SQLite.SQLiteParameter("@dinh_dang", format));
+                parameterList.Add(new("@dinh_dang", format));
             }
 
             if (fromDate.HasValue)
             {
                 baseQuery += " AND date(ngay_them) >= date(@fromDate)";
-                parameterList.Add(new System.Data.SQLite.SQLiteParameter("@fromDate", fromDate.Value.ToString("yyyy-MM-dd")));
+                parameterList.Add(new("@fromDate", fromDate.Value.ToString("yyyy-MM-dd")));
             }
 
             if (toDate.HasValue)
             {
                 baseQuery += " AND date(ngay_them) <= date(@toDate)";
-                parameterList.Add(new System.Data.SQLite.SQLiteParameter("@toDate", toDate.Value.ToString("yyyy-MM-dd")));
+                parameterList.Add(new("@toDate", toDate.Value.ToString("yyyy-MM-dd")));
             }
 
             if (minSize.HasValue)
             {
                 baseQuery += " AND kich_thuoc >= @minSize";
-                parameterList.Add(new System.Data.SQLite.SQLiteParameter("@minSize", minSize.Value));
+                parameterList.Add(new("@minSize", minSize.Value));
             }
 
             if (maxSize.HasValue)
             {
                 baseQuery += " AND kich_thuoc <= @maxSize";
-                parameterList.Add(new System.Data.SQLite.SQLiteParameter("@maxSize", maxSize.Value));
+                parameterList.Add(new("@maxSize", maxSize.Value));
             }
 
             if (isImportant.HasValue && isImportant.Value == true)
@@ -146,12 +148,12 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
             return list;
         }
 
-        public async Task<BaseEntity?> GetByIdAsync(int id, CancellationToken ct = default)
+        public async Task<Document?> GetByIdAsync(int id, CancellationToken ct = default)
         {
-            return await Task.FromResult<BaseEntity?>(GetById(id)); 
+            return await Task.FromResult<Document?>(GetById(id)); 
         }
 
-        public async Task<IEnumerable<BaseEntity>> GetAllAsync(CancellationToken ct = default)
+        public async Task<IEnumerable<Document>> GetAllAsync(CancellationToken ct = default)
         {
             var dt = await Task.Run(() => DatabaseHelper.GetAllDocuments());
             var list = new List<Document>();
@@ -162,20 +164,14 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
             return list;
         }
 
-        public async Task AddAsync(BaseEntity entity, CancellationToken ct = default)
+        public async Task AddAsync(Document entity, CancellationToken ct = default)
         {
-            if (!(entity is Document doc))
-                throw new ArgumentException("Entity must be of type Document", nameof(entity));
-
-            await Task.Run(() => Add(doc));
+            await Task.Run(() => Add(entity));
         }
 
-        public async Task UpdateAsync(BaseEntity entity, CancellationToken ct = default)
+        public async Task UpdateAsync(Document entity, CancellationToken ct = default)
         {
-             if (!(entity is Document doc))
-                throw new ArgumentException("Entity must be of type Document", nameof(entity));
-
-            await Task.Run(() => Update(doc));
+            await Task.Run(() => Update(entity));
         }
 
         public async Task DeleteAsync(int id, CancellationToken ct = default)
@@ -183,24 +179,103 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
              await Task.Run(() => Delete(id));
         }
 
-        public async Task<IEnumerable<BaseEntity>> GetFilesByOwnerAsync(int ownerId, CancellationToken ct = default)
+        public async Task<IEnumerable<Document>> GetAllByUserIdAsync(int userId, CancellationToken ct = default)
         {
-            return await GetAllAsync(ct);
+            string query = "SELECT * FROM tai_lieu WHERE (is_deleted IS NULL OR is_deleted = 0) AND user_id = @userId ORDER BY ngay_them DESC";
+            SQLiteParameter[] parameters = [new("@userId", userId)];
+            return await Task.Run(() => ExecuteAndMap(query, parameters));
         }
 
-        public async Task<BaseEntity?> GetByVersionAsync(int docId, int version, CancellationToken ct = default)
+        public async Task<Document?> GetByIdAndUserIdAsync(int id, int userId, CancellationToken ct = default)
         {
-            return await Task.FromResult<BaseEntity?>(null);
+            string query = "SELECT * FROM tai_lieu WHERE id = @id AND user_id = @userId";
+            SQLiteParameter[] parameters = 
+            [
+                new("@id", id),
+                new("@userId", userId)
+            ];
+            var list = await Task.Run(() => ExecuteAndMap(query, parameters));
+            return list.Count > 0 ? list[0] : null;
         }
 
-        public async Task<List<Document>> SearchAsync(string keyword, CancellationToken ct = default)
+        public async Task<Document?> GetByVersionAsync(int docId, int version, CancellationToken ct = default)
         {
-            return await Task.Run(() => Search(keyword));
+            string query = "SELECT * FROM tai_lieu WHERE id = @id AND version = @version";
+            SQLiteParameter[] parameters = 
+            [
+                new("@id", docId),
+                new("@version", version)
+            ];
+            var list = await Task.Run(() => ExecuteAndMap(query, parameters));
+            return list.Count > 0 ? list[0] : null;
         }
 
-        public async Task<List<Document>> SearchAdvancedAsync(string keyword, string format, DateTime? fromDate, DateTime? toDate, decimal? minSize, decimal? maxSize, bool? isImportant, CancellationToken ct = default)
+        public async Task<List<Document>> SearchAsync(string keyword, int userId, CancellationToken ct = default)
         {
-            return await Task.Run(() => SearchAdvanced(keyword, format, fromDate, toDate, minSize, maxSize, isImportant));
+            string query = @"SELECT * FROM tai_lieu
+                           WHERE (is_deleted IS NULL OR is_deleted = 0)
+                           AND user_id = @userId
+                           AND (ten LIKE @keyword OR ghi_chu LIKE @keyword)
+                           ORDER BY ngay_them DESC";
+
+            SQLiteParameter[] parameters = 
+            [
+                new("@keyword", "%" + keyword + "%"),
+                new("@userId", userId)
+            ];
+            return await Task.Run(() => ExecuteAndMap(query, parameters));
+        }
+
+        public async Task<List<Document>> SearchAdvancedAsync(string keyword, string format, DateTime? fromDate, DateTime? toDate, decimal? minSize, decimal? maxSize, bool? isImportant, int userId, CancellationToken ct = default)
+        {
+            string baseQuery = @"SELECT * FROM tai_lieu WHERE (is_deleted IS NULL OR is_deleted = 0) AND user_id = @userId";
+            List<SQLiteParameter> parameterList = [];
+            parameterList.Add(new("@userId", userId));
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                baseQuery += " AND (ten LIKE @keyword OR ghi_chu LIKE @keyword OR tags LIKE @keyword)";
+                parameterList.Add(new("@keyword", "%" + keyword + "%"));
+            }
+
+            if (!string.IsNullOrEmpty(format) && format != "Tất cả")
+            {
+                baseQuery += " AND dinh_dang = @dinh_dang";
+                parameterList.Add(new("@dinh_dang", format));
+            }
+
+            if (fromDate.HasValue)
+            {
+                baseQuery += " AND date(ngay_them) >= date(@fromDate)";
+                parameterList.Add(new("@fromDate", fromDate.Value.ToString("yyyy-MM-dd")));
+            }
+
+            if (toDate.HasValue)
+            {
+                baseQuery += " AND date(ngay_them) <= date(@toDate)";
+                parameterList.Add(new("@toDate", toDate.Value.ToString("yyyy-MM-dd")));
+            }
+
+            if (minSize.HasValue)
+            {
+                baseQuery += " AND kich_thuoc >= @minSize";
+                parameterList.Add(new("@minSize", minSize.Value));
+            }
+
+            if (maxSize.HasValue)
+            {
+                baseQuery += " AND kich_thuoc <= @maxSize";
+                parameterList.Add(new("@maxSize", maxSize.Value));
+            }
+
+            if (isImportant.HasValue && isImportant.Value == true)
+            {
+                baseQuery += " AND quan_trong = 1";
+            }
+
+            baseQuery += " ORDER BY ngay_them DESC";
+
+            return await Task.Run(() => ExecuteAndMap(baseQuery, parameterList.ToArray()));
         }
     }
 }
