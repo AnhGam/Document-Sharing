@@ -171,11 +171,6 @@ namespace document_sharing_manager.Core.Services
         {
             try
             {
-                if (!string.IsNullOrEmpty(UserSession.AccessToken))
-                {
-                    _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", UserSession.AccessToken);
-                }
-
                 string fullPath = FileStorageService.ResolvePath(doc.DuongDan);
                 if (!File.Exists(fullPath)) return;
 
@@ -188,12 +183,22 @@ namespace document_sharing_manager.Core.Services
                 if (!string.IsNullOrEmpty(doc.Ten)) content.Add(new StringContent(doc.Ten), "ten");
                 if (doc.GhiChu != null) content.Add(new StringContent(doc.GhiChu), "ghiChu");
 
+                using var request = new HttpRequestMessage(HttpMethod.Post, $"{_apiUrl}/sync-stream")
+                {
+                    Content = content
+                };
+
+                if (!string.IsNullOrEmpty(UserSession.AccessToken))
+                {
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", UserSession.AccessToken);
+                }
+
                 using var fileStream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, useAsync: true);
                 var fileContent = new StreamContent(fileStream);
                 fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
                 content.Add(fileContent, "file", Path.GetFileName(fullPath));
 
-                var response = await _httpClient.PostAsync($"{_apiUrl}/sync-stream", content, ct);
+                var response = await _httpClient.SendAsync(request, ct);
                 
                 if (response.IsSuccessStatusCode)
                 {
@@ -211,17 +216,15 @@ namespace document_sharing_manager.Core.Services
 
                         if (_syncContext != null)
                         {
-                            _syncContext.Post(async _ => 
-                            {
-                                UpdateLocal();
-                                await _repository.UpdateAsync(doc, ct);
-                            }, null);
+                            _syncContext.Post(_ => UpdateLocal(), null);
                         }
                         else
                         {
                             UpdateLocal();
-                            await _repository.UpdateAsync(doc, ct);
                         }
+
+                        // Background DB update
+                        await _repository.UpdateAsync(doc, ct);
                     }
                 }
                 else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)

@@ -7,6 +7,7 @@ using document_sharing_manager.Core.Interfaces;
 using document_sharing_manager.Core.Domain;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace document_sharing_manager.Services
 {
@@ -18,7 +19,8 @@ namespace document_sharing_manager.Services
         private readonly SyncEngine _engine;
         private readonly IDocumentRepository _repository;
         private readonly FileSystemWatcher _watcher;
-        private readonly ConcurrentDictionary<string, Timer> _debouncers = new();
+        private readonly ConcurrentDictionary<string, System.Timers.Timer> _debouncers = new();
+        private readonly CancellationTokenSource _cts = new();
         private const double DebounceInterval = 3000; // 3 seconds wait after last change
 
         public SyncWatcher(SyncEngine engine, IDocumentRepository repository)
@@ -38,6 +40,7 @@ namespace document_sharing_manager.Services
 
             _watcher.Changed += OnChanged;
             _watcher.Created += OnChanged;
+            _watcher.Renamed += (s, e) => OnChanged(s, e);
         }
 
         public void Start()
@@ -48,6 +51,7 @@ namespace document_sharing_manager.Services
         public void Stop()
         {
             _watcher.EnableRaisingEvents = false;
+            _cts.Cancel();
         }
 
         private void OnChanged(object sender, FileSystemEventArgs e)
@@ -63,7 +67,7 @@ namespace document_sharing_manager.Services
         {
             _debouncers.AddOrUpdate(key, 
                 k => {
-                    var timer = new Timer(DebounceInterval) { AutoReset = false };
+                    var timer = new System.Timers.Timer(DebounceInterval) { AutoReset = false };
                     timer.Elapsed += async (s, ev) => {
                         try { await action(); }
                         catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Debounce error: {ex.Message}"); }
@@ -90,15 +94,15 @@ namespace document_sharing_manager.Services
                 string fileName = Path.GetFileName(fullPath);
                 string relativePath = Path.Combine(FileStorageService.DefaultFolder, fileName);
                 
-                // Find document in SQLite using single targeted query
-                var doc = await _repository.GetByPathAsync(relativePath);
+                    // Find document in SQLite using single targeted query
+                    var doc = await _repository.GetByPathAsync(relativePath, _cts.Token);
 
-                if (doc != null)
-                {
-                    // Update metadata to trigger sync
-                    doc.SyncStatus = 1; // 1: PendingUpload
-                    doc.LocalVersion++;
-                    await _repository.UpdateAsync(doc);
+                    if (doc != null)
+                    {
+                        // Update metadata to trigger sync
+                        doc.SyncStatus = 1; // 1: PendingUpload
+                        doc.LocalVersion++;
+                        await _repository.UpdateAsync(doc, _cts.Token);
 
                     // Signal engine to process
                     _engine.Enqueue(doc, SyncType.Upload);
@@ -115,6 +119,7 @@ namespace document_sharing_manager.Services
         public void Dispose()
         {
             _watcher.Dispose();
+            _cts.Dispose();
             foreach (var timer in _debouncers.Values)
             {
                 timer.Stop();
