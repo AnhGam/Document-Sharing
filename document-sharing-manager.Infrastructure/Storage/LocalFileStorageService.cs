@@ -36,18 +36,18 @@ namespace document_sharing_manager.Infrastructure.Storage
                 throw new InvalidOperationException($"File size exceeds the maximum limit of {_maxFileSizeBytes / (1024 * 1024)}MB");
             }
 
-            // Security: Prevent Path Traversal by generating a new name
+            // Security: Prevent Path Traversal by validating the full path
             var extension = Path.GetExtension(fileName);
             var safeFileName = $"{Guid.NewGuid()}{extension}";
             
-            var targetDir = Path.Combine(_basePath, subDirectory);
-            if (!Directory.Exists(targetDir))
+            var relativePath = Path.Combine(subDirectory ?? string.Empty, safeFileName);
+            var fullPath = GetValidatedFullPath(relativePath);
+            
+            var targetDir = Path.GetDirectoryName(fullPath);
+            if (!string.IsNullOrEmpty(targetDir) && !Directory.Exists(targetDir))
             {
                 Directory.CreateDirectory(targetDir);
             }
-
-            var relativePath = Path.Combine(subDirectory, safeFileName);
-            var fullPath = Path.Combine(_basePath, relativePath);
 
             try
             {
