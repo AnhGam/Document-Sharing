@@ -530,16 +530,23 @@ namespace document_sharing_manager.Core.Data
 
                     using (var cmd = new SQLiteCommand(query, conn, transaction))
                     {
+                        cmd.Parameters.Add("@ten", System.Data.DbType.String);
+                        cmd.Parameters.Add("@dinh_dang", System.Data.DbType.String);
+                        cmd.Parameters.Add("@duong_dan", System.Data.DbType.String);
+                        cmd.Parameters.Add("@ghi_chu", System.Data.DbType.String);
+                        cmd.Parameters.Add("@kich_thuoc", System.Data.DbType.Decimal);
+                        cmd.Parameters.Add("@quan_trong", System.Data.DbType.Int32);
+                        cmd.Parameters.Add("@tags", System.Data.DbType.String);
+
                         foreach (var doc in documents)
                         {
-                            cmd.Parameters.Clear();
-                            cmd.Parameters.AddWithValue("@ten", doc.Ten);
-                            cmd.Parameters.AddWithValue("@dinh_dang", string.IsNullOrEmpty(doc.DinhDang) ? DBNull.Value : (object)doc.DinhDang);
-                            cmd.Parameters.AddWithValue("@duong_dan", doc.DuongDan ?? (object)DBNull.Value);
-                            cmd.Parameters.AddWithValue("@ghi_chu", string.IsNullOrEmpty(doc.GhiChu) ? DBNull.Value : (object)doc.GhiChu);
-                            cmd.Parameters.AddWithValue("@kich_thuoc", doc.KichThuoc.HasValue ? (object)doc.KichThuoc.Value : DBNull.Value);
-                            cmd.Parameters.AddWithValue("@quan_trong", doc.QuanTrong ? 1 : 0);
-                            cmd.Parameters.AddWithValue("@tags", string.IsNullOrEmpty(doc.Tags) ? DBNull.Value : (object)doc.Tags);
+                            cmd.Parameters["@ten"].Value = doc.Ten;
+                            cmd.Parameters["@dinh_dang"].Value = string.IsNullOrEmpty(doc.DinhDang) ? DBNull.Value : (object)doc.DinhDang;
+                            cmd.Parameters["@duong_dan"].Value = doc.DuongDan ?? (object)DBNull.Value;
+                            cmd.Parameters["@ghi_chu"].Value = string.IsNullOrEmpty(doc.GhiChu) ? DBNull.Value : (object)doc.GhiChu;
+                            cmd.Parameters["@kich_thuoc"].Value = doc.KichThuoc.HasValue ? (object)doc.KichThuoc.Value : DBNull.Value;
+                            cmd.Parameters["@quan_trong"].Value = doc.QuanTrong ? 1 : 0;
+                            cmd.Parameters["@tags"].Value = string.IsNullOrEmpty(doc.Tags) ? DBNull.Value : (object)doc.Tags;
 
                             if (cmd.ExecuteNonQuery() > 0) successCount++;
                         }

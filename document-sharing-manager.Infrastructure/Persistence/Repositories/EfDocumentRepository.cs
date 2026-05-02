@@ -9,18 +9,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace document_sharing_manager.Infrastructure.Persistence.Repositories
 {
-    public class EfDocumentRepository : IDocumentRepository
+    public class EfDocumentRepository(AppDbContext context) : IDocumentRepository
     {
-        private readonly AppDbContext _context;
-
-        public EfDocumentRepository(AppDbContext context)
-        {
-            _context = context;
-        }
+        private readonly AppDbContext _context = context;
 
         public async Task<BaseEntity> GetByIdAsync(int id, CancellationToken ct = default)
         {
-            return (await _context.Documents.FindAsync(new object[] { id }, ct))!;
+            return (await _context.Documents.FindAsync([id], ct))!;
         }
 
         public async Task<IEnumerable<BaseEntity>> GetAllAsync(CancellationToken ct = default)
@@ -55,7 +50,7 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
 
         public async Task DeleteAsync(int id, CancellationToken ct = default)
         {
-            var entity = await _context.Documents.FindAsync(new object[] { id }, ct);
+            var entity = await _context.Documents.FindAsync([id], ct);
             if (entity != null)
             {
                 entity.SoftDelete();
@@ -76,12 +71,18 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
 
         public async Task<List<Document>> SearchAsync(string keyword, CancellationToken ct = default)
         {
-            if (string.IsNullOrWhiteSpace(keyword))
+            if (string.IsNullOrEmpty(keyword))
+            {
                 return await _context.Documents.AsNoTracking().ToListAsync(ct);
+            }
+
+            // Accuracy: Escape SQL wildcards to prevent incorrect search results
+            var escapedKeyword = keyword.Replace("%", "\\%").Replace("_", "\\_");
+            var searchPattern = $"%{escapedKeyword}%";
 
             return await _context.Documents
                 .AsNoTracking()
-                .Where(d => EF.Functions.ILike(d.Ten, $"%{keyword}%") || (d.GhiChu != null && EF.Functions.ILike(d.GhiChu, $"%{keyword}%")))
+                .Where(d => EF.Functions.ILike(d.Ten, searchPattern) || (d.GhiChu != null && EF.Functions.ILike(d.GhiChu, searchPattern)))
                 .ToListAsync(ct);
         }
 

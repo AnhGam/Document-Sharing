@@ -79,15 +79,7 @@ namespace document_sharing_manager.Infrastructure.Storage
 
         public Task<Stream> GetFileAsync(string path, CancellationToken ct = default)
         {
-            // Strict Path Validation for Path Traversal prevention
-            var root = Path.GetFullPath(_basePath);
-            if (!root.EndsWith(Path.DirectorySeparatorChar.ToString())) root += Path.DirectorySeparatorChar;
-
-            var fullPath = Path.GetFullPath(Path.Combine(root, path));
-            if (!fullPath.StartsWith(root, StringComparison.OrdinalIgnoreCase))
-            {
-                throw new UnauthorizedAccessException("Access denied: Path is outside storage root.");
-            }
+            var fullPath = GetValidatedFullPath(path);
 
             if (!File.Exists(fullPath))
             {
@@ -101,7 +93,7 @@ namespace document_sharing_manager.Infrastructure.Storage
 
         public Task<bool> DeleteFileAsync(string path, CancellationToken ct = default)
         {
-            var fullPath = Path.Combine(_basePath, path);
+            var fullPath = GetValidatedFullPath(path);
             if (File.Exists(fullPath))
             {
                 File.Delete(fullPath);
@@ -112,8 +104,25 @@ namespace document_sharing_manager.Infrastructure.Storage
 
         public Task<bool> ExistsAsync(string path, CancellationToken ct = default)
         {
-            var fullPath = Path.Combine(_basePath, path);
+            var fullPath = GetValidatedFullPath(path);
             return Task.FromResult(File.Exists(fullPath));
+        }
+
+        private string GetValidatedFullPath(string path)
+        {
+            if (string.IsNullOrEmpty(path)) throw new ArgumentNullException(nameof(path));
+
+            var root = Path.GetFullPath(_basePath);
+            if (!root.EndsWith(Path.DirectorySeparatorChar.ToString())) root += Path.DirectorySeparatorChar;
+
+            var fullPath = Path.GetFullPath(Path.Combine(root, path));
+            
+            if (!fullPath.StartsWith(root, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new UnauthorizedAccessException("Access denied: Path is outside storage root.");
+            }
+
+            return fullPath;
         }
     }
 }
