@@ -1,6 +1,7 @@
 using document_sharing_manager.Core.Interfaces;
 using document_sharing_manager.Infrastructure.Persistence;
 using document_sharing_manager.Infrastructure.Persistence.Repositories;
+using document_sharing_manager.Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -32,6 +33,9 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // Register Repositories
 builder.Services.AddScoped<IDocumentRepository, EfDocumentRepository>();
+
+// Register Storage Services
+builder.Services.AddScoped<IStorageService, LocalFileStorageService>();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
