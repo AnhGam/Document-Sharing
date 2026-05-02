@@ -10,7 +10,9 @@ namespace document_sharing_manager.Core.DTOs
         [Required]
         public int LocalVersion { get; set; }
 
-        public string? Content { get; set; } // Simplified for now, or use IFormFile for actual uploads
+        public string? Ten { get; set; }
+        public string? GhiChu { get; set; }
+        public string? Content { get; set; } 
     }
 
     public class SyncResponse

@@ -121,17 +121,17 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
 
             baseQuery += " ORDER BY ngay_them DESC";
 
-            return ExecuteAndMap(baseQuery, parameterList.ToArray());
+            return ExecuteAndMap(baseQuery, [.. parameterList]);
         }
 
         public bool Add(Document doc)
         {
-            return DatabaseHelper.InsertDocument(doc.Ten, doc.DinhDang, doc.DuongDan, doc.GhiChu, doc.KichThuoc, doc.QuanTrong, doc.Tags);
+            return DatabaseHelper.InsertDocument(doc.Ten, doc.DinhDang, doc.DuongDan, doc.GhiChu, doc.KichThuoc, doc.QuanTrong, doc.UserId, doc.Version, doc.Tags);
         }
 
         public bool Update(Document doc)
         {
-             return DatabaseHelper.UpdateDocument(doc.Id, doc.Ten, doc.DinhDang, doc.DuongDan, doc.GhiChu, doc.KichThuoc, doc.QuanTrong, doc.Tags);
+             return DatabaseHelper.UpdateDocument(doc.Id, doc.Ten, doc.DinhDang, doc.DuongDan, doc.GhiChu, doc.KichThuoc, doc.QuanTrong, doc.UserId, doc.Version, doc.Tags);
         }
 
         public bool Delete(int id)
@@ -275,7 +275,7 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
 
             baseQuery += " ORDER BY ngay_them DESC";
 
-            return await Task.Run(() => ExecuteAndMap(baseQuery, parameterList.ToArray()));
+            return await Task.Run(() => ExecuteAndMap(baseQuery, [.. parameterList]));
         }
     }
 }

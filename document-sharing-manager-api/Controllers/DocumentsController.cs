@@ -16,7 +16,8 @@ namespace document_sharing_manager_api.Controllers
     {
         private readonly IDocumentRepository _repository = repository;
 
-        private int CurrentUserId => int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
+        private int CurrentUserId => int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value 
+            ?? throw new UnauthorizedAccessException("Required user claim is missing."));
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Document>>> GetAll(CancellationToken ct)
@@ -92,7 +93,9 @@ namespace document_sharing_manager_api.Controllers
 
             // Perform sync update
             document.Version++;
-            // Update other fields from request if necessary
+            if (!string.IsNullOrEmpty(request.Ten)) document.Ten = request.Ten!;
+            if (request.GhiChu != null) document.GhiChu = request.GhiChu;
+
             await _repository.UpdateAsync(document, ct);
 
             return Ok(new SyncResponse 

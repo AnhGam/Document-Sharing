@@ -108,7 +108,7 @@ namespace document_sharing_manager.Core.Data
                     tags TEXT,
                     is_deleted INTEGER DEFAULT 0,
                     deleted_at DATETIME,
-                    user_id INTEGER,
+                    user_id INTEGER NOT NULL,
                     version INTEGER DEFAULT 1
                 );
 
@@ -461,12 +461,12 @@ namespace document_sharing_manager.Core.Data
 
         public static bool InsertDocument(string ten, string dinhDang,
             string duongDan, string ghiChu, decimal? kichThuoc, bool quanTrong,
-            string? tags = null)
+            int userId, int version = 1, string? tags = null)
         {
             string query = @"INSERT INTO tai_lieu
-                (ten, dinh_dang, duong_dan, ghi_chu, kich_thuoc, quan_trong, tags)
+                (ten, dinh_dang, duong_dan, ghi_chu, kich_thuoc, quan_trong, tags, user_id, version)
                 VALUES
-                (@ten, @dinh_dang, @duong_dan, @ghi_chu, @kich_thuoc, @quan_trong, @tags)";
+                (@ten, @dinh_dang, @duong_dan, @ghi_chu, @kich_thuoc, @quan_trong, @tags, @user_id, @version)";
 
             System.Data.SQLite.SQLiteParameter[] parameters = 
             [
@@ -476,7 +476,9 @@ namespace document_sharing_manager.Core.Data
                 new("@ghi_chu", string.IsNullOrEmpty(ghiChu) ? DBNull.Value : (object)ghiChu),
                 new("@kich_thuoc", kichThuoc.HasValue ? (object)kichThuoc.Value : DBNull.Value),
                 new("@quan_trong", quanTrong ? 1 : 0),
-                new("@tags", string.IsNullOrEmpty(tags) ? DBNull.Value : (object)tags!)
+                new("@tags", string.IsNullOrEmpty(tags) ? DBNull.Value : (object)tags!),
+                new("@user_id", userId),
+                new("@version", version)
             ];
 
             int result = ExecuteNonQuery(query, parameters);
@@ -498,9 +500,9 @@ namespace document_sharing_manager.Core.Data
                 try
                 {
                     string query = @"INSERT INTO tai_lieu
-                        (ten, dinh_dang, duong_dan, ghi_chu, kich_thuoc, quan_trong, tags)
+                        (ten, dinh_dang, duong_dan, ghi_chu, kich_thuoc, quan_trong, tags, user_id, version)
                         VALUES
-                        (@ten, @dinh_dang, @duong_dan, @ghi_chu, @kich_thuoc, @quan_trong, @tags)";
+                        (@ten, @dinh_dang, @duong_dan, @ghi_chu, @kich_thuoc, @quan_trong, @tags, @user_id, @version)";
 
                     using (var cmd = new SQLiteCommand(query, conn, transaction))
                     {
@@ -511,6 +513,8 @@ namespace document_sharing_manager.Core.Data
                         cmd.Parameters.Add("@kich_thuoc", System.Data.DbType.Decimal);
                         cmd.Parameters.Add("@quan_trong", System.Data.DbType.Int32);
                         cmd.Parameters.Add("@tags", System.Data.DbType.String);
+                        cmd.Parameters.Add("@user_id", System.Data.DbType.Int32);
+                        cmd.Parameters.Add("@version", System.Data.DbType.Int32);
 
                         foreach (var doc in documents)
                         {
@@ -521,6 +525,8 @@ namespace document_sharing_manager.Core.Data
                             cmd.Parameters["@kich_thuoc"].Value = doc.KichThuoc.HasValue ? (object)doc.KichThuoc.Value : DBNull.Value;
                             cmd.Parameters["@quan_trong"].Value = doc.QuanTrong ? 1 : 0;
                             cmd.Parameters["@tags"].Value = string.IsNullOrEmpty(doc.Tags) ? DBNull.Value : (object)doc.Tags!;
+                            cmd.Parameters["@user_id"].Value = doc.UserId;
+                            cmd.Parameters["@version"].Value = doc.Version;
 
                             if (cmd.ExecuteNonQuery() > 0) successCount++;
                         }
@@ -541,7 +547,7 @@ namespace document_sharing_manager.Core.Data
         /// </summary>
         public static bool UpdateDocument(int id, string ten, string dinhDang,
             string duongDan, string ghiChu, decimal? kichThuoc, bool quanTrong,
-            string? tags = null)
+            int userId, int version, string? tags = null)
         {
             string query = @"UPDATE tai_lieu SET
                 ten = @ten,
@@ -550,7 +556,9 @@ namespace document_sharing_manager.Core.Data
                 ghi_chu = @ghi_chu,
                 kich_thuoc = @kich_thuoc,
                 quan_trong = @quan_trong,
-                tags = @tags
+                tags = @tags,
+                user_id = @user_id,
+                version = @version
                 WHERE id = @id";
 
             System.Data.SQLite.SQLiteParameter[] parameters = 
@@ -562,7 +570,9 @@ namespace document_sharing_manager.Core.Data
                 new("@ghi_chu", string.IsNullOrEmpty(ghiChu) ? DBNull.Value : (object)ghiChu),
                 new("@kich_thuoc", kichThuoc.HasValue ? (object)kichThuoc.Value : DBNull.Value),
                 new("@quan_trong", quanTrong ? 1 : 0),
-                new("@tags", string.IsNullOrEmpty(tags) ? DBNull.Value : (object)tags!)
+                new("@tags", string.IsNullOrEmpty(tags) ? DBNull.Value : (object)tags!),
+                new("@user_id", userId),
+                new("@version", version)
             ];
 
             int result = ExecuteNonQuery(query, parameters);
