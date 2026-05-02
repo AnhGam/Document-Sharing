@@ -27,6 +27,16 @@ Theo tiêu chuẩn DevOps 2026, hệ thống phải đảm bảo giám sát theo
 3. **Errors:** Tỷ lệ lỗi (Error rate).
 4. **Saturation:** Mức độ sử dụng tài nguyên (CPU, RAM, Disk I/O).
 
+### 3.1. Google SRE Philosophy (Roadmap cho Personal Host/Server)
+Khi ứng dụng chuyển sang mô hình chia sẻ ngang hàng (P2P) hoặc Host-Server, triết lý SRE sẽ được áp dụng để duy trì độ tin cậy:
+
+- **Error Budgets:** Cho phép một tỷ lệ lỗi nhất định (ví dụ 0.1%) để đánh đổi lấy tốc độ phát triển tính năng mới.
+- **Four Golden Signals cho Personal Host:**
+    - **Latency:** Đo lường tốc độ phản hồi của SQLite và File System cục bộ.
+    - **Traffic:** Theo dõi số lượng Session truy cập file đồng thời.
+    - **Errors:** Giám sát các lỗi ngoại lệ (Exceptions) khi truyền tải dữ liệu.
+    - **Saturation:** Cực kỳ quan trọng để bảo vệ tài nguyên máy người dùng (CPU/RAM/Disk Saturation).
+
 Hệ thống phải triển khai đầy đủ:
 1. **Metrics:** Thu thập dữ liệu qua Prometheus/Grafana.
 2. **Logs:** Tập trung log (ELK Stack hoặc Seq) để truy vết lỗi.
