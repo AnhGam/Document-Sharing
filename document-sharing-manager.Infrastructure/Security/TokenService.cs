@@ -31,7 +31,7 @@ namespace document_sharing_manager.Infrastructure.Security
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.AddMinutes(double.Parse(_config["JWT:DurationInMinutes"] ?? "15")),
+                Expires = DateTime.UtcNow.AddMinutes(double.TryParse(_config["JWT:DurationInMinutes"], out var duration) ? duration : 15),
                 SigningCredentials = creds,
                 Issuer = _config["JWT:Issuer"],
                 Audience = _config["JWT:Audience"]

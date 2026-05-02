@@ -23,7 +23,11 @@ namespace document_sharing_manager_api.Middleware
                     _ => (int)HttpStatusCode.InternalServerError
                 },
                 Title = "An error occurred",
-                Detail = exception.Message,
+                Detail = exception switch
+                {
+                    UnauthorizedAccessException or InvalidOperationException or ArgumentException => exception.Message,
+                    _ => "An unexpected error occurred."
+                },
                 Instance = httpContext.Request.Path
             };
 

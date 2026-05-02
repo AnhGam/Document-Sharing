@@ -11,10 +11,11 @@ using BC = BCrypt.Net.BCrypt;
 
 namespace document_sharing_manager.Infrastructure.Security
 {
-    public class AuthService(AppDbContext context, ITokenService tokenService) : IAuthService
+    public class AuthService(AppDbContext context, ITokenService tokenService, Microsoft.Extensions.Configuration.IConfiguration config) : IAuthService
     {
         private readonly AppDbContext _context = context;
         private readonly ITokenService _tokenService = tokenService;
+        private readonly Microsoft.Extensions.Configuration.IConfiguration _config = config;
 
         public async Task<AuthResponse> LoginAsync(LoginRequest request, CancellationToken ct = default)
         {
@@ -39,7 +40,7 @@ namespace document_sharing_manager.Infrastructure.Security
             {
                 Token = refreshToken,
                 UserId = user.Id,
-                ExpiryDate = DateTime.UtcNow.AddDays(7)
+                ExpiryDate = DateTime.UtcNow.AddDays(int.TryParse(_config["JWT:RefreshTokenDurationInDays"], out var days) ? days : 7)
             };
 
             await _context.RefreshTokens.AddAsync(refreshTokenEntity, ct);
@@ -101,7 +102,7 @@ namespace document_sharing_manager.Infrastructure.Security
             {
                 Token = newRefreshToken,
                 UserId = user.Id,
-                ExpiryDate = DateTime.UtcNow.AddDays(7)
+                ExpiryDate = DateTime.UtcNow.AddDays(int.TryParse(_config["JWT:RefreshTokenDurationInDays"], out var days) ? days : 7)
             };
 
             await _context.RefreshTokens.AddAsync(newRefreshTokenEntity, ct);

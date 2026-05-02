@@ -49,6 +49,12 @@ builder.Services.AddScoped<IStorageService, LocalFileStorageService>();
 
 // Configure JWT Authentication
 var jwtKey = builder.Configuration["JWT:Key"] ?? throw new InvalidOperationException("JWT Key is missing");
+if (jwtKey.Contains("${JWT_SECRET_KEY}"))
+{
+    jwtKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") ?? throw new InvalidOperationException("JWT_SECRET_KEY environment variable is not set.");
+    builder.Configuration["JWT:Key"] = jwtKey;
+}
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
