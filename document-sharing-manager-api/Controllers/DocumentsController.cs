@@ -16,6 +16,7 @@ namespace document_sharing_manager_api.Controllers
     {
         private static string SanitizeFileName(string fileName)
         {
+            if (string.IsNullOrWhiteSpace(fileName)) return "document";
             var invalidChars = System.IO.Path.GetInvalidFileNameChars();
             return string.Join("_", fileName.Split(invalidChars, StringSplitOptions.RemoveEmptyEntries));
         }
@@ -132,14 +133,25 @@ namespace document_sharing_manager_api.Controllers
                 }
 
                 using var stream = new MemoryStream(data);
-                string extension = string.IsNullOrEmpty(document.DinhDang) ? "bin" : document.DinhDang.ToLower();
+                string extension = System.IO.Path.GetExtension(document.DuongDan)?.TrimStart('.') ?? "bin";
+                if (string.IsNullOrEmpty(extension)) extension = "bin";
+
                 string safeName = SanitizeFileName(document.Ten);
-                string fileName = $"{safeName}_{document.Version}.{extension}";
+                if (safeName.Length > 200) safeName = safeName.Substring(0, 200);
+
+                string fileName = $"{safeName}_v{document.Version}.{extension}";
                 
                 document.DuongDan = await _storageService.UploadFileAsync(stream, fileName, "sync", ct);
             }
 
-            await _repository.UpdateAsync(document, ct);
+            try 
+            {
+                await _repository.UpdateAsync(document, ct);
+            }
+            catch (Exception ex) when (ex is System.Data.DBConcurrencyException || ex.GetType().Name == "DbUpdateConcurrencyException")
+            {
+                return Conflict(new { Message = "A concurrency conflict occurred. Please refresh and try again." });
+            }
 
             return Ok(new SyncResponse 
             { 
