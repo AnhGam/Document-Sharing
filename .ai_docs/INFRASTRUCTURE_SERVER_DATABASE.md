@@ -17,8 +17,14 @@
 - Implement `IDocumentRepository`.
 - Tiêm `AppDbContext` qua Constructor.
 - **Security Check:** Khi lấy danh sách Document, bắt buộc phải filter theo `OwnerId` hoặc `IsDeleted == false` ngay từ câu query (WHERE clause), không kéo toàn bộ table về server rồi mới filter.
+- **Nullability:** Đảm bảo xử lý các giá trị Nullable trong các query bằng cách sử dụng toán tử `??` hoặc `HasValue` để tránh NullReferenceException trong thời gian chạy.
 
 ## 4. Database Migrations & Seeding
 - Không dùng `db.Database.EnsureCreated()`. Bắt buộc dùng EF Core Migrations (`Add-Migration`, `Update-Database`).
 - Trong quá trình khởi động app (`Program.cs`), gọi `context.Database.MigrateAsync()` để tự động apply các migration mới nhất một cách an toàn.
 - Cấu hình Connection String từ `appsettings.json`, tuyệt đối không hardcode trong `AppDbContext`. Sử dụng `Npgsql.EntityFrameworkCore.PostgreSQL`.
+- **Capacity & FinOps Governance:** 
+    - Sử dụng `capacity-governance.ps1` để kiểm tra dung lượng Installer và Repository.
+    - Tự động chặn build nếu vượt ngưỡng (50MB cho Installer).
+    - **DORA Metrics:** Theo dõi Lead Time for Changes trực tiếp từ CI duration.
+- **Hybrid Support:** Hỗ trợ song song SQLite cho các cá nhân tự host trên máy Windows (Local) và PostgreSQL cho các hệ thống máy chủ Online chuyên nghiệp.

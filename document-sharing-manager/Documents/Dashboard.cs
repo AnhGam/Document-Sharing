@@ -31,8 +31,8 @@ namespace document_sharing_manager.Documents
         public string SelectedFormat => null;
         public DateTime? FilterFromDate => chkEnableDateFilter.Checked ? dtpFromDate.Value.Date : (DateTime?)null;
         public DateTime? FilterToDate => chkEnableDateFilter.Checked ? dtpToDate.Value.Date : (DateTime?)null;
-        public double? FilterMinSize => chkEnableSizeFilter.Checked ? (double?)nudMinSize.Value : (double?)null;
-        public double? FilterMaxSize => chkEnableSizeFilter.Checked ? (double?)nudMaxSize.Value : (double?)null;
+        public decimal? FilterMinSize => chkEnableSizeFilter.Checked ? (decimal?)nudMinSize.Value : (decimal?)null;
+        public decimal? FilterMaxSize => chkEnableSizeFilter.Checked ? (decimal?)nudMaxSize.Value : (decimal?)null;
         public bool FilterIsImportant => chkImportantOnly.Checked;
 
         // Events
@@ -1605,7 +1605,7 @@ namespace document_sharing_manager.Documents
                         DuongDan = row["duong_dan"]?.ToString(),
                         GhiChu = row["ghi_chu"]?.ToString(),
                         NgayThem = row["ngay_them"] != DBNull.Value ? Convert.ToDateTime(row["ngay_them"]) : DateTime.MinValue,
-                        KichThuoc = row["kich_thuoc"] != DBNull.Value ? Convert.ToDouble(row["kich_thuoc"]) : 0,
+                        KichThuoc = row["kich_thuoc"] != DBNull.Value ? Convert.ToDecimal(row["kich_thuoc"]) : 0m,
                         QuanTrong = row["quan_trong"] != DBNull.Value && Convert.ToInt32(row["quan_trong"]) == 1,
                         Tags = row["tags"]?.ToString()
                     });

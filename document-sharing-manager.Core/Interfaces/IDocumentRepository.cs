@@ -11,11 +11,14 @@ namespace document_sharing_manager.Core.Interfaces
         Task<IEnumerable<BaseEntity>> GetFilesByOwnerAsync(int ownerId, CancellationToken ct = default);
         Task<BaseEntity> GetByVersionAsync(int docId, int version, CancellationToken ct = default);
 
+        Task<List<Document>> SearchAsync(string keyword, CancellationToken ct = default);
+        Task<List<Document>> SearchAdvancedAsync(string keyword, string format, DateTime? fromDate, DateTime? toDate, decimal? minSize, decimal? maxSize, bool? isImportant, CancellationToken ct = default);
+
         // Synchronous Legacy methods for UI compatibility
         List<Document> GetAll();
         Document GetById(int id);
         List<Document> Search(string keyword);
-        List<Document> SearchAdvanced(string keyword, string format, DateTime? fromDate, DateTime? toDate, double? minSize, double? maxSize, bool? isImportant);
+        List<Document> SearchAdvanced(string keyword, string format, DateTime? fromDate, DateTime? toDate, decimal? minSize, decimal? maxSize, bool? isImportant);
         bool Update(Document doc);
         bool Delete(int id);
         List<string> GetDistinctFormats();
