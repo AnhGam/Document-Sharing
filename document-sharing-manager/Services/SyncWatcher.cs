@@ -65,8 +65,12 @@ namespace document_sharing_manager.Services
                 k => {
                     var timer = new Timer(DebounceInterval) { AutoReset = false };
                     timer.Elapsed += (s, ev) => {
-                        action();
-                        _debouncers.TryRemove(k, out _);
+                        try { action(); }
+                        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Debounce error: {ex.Message}"); }
+                        finally {
+                            _debouncers.TryRemove(k, out _);
+                            timer.Dispose();
+                        }
                     };
                     timer.Start();
                     return timer;
@@ -86,11 +90,9 @@ namespace document_sharing_manager.Services
                 string fileName = Path.GetFileName(fullPath);
                 string relativePath = Path.Combine("documents", fileName);
                 
-                // Find document in SQLite
-                var documents = await _repository.GetAllAsync();
-                var doc = documents.FirstOrDefault(d => 
-                    d.DuongDan.Equals(relativePath, StringComparison.OrdinalIgnoreCase) || 
-                    d.DuongDan.Equals(fullPath, StringComparison.OrdinalIgnoreCase));
+                // Find document in SQLite using targeted query
+                var doc = await _repository.GetByPathAsync(relativePath) ?? 
+                          await _repository.GetByPathAsync(fullPath);
 
                 if (doc != null)
                 {

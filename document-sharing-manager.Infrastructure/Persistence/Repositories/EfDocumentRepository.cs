@@ -79,6 +79,13 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
                 .FirstOrDefaultAsync(d => d.Id == docId && d.Version == version && d.UserId == userId, ct);
         }
 
+        public async Task<Document?> GetByPathAsync(string path, CancellationToken ct = default)
+        {
+            return await _context.Documents
+                .AsNoTracking()
+                .FirstOrDefaultAsync(d => d.DuongDan == path && !d.IsDeleted, ct);
+        }
+
         public async Task<List<Document>> SearchAsync(string keyword, int userId, CancellationToken ct = default)
         {
             var query = _context.Documents.AsNoTracking().Where(d => d.UserId == userId);

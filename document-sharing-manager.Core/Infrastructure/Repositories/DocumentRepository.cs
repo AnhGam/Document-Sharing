@@ -55,6 +55,17 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
             return ExecuteAndMap("SELECT * FROM tai_lieu WHERE (is_deleted IS NULL OR is_deleted = 0) ORDER BY ngay_them DESC");
         }
 
+        public async Task<Document?> GetByPathAsync(string path, CancellationToken ct = default)
+        {
+            return await Task.Run(() => 
+            {
+                string query = "SELECT * FROM tai_lieu WHERE duong_dan = @path AND (is_deleted IS NULL OR is_deleted = 0)";
+                SQLiteParameter[] parameters = [new("@path", path)];
+                var list = ExecuteAndMap(query, parameters);
+                return list.Count > 0 ? list[0] : null;
+            }, ct);
+        }
+
         public Document? GetById(int id)
         {
             string query = "SELECT * FROM tai_lieu WHERE id = @id";

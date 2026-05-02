@@ -28,18 +28,33 @@ namespace document_sharing_manager.Core.Services
     public class SyncEngine : ISyncService
     {
         private readonly IDocumentRepository _repository;
-        private readonly HttpClient _httpClient;
+        
+        // Static HttpClient to prevent socket exhaustion
+        private static readonly HttpClient _httpClient = new HttpClient();
+        
+        static SyncEngine()
+        {
+            _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            // Set a reasonable timeout for large file uploads
+            _httpClient.Timeout = TimeSpan.FromMinutes(10);
+        }
+
         private readonly ConcurrentQueue<SyncTask> _taskQueue = new();
+        // Track enqueued document IDs to avoid O(N) lookup in queue
+        private readonly ConcurrentDictionary<string, byte> _enqueuedTasks = new();
+        
         private readonly SemaphoreSlim _signal = new(0);
-        private readonly string _apiUrl = "http://localhost:5247/api/documents"; 
+        private string _apiUrl = "http://localhost:5247/api/documents"; 
         private readonly CancellationTokenSource _cts = new();
         private bool _isRunning = false;
 
-        public SyncEngine(IDocumentRepository repository)
+        public SyncEngine(IDocumentRepository repository, string? apiUrl = null)
         {
             _repository = repository;
-            _httpClient = new HttpClient();
-            _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            if (!string.IsNullOrEmpty(apiUrl))
+            {
+                _apiUrl = apiUrl!.TrimEnd('/');
+            }
         }
 
         public void Start()
@@ -62,14 +77,12 @@ namespace document_sharing_manager.Core.Services
         {
             try
             {
-                // 1. Scan for PendingUploads
                 var documents = await _repository.GetAllByUserIdAsync(UserSession.CurrentUserId, ct);
                 foreach (var doc in documents.Where(d => d.SyncStatus == 1)) // 1: PendingUpload
                 {
                     Enqueue(doc, SyncType.Upload);
                 }
 
-                // 2. Scan for PendingDownloads (Status 2)
                 foreach (var doc in documents.Where(d => d.SyncStatus == 2)) // 2: PendingDownload
                 {
                     Enqueue(doc, SyncType.Download);
@@ -99,8 +112,8 @@ namespace document_sharing_manager.Core.Services
 
         public void Enqueue(Document doc, SyncType type)
         {
-            // Avoid duplicate tasks for the same document in the queue
-            if (!_taskQueue.Any(t => t.Document.Id == doc.Id && t.Type == type))
+            string key = $"{doc.Id}_{type}";
+            if (_enqueuedTasks.TryAdd(key, 0))
             {
                 _taskQueue.Enqueue(new SyncTask { Document = doc, Type = type });
                 _signal.Release();
@@ -116,15 +129,17 @@ namespace document_sharing_manager.Core.Services
                     await _signal.WaitAsync(_cts.Token);
                     if (_taskQueue.TryDequeue(out var task))
                     {
+                        string key = $"{task.Document.Id}_{task.Type}";
+                        _enqueuedTasks.TryRemove(key, out _);
+                        
                         await ProcessTaskAsync(task);
                     }
                 }
                 catch (OperationCanceledException) { break; }
                 catch (Exception ex)
                 {
-                    // Basic logging
                     System.Diagnostics.Debug.WriteLine($"SyncEngine Worker Error: {ex.Message}");
-                    await Task.Delay(5000, _cts.Token); // Backoff on error
+                    await Task.Delay(5000, _cts.Token);
                 }
             }
         }
@@ -137,7 +152,7 @@ namespace document_sharing_manager.Core.Services
                     await HandleUploadAsync(task.Document);
                     break;
                 case SyncType.Download:
-                    // TODO: Implement Download if server provides direct download
+                    // TODO: Implement Download
                     break;
             }
         }
@@ -149,39 +164,40 @@ namespace document_sharing_manager.Core.Services
                 string fullPath = FileStorageService.ResolvePath(doc.DuongDan);
                 if (!File.Exists(fullPath)) return;
 
-                byte[] fileData = File.ReadAllBytes(fullPath);
-                string base64Content = Convert.ToBase64String(fileData);
-
-                var request = new SyncRequest
+                // Use MultipartFormDataContent and StreamContent for large file safety (OOM prevention)
+                using (var content = new MultipartFormDataContent())
                 {
-                    DocumentId = doc.Id,
-                    LocalVersion = doc.Version, // Last known server version
-                    Ten = doc.Ten,
-                    GhiChu = doc.GhiChu,
-                    Content = base64Content
-                };
+                    content.Add(new StringContent(doc.Id.ToString()), "documentId");
+                    content.Add(new StringContent(doc.Version.ToString()), "localVersion");
+                    if (!string.IsNullOrEmpty(doc.Ten)) content.Add(new StringContent(doc.Ten), "ten");
+                    if (doc.GhiChu != null) content.Add(new StringContent(doc.GhiChu), "ghiChu");
 
-                var json = JsonConvert.SerializeObject(request);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                var response = await _httpClient.PostAsync($"{_apiUrl}/sync", content);
-                
-                if (response.IsSuccessStatusCode)
-                {
-                    var resultJson = await response.Content.ReadAsStringAsync();
-                    var result = JsonConvert.DeserializeObject<SyncResponse>(resultJson);
-                    
-                    if (result != null && result.Success)
+                    using (var fileStream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, useAsync: true))
                     {
-                        doc.Version = result.CurrentVersion;
-                        doc.SyncStatus = 0; // 0: Synced
-                        doc.LocalVersion = doc.Version; // Align local version
-                        await _repository.UpdateAsync(doc);
+                        var fileContent = new StreamContent(fileStream);
+                        fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+                        content.Add(fileContent, "file", Path.GetFileName(fullPath));
+
+                        var response = await _httpClient.PostAsync($"{_apiUrl}/sync-stream", content);
+                        
+                        if (response.IsSuccessStatusCode)
+                        {
+                            var resultJson = await response.Content.ReadAsStringAsync();
+                            var result = JsonConvert.DeserializeObject<SyncResponse>(resultJson);
+                            
+                            if (result != null && result.Success)
+                            {
+                                doc.Version = result.CurrentVersion;
+                                doc.SyncStatus = 0; // 0: Synced
+                                doc.LocalVersion = doc.Version; 
+                                await _repository.UpdateAsync(doc);
+                            }
+                        }
+                        else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+                        {
+                            await HandleConflictAsync(doc);
+                        }
                     }
-                }
-                else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
-                {
-                    await HandleConflictAsync(doc);
                 }
             }
             catch (Exception ex)
