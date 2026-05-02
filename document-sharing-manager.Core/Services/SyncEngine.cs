@@ -77,6 +77,7 @@ namespace document_sharing_manager.Core.Services
 
         public void Dispose()
         {
+            Stop();
             _cts.Dispose();
             _signal.Dispose();
             GC.SuppressFinalize(this);
@@ -229,7 +230,7 @@ namespace document_sharing_manager.Core.Services
 
                         if (_syncContext != null)
                         {
-                            _syncContext.Post(_ => UpdateLocal(), null);
+                            _syncContext.Send(_ => UpdateLocal(), null);
                         }
                         else
                         {
@@ -275,7 +276,7 @@ namespace document_sharing_manager.Core.Services
                 // Update object on UI thread
                 if (_syncContext != null)
                 {
-                    _syncContext.Post(_ => {
+                    _syncContext.Send(_ => {
                         doc.SyncStatus = 3; // 3: Conflict
                         if ((doc.GhiChu?.Length ?? 0) + conflictMsg.Length < 2000)
                         {

@@ -115,7 +115,7 @@ namespace document_sharing_manager.Services
 
                         if (_syncContext != null)
                         {
-                            _syncContext.Post(_ => UpdateLocal(), null);
+                            _syncContext.Send(_ => UpdateLocal(), null);
                         }
                         else
                         {
@@ -136,6 +136,7 @@ namespace document_sharing_manager.Services
 
         public void Dispose()
         {
+            Stop();
             _watcher.Dispose();
             _cts.Dispose();
             foreach (var timer in _debouncers.Values)
