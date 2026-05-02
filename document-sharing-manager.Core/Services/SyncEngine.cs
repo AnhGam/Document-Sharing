@@ -30,7 +30,7 @@ namespace document_sharing_manager.Core.Services
         private readonly IDocumentRepository _repository;
         
         // Static HttpClient to prevent socket exhaustion
-        private static readonly HttpClient _httpClient = new HttpClient();
+        private static readonly HttpClient _httpClient = new();
         
         static SyncEngine()
         {
@@ -44,17 +44,17 @@ namespace document_sharing_manager.Core.Services
         private readonly ConcurrentDictionary<string, byte> _enqueuedTasks = new();
         
         private readonly SemaphoreSlim _signal = new(0);
-        private string _apiUrl = "http://localhost:5247/api/documents"; 
+        private readonly string _apiUrl; 
         private readonly CancellationTokenSource _cts = new();
         private bool _isRunning = false;
 
-        public SyncEngine(IDocumentRepository repository, string? apiUrl = null)
+        public SyncEngine(IDocumentRepository repository, string apiUrl)
         {
             _repository = repository;
-            if (!string.IsNullOrEmpty(apiUrl))
-            {
-                _apiUrl = apiUrl!.TrimEnd('/');
-            }
+            if (string.IsNullOrWhiteSpace(apiUrl))
+                throw new ArgumentException("API URL must be provided.", nameof(apiUrl));
+            
+            _apiUrl = apiUrl.TrimEnd('/');
         }
 
         public void Start()
@@ -165,39 +165,35 @@ namespace document_sharing_manager.Core.Services
                 if (!File.Exists(fullPath)) return;
 
                 // Use MultipartFormDataContent and StreamContent for large file safety (OOM prevention)
-                using (var content = new MultipartFormDataContent())
+                using MultipartFormDataContent content = new();
+                content.Add(new StringContent(doc.Id.ToString()), "documentId");
+                content.Add(new StringContent(doc.Version.ToString()), "localVersion");
+                if (!string.IsNullOrEmpty(doc.Ten)) content.Add(new StringContent(doc.Ten), "ten");
+                if (doc.GhiChu != null) content.Add(new StringContent(doc.GhiChu), "ghiChu");
+
+                using var fileStream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, useAsync: true);
+                var fileContent = new StreamContent(fileStream);
+                fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+                content.Add(fileContent, "file", Path.GetFileName(fullPath));
+
+                var response = await _httpClient.PostAsync($"{_apiUrl}/sync-stream", content);
+                
+                if (response.IsSuccessStatusCode)
                 {
-                    content.Add(new StringContent(doc.Id.ToString()), "documentId");
-                    content.Add(new StringContent(doc.Version.ToString()), "localVersion");
-                    if (!string.IsNullOrEmpty(doc.Ten)) content.Add(new StringContent(doc.Ten), "ten");
-                    if (doc.GhiChu != null) content.Add(new StringContent(doc.GhiChu), "ghiChu");
-
-                    using (var fileStream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, useAsync: true))
+                    var resultJson = await response.Content.ReadAsStringAsync();
+                    var result = JsonConvert.DeserializeObject<SyncResponse>(resultJson);
+                    
+                    if (result != null && result.Success)
                     {
-                        var fileContent = new StreamContent(fileStream);
-                        fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-                        content.Add(fileContent, "file", Path.GetFileName(fullPath));
-
-                        var response = await _httpClient.PostAsync($"{_apiUrl}/sync-stream", content);
-                        
-                        if (response.IsSuccessStatusCode)
-                        {
-                            var resultJson = await response.Content.ReadAsStringAsync();
-                            var result = JsonConvert.DeserializeObject<SyncResponse>(resultJson);
-                            
-                            if (result != null && result.Success)
-                            {
-                                doc.Version = result.CurrentVersion;
-                                doc.SyncStatus = 0; // 0: Synced
-                                doc.LocalVersion = doc.Version; 
-                                await _repository.UpdateAsync(doc);
-                            }
-                        }
-                        else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
-                        {
-                            await HandleConflictAsync(doc);
-                        }
+                        doc.Version = result.CurrentVersion;
+                        doc.SyncStatus = 0; // 0: Synced
+                        doc.LocalVersion = doc.Version; 
+                        await _repository.UpdateAsync(doc);
                     }
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+                {
+                    await HandleConflictAsync(doc);
                 }
             }
             catch (Exception ex)

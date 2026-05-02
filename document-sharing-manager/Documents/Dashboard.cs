@@ -52,7 +52,7 @@ namespace document_sharing_manager.Documents
         private DoubleBufferedTreeView treeCategory;
         private SplitContainer splitCategory;
         private TreeNode _hoveredNode;
-        private readonly Dictionary<string, Bitmap> _treeIconCache = new Dictionary<string, Bitmap>();
+        private readonly Dictionary<string, Bitmap> _treeIconCache = new();
 
         public Dashboard()
         {
@@ -64,7 +64,8 @@ namespace document_sharing_manager.Documents
             _presenter = new DashboardPresenter(this, _repository);
 
             // Initialize Sync Engine and Watcher
-            _syncEngine = new SyncEngine(_repository);
+            string apiUrl = System.Configuration.ConfigurationManager.AppSettings["ApiBaseUrl"] ?? "http://localhost:5247/api/documents";
+            _syncEngine = new SyncEngine(_repository, apiUrl);
             _syncWatcher = new SyncWatcher(_syncEngine, _repository);
             
             // Start background processes
@@ -123,11 +124,11 @@ namespace document_sharing_manager.Documents
         {
             contextMenuDocument.Items.Add(new ToolStripSeparator());
 
-            ToolStripMenuItem ctxMenuPersonalNote = new ToolStripMenuItem("Ghi chú cá nhân...");
+            ToolStripMenuItem ctxMenuPersonalNote = new("Ghi chú cá nhân...");
             ctxMenuPersonalNote.Click += CtxMenuPersonalNoteClick;
             contextMenuDocument.Items.Add(ctxMenuPersonalNote);
 
-            ToolStripMenuItem ctxMenuAddToCollection = new ToolStripMenuItem("Thêm vào bộ sưu tập...");
+            ToolStripMenuItem ctxMenuAddToCollection = new("Thêm vào bộ sưu tập...");
             ctxMenuAddToCollection.Click += CtxMenuAddToCollectionClick;
             contextMenuDocument.Items.Add(ctxMenuAddToCollection);
         }
@@ -240,10 +241,8 @@ namespace document_sharing_manager.Documents
                 string iconPath = System.IO.Path.Combine(Application.StartupPath, "assets", "logo", "icons", "icon-48.png");
                 if (System.IO.File.Exists(iconPath))
                 {
-                    using (var bmp = new System.Drawing.Bitmap(iconPath))
-                    {
-                        this.Icon = System.Drawing.Icon.FromHandle(bmp.GetHicon());
-                    }
+                    using var bmp = new System.Drawing.Bitmap(iconPath);
+                    this.Icon = System.Drawing.Icon.FromHandle(bmp.GetHicon());
                 }
             }
             catch { }
@@ -281,11 +280,9 @@ namespace document_sharing_manager.Documents
             toolBtnBulk.ToolTipText = "Quản lý hàng loạt";
             toolBtnBulk.Click += (s, ev) =>
             {
-                using (var form = new document_sharing_manager.Documents.BulkDeleteForm())
-                {
-                    form.ShowDialog(this);
-                    if (form.DataChanged) TriggerRefresh();
-                }
+                using var form = new document_sharing_manager.Documents.BulkDeleteForm();
+                form.ShowDialog(this);
+                if (form.DataChanged) TriggerRefresh();
             };
 
             toolBtnRecent.Image = IconHelper.CreateClockIcon(16, AppTheme.AccentSky);
@@ -526,8 +523,8 @@ namespace document_sharing_manager.Documents
             // Toolbar bottom border (Win11 style divider)
             toolStrip.Paint += (s, e) =>
             {
-                using (var pen = new Pen(AppTheme.BorderLight, 1))
-                    e.Graphics.DrawLine(pen, 0, toolStrip.Height - 1, toolStrip.Width, toolStrip.Height - 1);
+                using var pen = new Pen(AppTheme.BorderLight, 1);
+                e.Graphics.DrawLine(pen, 0, toolStrip.Height - 1, toolStrip.Width, toolStrip.Height - 1);
             };
 
             // Search panel: white card surface
@@ -552,14 +549,12 @@ namespace document_sharing_manager.Documents
 
         private void BtnThemClick(object sender, EventArgs e)
         {
-            using (var form = new document_sharing_manager.Documents.BatchImportForm())
+            using var form = new document_sharing_manager.Documents.BatchImportForm();
+            form.ImportCompleted += (s, ev) => TriggerRefresh();
+            if (form.ShowDialog(this) == DialogResult.OK)
             {
-                form.ImportCompleted += (s, ev) => TriggerRefresh();
-                if (form.ShowDialog(this) == DialogResult.OK)
-                {
-                    // Refresh if dialog returned OK (though ImportCompleted handles immediate updates)
-                    TriggerRefresh();
-                }
+                // Refresh if dialog returned OK (though ImportCompleted handles immediate updates)
+                TriggerRefresh();
             }
         }
 
@@ -569,7 +564,7 @@ namespace document_sharing_manager.Documents
             // Get object from row bound item
             if (dgvDocuments.SelectedRows[0].DataBoundItem is Document doc)
             {
-                AddEditForm form = new AddEditForm(doc.Id);
+                AddEditForm form = new(doc.Id);
                 if (form.ShowDialog() == DialogResult.OK)
                 {
                     TriggerRefresh();
@@ -667,7 +662,7 @@ namespace document_sharing_manager.Documents
                     
                     e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
                     
-                    using (GraphicsPath path = new GraphicsPath())
+                    using var path = new GraphicsPath();
                     {
                         // 12pt approx
                         float emSize = e.Graphics.DpiY * 12 / 72; 
@@ -678,25 +673,22 @@ namespace document_sharing_manager.Documents
                         float x = e.CellBounds.Left + (e.CellBounds.Width - bounds.Width) / 2 - bounds.Left;
                         float y = e.CellBounds.Top + (e.CellBounds.Height - bounds.Height) / 2 - bounds.Top;
 
-                        Matrix m = new Matrix();
+                        using var m = new Matrix();
                         m.Translate(x, y);
                         path.Transform(m);
 
                         if (isImportant)
                         {
-                            using (Brush goldBrush = new SolidBrush(Color.Gold))
-                            using (Pen borderPen = new Pen(Color.FromArgb(160, 160, 160), 1f))
-                            {
-                                e.Graphics.FillPath(goldBrush, path);
-                                e.Graphics.DrawPath(borderPen, path);
-                            }
+                            using var goldBrush = new SolidBrush(Color.Gold);
+                            using var borderPen = new Pen(Color.FromArgb(160, 160, 160), 1f);
+                            
+                            e.Graphics.FillPath(goldBrush, path);
+                            e.Graphics.DrawPath(borderPen, path);
                         }
                         else
                         {
-                            using (Pen grayPen = new Pen(Color.LightGray, 1.5f))
-                            {
-                                e.Graphics.DrawPath(grayPen, path);
-                            }
+                            using var grayPen = new Pen(Color.LightGray, 1.5f);
+                            e.Graphics.DrawPath(grayPen, path);
                         }
                     }
                 }
@@ -907,7 +899,7 @@ namespace document_sharing_manager.Documents
                     }
                 };
 
-                dialog.Controls.AddRange(new Control[] { lblInfo, lblSelect, lstCollections, lblNew, txtNew, btnAdd });
+                dialog.Controls.AddRange([lblInfo, lblSelect, lstCollections, lblNew, txtNew, btnAdd]);
                 dialog.ShowDialog(this);
             }
         }
@@ -1008,10 +1000,10 @@ namespace document_sharing_manager.Documents
                 };
                 btnClose.FlatAppearance.BorderSize = 0;
 
-                aboutForm.Controls.AddRange(new Control[] {
+                aboutForm.Controls.AddRange([
                     lblAppName, lblEdition, lblVersion, lblDesc,
                     lblStudent, lblCopyright, lnkGitHub, btnClose
-                });
+                ]);
                 aboutForm.AcceptButton = btnClose;
                 aboutForm.ShowDialog(this);
             }

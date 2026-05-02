@@ -139,7 +139,7 @@ namespace document_sharing_manager_api.Controllers
             }
             catch (Exception ex) when (ex is System.Data.DBConcurrencyException || ex.GetType().Name == "DbUpdateConcurrencyException")
             {
-                return Conflict(new { Message = "A concurrency conflict occurred. Please refresh and try again." });
+                return Conflict(new SyncResponse { Success = false, Message = "A concurrency conflict occurred. Please refresh and try again." });
             }
 
             return Ok(new SyncResponse 

@@ -56,16 +56,16 @@ namespace document_sharing_manager.Services
             if (Directory.Exists(e.FullPath)) return;
 
             // Debounce to avoid multiple uploads while user is saving
-            Debounce(e.FullPath, async () => await HandleFileChangeAsync(e.FullPath));
+            Debounce(e.FullPath, () => HandleFileChangeAsync(e.FullPath));
         }
 
-        private void Debounce(string key, Action action)
+        private void Debounce(string key, Func<Task> action)
         {
             _debouncers.AddOrUpdate(key, 
                 k => {
                     var timer = new Timer(DebounceInterval) { AutoReset = false };
-                    timer.Elapsed += (s, ev) => {
-                        try { action(); }
+                    timer.Elapsed += async (s, ev) => {
+                        try { await action(); }
                         catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Debounce error: {ex.Message}"); }
                         finally {
                             _debouncers.TryRemove(k, out _);
@@ -86,13 +86,12 @@ namespace document_sharing_manager.Services
         {
             try 
             {
-                // Normalize path to match DB entries (which use relative paths)
+                // Normalize path to match DB entries (which use relative paths like 'documents\file.ext')
                 string fileName = Path.GetFileName(fullPath);
                 string relativePath = Path.Combine("documents", fileName);
                 
-                // Find document in SQLite using targeted query
-                var doc = await _repository.GetByPathAsync(relativePath) ?? 
-                          await _repository.GetByPathAsync(fullPath);
+                // Find document in SQLite using single targeted query
+                var doc = await _repository.GetByPathAsync(relativePath);
 
                 if (doc != null)
                 {
