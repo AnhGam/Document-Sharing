@@ -4,14 +4,14 @@ namespace document_sharing_manager.Core.Domain
 {
     public class Document : BaseEntity
     {
-        public string Ten { get; set; }
-        public string DinhDang { get; set; }
-        public string DuongDan { get; set; }
-        public string GhiChu { get; set; }
+        public string Ten { get; set; } = string.Empty;
+        public string DinhDang { get; set; } = string.Empty;
+        public string DuongDan { get; set; } = string.Empty;
+        public string GhiChu { get; set; } = string.Empty;
         public DateTime NgayThem { get; set; } = DateTime.Now;
         public decimal? KichThuoc { get; set; }
         public bool QuanTrong { get; set; }
-        public string Tags { get; set; }
+        public string Tags { get; set; } = string.Empty;
         public bool IsDeleted { get; set; }
         public DateTime? DeletedAt { get; set; }
 

@@ -35,7 +35,7 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
             };
         }
 
-        private List<Document> ExecuteAndMap(string query, System.Data.SQLite.SQLiteParameter[] parameters = null)
+        private List<Document> ExecuteAndMap(string query, System.Data.SQLite.SQLiteParameter[]? parameters = null)
         {
             DataTable dt = DatabaseHelper.ExecuteQuery(query, parameters);
             List<Document> list = new List<Document>();
@@ -51,7 +51,7 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
             return ExecuteAndMap("SELECT * FROM tai_lieu WHERE (is_deleted IS NULL OR is_deleted = 0) ORDER BY ngay_them DESC");
         }
 
-        public Document GetById(int id)
+        public Document? GetById(int id)
         {
             string query = "SELECT * FROM tai_lieu WHERE id = @id";
             var parameters = new System.Data.SQLite.SQLiteParameter[] { new System.Data.SQLite.SQLiteParameter("@id", id) };
@@ -146,9 +146,9 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
             return list;
         }
 
-        public async Task<BaseEntity> GetByIdAsync(int id, CancellationToken ct = default)
+        public async Task<BaseEntity?> GetByIdAsync(int id, CancellationToken ct = default)
         {
-            return await Task.FromResult<BaseEntity>(GetById(id)); 
+            return await Task.FromResult<BaseEntity?>(GetById(id)); 
         }
 
         public async Task<IEnumerable<BaseEntity>> GetAllAsync(CancellationToken ct = default)
@@ -188,9 +188,9 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
             return await GetAllAsync(ct);
         }
 
-        public async Task<BaseEntity> GetByVersionAsync(int docId, int version, CancellationToken ct = default)
+        public async Task<BaseEntity?> GetByVersionAsync(int docId, int version, CancellationToken ct = default)
         {
-            return await Task.FromResult<BaseEntity>(null);
+            return await Task.FromResult<BaseEntity?>(null);
         }
 
         public async Task<List<Document>> SearchAsync(string keyword, CancellationToken ct = default)

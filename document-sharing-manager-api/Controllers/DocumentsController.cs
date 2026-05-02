@@ -3,20 +3,17 @@ using System.Threading;
 using System.Threading.Tasks;
 using document_sharing_manager.Core.Domain;
 using document_sharing_manager.Core.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace document_sharing_manager_api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class DocumentsController : ControllerBase
+    [Authorize]
+    public class DocumentsController(IDocumentRepository repository) : ControllerBase
     {
-        private readonly IDocumentRepository _repository;
-
-        public DocumentsController(IDocumentRepository repository)
-        {
-            _repository = repository;
-        }
+        private readonly IDocumentRepository _repository = repository;
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Document>>> GetAll(CancellationToken ct)
