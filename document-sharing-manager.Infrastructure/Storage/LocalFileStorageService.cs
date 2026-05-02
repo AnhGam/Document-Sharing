@@ -49,6 +49,7 @@ namespace document_sharing_manager.Infrastructure.Storage
             var relativePath = Path.Combine(subDirectory, safeFileName);
             var fullPath = Path.Combine(_basePath, relativePath);
 
+            bool shouldDelete = false;
             using (var fileStream = new FileStream(fullPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, useAsync: true))
             {
                 if (stream.CanSeek)
@@ -66,14 +67,18 @@ namespace document_sharing_manager.Infrastructure.Storage
                         totalBytesRead += bytesRead;
                         if (totalBytesRead > _maxFileSizeBytes)
                         {
-                            // Clean up partial file before throwing
-                            fileStream.Close();
-                            File.Delete(fullPath);
-                            throw new InvalidOperationException($"File size exceeds the maximum limit of {_maxFileSizeBytes / (1024 * 1024)}MB");
+                            shouldDelete = true;
+                            break;
                         }
                         await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), ct);
                     }
                 }
+            }
+
+            if (shouldDelete)
+            {
+                if (File.Exists(fullPath)) File.Delete(fullPath);
+                throw new InvalidOperationException($"File size exceeds the maximum limit of {_maxFileSizeBytes / (1024 * 1024)}MB");
             }
 
             return relativePath;

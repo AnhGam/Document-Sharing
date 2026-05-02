@@ -523,35 +523,43 @@ namespace document_sharing_manager.Core.Data
                 conn.Open();
                 using (var transaction = conn.BeginTransaction())
                 {
-                    string query = @"INSERT INTO tai_lieu
-                        (ten, dinh_dang, duong_dan, ghi_chu, kich_thuoc, quan_trong, tags)
-                        VALUES
-                        (@ten, @dinh_dang, @duong_dan, @ghi_chu, @kich_thuoc, @quan_trong, @tags)";
-
-                    using (var cmd = new SQLiteCommand(query, conn, transaction))
+                    try
                     {
-                        cmd.Parameters.Add("@ten", System.Data.DbType.String);
-                        cmd.Parameters.Add("@dinh_dang", System.Data.DbType.String);
-                        cmd.Parameters.Add("@duong_dan", System.Data.DbType.String);
-                        cmd.Parameters.Add("@ghi_chu", System.Data.DbType.String);
-                        cmd.Parameters.Add("@kich_thuoc", System.Data.DbType.Decimal);
-                        cmd.Parameters.Add("@quan_trong", System.Data.DbType.Int32);
-                        cmd.Parameters.Add("@tags", System.Data.DbType.String);
+                        string query = @"INSERT INTO tai_lieu
+                            (ten, dinh_dang, duong_dan, ghi_chu, kich_thuoc, quan_trong, tags)
+                            VALUES
+                            (@ten, @dinh_dang, @duong_dan, @ghi_chu, @kich_thuoc, @quan_trong, @tags)";
 
-                        foreach (var doc in documents)
+                        using (var cmd = new SQLiteCommand(query, conn, transaction))
                         {
-                            cmd.Parameters["@ten"].Value = doc.Ten;
-                            cmd.Parameters["@dinh_dang"].Value = string.IsNullOrEmpty(doc.DinhDang) ? DBNull.Value : (object)doc.DinhDang;
-                            cmd.Parameters["@duong_dan"].Value = doc.DuongDan ?? (object)DBNull.Value;
-                            cmd.Parameters["@ghi_chu"].Value = string.IsNullOrEmpty(doc.GhiChu) ? DBNull.Value : (object)doc.GhiChu;
-                            cmd.Parameters["@kich_thuoc"].Value = doc.KichThuoc.HasValue ? (object)doc.KichThuoc.Value : DBNull.Value;
-                            cmd.Parameters["@quan_trong"].Value = doc.QuanTrong ? 1 : 0;
-                            cmd.Parameters["@tags"].Value = string.IsNullOrEmpty(doc.Tags) ? DBNull.Value : (object)doc.Tags;
+                            cmd.Parameters.Add("@ten", System.Data.DbType.String);
+                            cmd.Parameters.Add("@dinh_dang", System.Data.DbType.String);
+                            cmd.Parameters.Add("@duong_dan", System.Data.DbType.String);
+                            cmd.Parameters.Add("@ghi_chu", System.Data.DbType.String);
+                            cmd.Parameters.Add("@kich_thuoc", System.Data.DbType.Decimal);
+                            cmd.Parameters.Add("@quan_trong", System.Data.DbType.Int32);
+                            cmd.Parameters.Add("@tags", System.Data.DbType.String);
 
-                            if (cmd.ExecuteNonQuery() > 0) successCount++;
+                            foreach (var doc in documents)
+                            {
+                                cmd.Parameters["@ten"].Value = doc.Ten;
+                                cmd.Parameters["@dinh_dang"].Value = string.IsNullOrEmpty(doc.DinhDang) ? DBNull.Value : (object)doc.DinhDang;
+                                cmd.Parameters["@duong_dan"].Value = doc.DuongDan ?? (object)DBNull.Value;
+                                cmd.Parameters["@ghi_chu"].Value = string.IsNullOrEmpty(doc.GhiChu) ? DBNull.Value : (object)doc.GhiChu;
+                                cmd.Parameters["@kich_thuoc"].Value = doc.KichThuoc.HasValue ? (object)doc.KichThuoc.Value : DBNull.Value;
+                                cmd.Parameters["@quan_trong"].Value = doc.QuanTrong ? 1 : 0;
+                                cmd.Parameters["@tags"].Value = string.IsNullOrEmpty(doc.Tags) ? DBNull.Value : (object)doc.Tags;
+
+                                if (cmd.ExecuteNonQuery() > 0) successCount++;
+                            }
                         }
+                        transaction.Commit();
                     }
-                    transaction.Commit();
+                    catch
+                    {
+                        transaction.Rollback();
+                        throw;
+                    }
                 }
             }
             return successCount;

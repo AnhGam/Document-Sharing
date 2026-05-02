@@ -80,13 +80,9 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
                 return await _context.Documents.AsNoTracking().ToListAsync(ct);
             }
 
-            // Accuracy: Escape SQL wildcards to prevent incorrect search results
-            var escapedKeyword = keyword.Replace("%", "\\%").Replace("_", "\\_");
-            var searchPattern = $"%{escapedKeyword}%";
-
             return await _context.Documents
                 .AsNoTracking()
-                .Where(d => EF.Functions.ILike(d.Ten, searchPattern) || (d.GhiChu != null && EF.Functions.ILike(d.GhiChu, searchPattern)))
+                .Where(d => d.Ten.Contains(keyword) || (d.GhiChu != null && d.GhiChu.Contains(keyword)))
                 .ToListAsync(ct);
         }
 
@@ -135,13 +131,9 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
             if (string.IsNullOrWhiteSpace(keyword))
                 return GetAll();
 
-            // Accuracy: Escape SQL wildcards to prevent incorrect search results
-            var escapedKeyword = keyword.Replace("%", "\\%").Replace("_", "\\_");
-            var searchPattern = $"%{escapedKeyword}%";
-
             return [.. _context.Documents
                 .AsNoTracking()
-                .Where(d => EF.Functions.ILike(d.Ten, searchPattern) || (d.GhiChu != null && EF.Functions.ILike(d.GhiChu, searchPattern)))];
+                .Where(d => d.Ten.Contains(keyword) || (d.GhiChu != null && d.GhiChu.Contains(keyword)))];
         }
 
         public List<Document> SearchAdvanced(string keyword, string format, DateTime? fromDate, DateTime? toDate, decimal? minSize, decimal? maxSize, bool? isImportant)
