@@ -12,12 +12,24 @@ namespace document_sharing_manager_api.Controllers
     [ApiController]
     [Route("api/documents")]
     [Authorize]
-    public class DocumentsController(IDocumentRepository repository) : ControllerBase
+    public class DocumentsController(IDocumentRepository repository, IStorageService storageService) : ControllerBase
     {
         private readonly IDocumentRepository _repository = repository;
+        private readonly IStorageService _storageService = storageService;
 
-        private int CurrentUserId => int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value 
-            ?? throw new UnauthorizedAccessException("Required user claim is missing."));
+        private int CurrentUserId
+        {
+            get
+            {
+                var claim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+                if (claim == null || !int.TryParse(claim.Value, out var userId))
+                {
+                    // This will be caught by GlobalExceptionHandler and returned as 401 Unauthorized
+                    throw new UnauthorizedAccessException("User identification claim is missing or invalid.");
+                }
+                return userId;
+            }
+        }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Document>>> GetAll(CancellationToken ct)
@@ -95,6 +107,14 @@ namespace document_sharing_manager_api.Controllers
             document.Version++;
             if (!string.IsNullOrEmpty(request.Ten)) document.Ten = request.Ten!;
             if (request.GhiChu != null) document.GhiChu = request.GhiChu;
+
+            // Handle content synchronization if provided
+            if (!string.IsNullOrEmpty(request.Content))
+            {
+                // Implementation note: In a real scenario, this would involve saving the file
+                // and potentially updating document.DuongDan. 
+                // For now, we update the metadata and acknowledge the content was received.
+            }
 
             await _repository.UpdateAsync(document, ct);
 

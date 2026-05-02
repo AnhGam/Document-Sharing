@@ -382,7 +382,7 @@ namespace document_sharing_manager.Documents
                         note,
                         (decimal)entry.FileSize / (1024.0m * 1024.0m),
                         isImportant,
-                        1, // UserId
+                        UserSession.CurrentUserId,
                         1, // Version
                         ""
                     );

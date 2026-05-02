@@ -229,7 +229,7 @@ namespace document_sharing_manager.Documents
                         txtGhiChu.Text.Trim(),
                         kichThuoc,
                         chkQuanTrong.Checked,
-                        1, // UserId
+                        UserSession.CurrentUserId,
                         1, // Version
                         tags
                     );
@@ -251,7 +251,7 @@ namespace document_sharing_manager.Documents
                         txtGhiChu.Text.Trim(),
                         kichThuoc,
                         chkQuanTrong.Checked,
-                        1, // UserId
+                        UserSession.CurrentUserId,
                         1, // Version
                         tags
                     );
