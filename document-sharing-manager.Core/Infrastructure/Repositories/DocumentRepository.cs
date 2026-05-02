@@ -306,5 +306,11 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
 
             return await Task.Run(() => ExecuteAndMap(baseQuery, [.. parameterList]));
         }
+        public async Task<List<Document>> GetPendingSyncDocumentsAsync(int userId, CancellationToken ct = default)
+        {
+            string query = "SELECT * FROM tai_lieu WHERE (is_deleted IS NULL OR is_deleted = 0) AND user_id = @userId AND sync_status != 0 ORDER BY ngay_them DESC";
+            SQLiteParameter[] parameters = [new("@userId", userId)];
+            return await Task.Run(() => ExecuteAndMap(query, parameters), ct);
+        }
     }
 }

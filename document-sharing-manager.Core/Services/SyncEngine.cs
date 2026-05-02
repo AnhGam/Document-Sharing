@@ -25,7 +25,7 @@ namespace document_sharing_manager.Core.Services
         public SyncType Type { get; set; }
     }
 
-    public class SyncEngine : ISyncService
+    public class SyncEngine : ISyncService, IDisposable
     {
         private readonly IDocumentRepository _repository;
         
@@ -46,6 +46,7 @@ namespace document_sharing_manager.Core.Services
         private readonly SemaphoreSlim _signal = new(0);
         private readonly string _apiUrl; 
         private readonly CancellationTokenSource _cts = new();
+        private readonly SynchronizationContext? _syncContext;
         private bool _isRunning = false;
 
         public SyncEngine(IDocumentRepository repository, string apiUrl)
@@ -55,6 +56,7 @@ namespace document_sharing_manager.Core.Services
                 throw new ArgumentException("API URL must be provided.", nameof(apiUrl));
             
             _apiUrl = apiUrl.TrimEnd('/');
+            _syncContext = SynchronizationContext.Current;
         }
 
         public void Start()
@@ -73,12 +75,19 @@ namespace document_sharing_manager.Core.Services
             _isRunning = false;
         }
 
+        public void Dispose()
+        {
+            _cts.Dispose();
+            _signal.Dispose();
+            GC.SuppressFinalize(this);
+        }
+
         public async Task<Result> SyncAsync(CancellationToken ct = default)
         {
             try
             {
-                var documents = await _repository.GetAllByUserIdAsync(UserSession.CurrentUserId, ct);
-                foreach (var doc in documents.Where(d => d.SyncStatus == 1)) // 1: PendingUpload
+                var documents = await _repository.GetPendingSyncDocumentsAsync(UserSession.CurrentUserId, ct);
+                foreach (var doc in documents)
                 {
                     Enqueue(doc, SyncType.Upload);
                 }
@@ -162,13 +171,20 @@ namespace document_sharing_manager.Core.Services
         {
             try
             {
+                if (!string.IsNullOrEmpty(UserSession.AccessToken))
+                {
+                    _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", UserSession.AccessToken);
+                }
+
                 string fullPath = FileStorageService.ResolvePath(doc.DuongDan);
                 if (!File.Exists(fullPath)) return;
 
                 // Use MultipartFormDataContent and StreamContent for large file safety (OOM prevention)
-                using MultipartFormDataContent content = new();
-                content.Add(new StringContent(doc.RemoteId.ToString()), "remoteId");
-                content.Add(new StringContent(doc.Version.ToString()), "localVersion");
+                using MultipartFormDataContent content = new()
+                {
+                    { new StringContent(doc.RemoteId.ToString()), "remoteId" },
+                    { new StringContent(doc.Version.ToString()), "localVersion" }
+                };
                 if (!string.IsNullOrEmpty(doc.Ten)) content.Add(new StringContent(doc.Ten), "ten");
                 if (doc.GhiChu != null) content.Add(new StringContent(doc.GhiChu), "ghiChu");
 
@@ -186,10 +202,26 @@ namespace document_sharing_manager.Core.Services
                     
                     if (result?.Success == true)
                     {
-                        doc.Version = result.CurrentVersion;
-                        doc.SyncStatus = 0; // 0: Synced
-                        doc.LocalVersion = doc.Version; 
-                        await _repository.UpdateAsync(doc, ct);
+                        void UpdateLocal()
+                        {
+                            doc.Version = result.CurrentVersion;
+                            doc.SyncStatus = 0; // 0: Synced
+                            doc.LocalVersion = doc.Version; 
+                        }
+
+                        if (_syncContext != null)
+                        {
+                            _syncContext.Post(async _ => 
+                            {
+                                UpdateLocal();
+                                await _repository.UpdateAsync(doc, ct);
+                            }, null);
+                        }
+                        else
+                        {
+                            UpdateLocal();
+                            await _repository.UpdateAsync(doc, ct);
+                        }
                     }
                 }
                 else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)

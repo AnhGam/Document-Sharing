@@ -207,5 +207,12 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
                 .Select(d => d.DinhDang)
                 .Distinct()];
         }
+        public async Task<List<Document>> GetPendingSyncDocumentsAsync(int userId, CancellationToken ct = default)
+        {
+            return await _context.Documents
+                .Where(d => d.UserId == userId && d.SyncStatus != 0 && !d.IsDeleted)
+                .OrderByDescending(d => d.CreatedAt)
+                .ToListAsync(ct);
+        }
     }
 }
