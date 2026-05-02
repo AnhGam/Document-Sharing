@@ -118,7 +118,7 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
 
         public List<Document> GetAll()
         {
-            return _context.Documents.AsNoTracking().ToList();
+            return [.. _context.Documents.AsNoTracking()];
         }
 
         public Document GetById(int id)
@@ -131,10 +131,9 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
             if (string.IsNullOrWhiteSpace(keyword))
                 return GetAll();
 
-            return _context.Documents
+            return [.. _context.Documents
                 .AsNoTracking()
-                .Where(d => EF.Functions.ILike(d.Ten, $"%{keyword}%") || (d.GhiChu != null && EF.Functions.ILike(d.GhiChu, $"%{keyword}%")))
-                .ToList();
+                .Where(d => EF.Functions.ILike(d.Ten, $"%{keyword}%") || (d.GhiChu != null && EF.Functions.ILike(d.GhiChu, $"%{keyword}%")))];
         }
 
         public List<Document> SearchAdvanced(string keyword, string format, DateTime? fromDate, DateTime? toDate, decimal? minSize, decimal? maxSize, bool? isImportant)
@@ -162,7 +161,7 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
             if (isImportant.HasValue)
                 query = query.Where(d => d.QuanTrong == isImportant.Value);
 
-            return query.ToList();
+            return [.. query];
         }
 
         public bool Update(Document doc)
@@ -184,11 +183,10 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
 
         public List<string> GetDistinctFormats()
         {
-            return _context.Documents
+            return [.. _context.Documents
                 .AsNoTracking()
                 .Select(d => d.DinhDang)
-                .Distinct()
-                .ToList();
+                .Distinct()];
         }
     }
 }
