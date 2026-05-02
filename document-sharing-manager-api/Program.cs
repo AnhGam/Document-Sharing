@@ -48,7 +48,16 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IStorageService, LocalFileStorageService>();
 
 // Configure JWT Authentication
-var jwtKey = builder.Configuration["JWT:Key"] ?? throw new InvalidOperationException("JWT Key is missing");
+var jwtKey = builder.Configuration["JWT:Key"];
+if (jwtKey != null && jwtKey.Contains("${JWT_SECRET_KEY}"))
+{
+    jwtKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
+}
+
+if (string.IsNullOrEmpty(jwtKey))
+{
+    throw new InvalidOperationException("JWT Key is missing or not configured properly. Ensure JWT:Key is in appsettings or JWT_SECRET_KEY environment variable is set.");
+}
 
 builder.Services.AddAuthentication(options =>
 {

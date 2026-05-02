@@ -19,8 +19,9 @@ namespace document_sharing_manager.Infrastructure.Security
 
         public async Task<AuthResponse> LoginAsync(LoginRequest request, CancellationToken ct = default)
         {
+            var normalizedUsername = request.Username.ToLower();
             var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.Username.ToLower() == request.Username.ToLower(), ct);
+                .FirstOrDefaultAsync(u => u.Username == normalizedUsername, ct);
 
             if (user == null || !BC.Verify(request.Password, user.PasswordHash))
             {
@@ -32,48 +33,29 @@ namespace document_sharing_manager.Infrastructure.Security
                 throw new UnauthorizedAccessException("User account is deactivated.");
             }
 
-            var accessToken = _tokenService.GenerateAccessToken(user);
-            var refreshToken = _tokenService.GenerateRefreshToken();
-
-            // Save refresh token
-            var refreshTokenEntity = new RefreshToken
-            {
-                Token = refreshToken,
-                UserId = user.Id,
-                ExpiryDate = DateTime.UtcNow.AddDays(int.TryParse(_config["JWT:RefreshTokenDurationInDays"], out var days) ? days : 7)
-            };
-
-            await _context.RefreshTokens.AddAsync(refreshTokenEntity, ct);
-            await _context.SaveChangesAsync(ct);
-
-            return new AuthResponse
-            {
-                Token = accessToken,
-                RefreshToken = refreshToken,
-                Username = user.Username,
-                Role = user.Role.ToString()
-            };
+            return await CreateAuthResponseAsync(user, ct);
         }
 
         public async Task<AuthResponse> RegisterAsync(RegisterRequest request, CancellationToken ct = default)
         {
-            if (await _context.Users.AnyAsync(u => u.Username.ToLower() == request.Username.ToLower(), ct))
+            var normalizedUsername = request.Username.ToLower();
+            if (await _context.Users.AnyAsync(u => u.Username == normalizedUsername, ct))
             {
                 throw new InvalidOperationException("Username already exists.");
             }
 
             var user = new User
             {
-                Username = request.Username,
+                Username = normalizedUsername,
                 Email = request.Email,
-                PasswordHash = BC.HashPassword(request.Password, int.TryParse(_config["Security:BCryptWorkFactor"], out var factor) ? factor : 10),
+                PasswordHash = BC.HashPassword(request.Password, int.TryParse(_config["Security:BCryptWorkFactor"], out var factor) ? factor : 12),
                 Role = UserRole.User
             };
 
             await _context.Users.AddAsync(user, ct);
             await _context.SaveChangesAsync(ct);
 
-            return await LoginAsync(new LoginRequest { Username = request.Username, Password = request.Password }, ct);
+            return await CreateAuthResponseAsync(user, ct);
         }
 
         public async Task<AuthResponse> RefreshTokenAsync(RefreshRequest request, CancellationToken ct = default)
@@ -116,24 +98,28 @@ namespace document_sharing_manager.Infrastructure.Security
 
             // Revoke old token
             tokenEntity.IsRevoked = true;
-            
-            var newAccessToken = _tokenService.GenerateAccessToken(user);
-            var newRefreshToken = _tokenService.GenerateRefreshToken();
+            return await CreateAuthResponseAsync(user, ct);
+        }
 
-            var newRefreshTokenEntity = new RefreshToken
+        private async Task<AuthResponse> CreateAuthResponseAsync(User user, CancellationToken ct)
+        {
+            var accessToken = _tokenService.GenerateAccessToken(user);
+            var refreshToken = _tokenService.GenerateRefreshToken();
+
+            var refreshTokenEntity = new RefreshToken
             {
-                Token = newRefreshToken,
+                Token = refreshToken,
                 UserId = user.Id,
                 ExpiryDate = DateTime.UtcNow.AddDays(int.TryParse(_config["JWT:RefreshTokenDurationInDays"], out var days) ? days : 7)
             };
 
-            await _context.RefreshTokens.AddAsync(newRefreshTokenEntity, ct);
+            await _context.RefreshTokens.AddAsync(refreshTokenEntity, ct);
             await _context.SaveChangesAsync(ct);
 
             return new AuthResponse
             {
-                Token = newAccessToken,
-                RefreshToken = newRefreshToken,
+                Token = accessToken,
+                RefreshToken = refreshToken,
                 Username = user.Username,
                 Role = user.Role.ToString()
             };
