@@ -528,10 +528,11 @@ namespace document_sharing_manager.Core.Data
                         VALUES
                         (@ten, @dinh_dang, @duong_dan, @ghi_chu, @kich_thuoc, @quan_trong, @tags)";
 
-                    foreach (var doc in documents)
+                    using (var cmd = new SQLiteCommand(query, conn, transaction))
                     {
-                        using (var cmd = new SQLiteCommand(query, conn, transaction))
+                        foreach (var doc in documents)
                         {
+                            cmd.Parameters.Clear();
                             cmd.Parameters.AddWithValue("@ten", doc.Ten);
                             cmd.Parameters.AddWithValue("@dinh_dang", string.IsNullOrEmpty(doc.DinhDang) ? DBNull.Value : (object)doc.DinhDang);
                             cmd.Parameters.AddWithValue("@duong_dan", doc.DuongDan ?? (object)DBNull.Value);

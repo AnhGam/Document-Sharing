@@ -28,7 +28,7 @@ namespace document_sharing_manager.Infrastructure.Storage
 
         public async Task<string> UploadFileAsync(Stream stream, string fileName, string subDirectory = "documents", CancellationToken ct = default)
         {
-            // Security: Limit capacity check
+            // Security: Limit capacity check (Seekable streams)
             if (stream.CanSeek && stream.Length > _maxFileSizeBytes)
             {
                 throw new InvalidOperationException($"File size exceeds the maximum limit of {_maxFileSizeBytes / (1024 * 1024)}MB");
@@ -49,7 +49,29 @@ namespace document_sharing_manager.Infrastructure.Storage
 
             using (var fileStream = new FileStream(fullPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, useAsync: true))
             {
-                await stream.CopyToAsync(fileStream, 8192, ct);
+                if (stream.CanSeek)
+                {
+                    await stream.CopyToAsync(fileStream, 8192, ct);
+                }
+                else
+                {
+                    // For non-seekable streams, check size during copy
+                    var buffer = new byte[8192];
+                    long totalBytesRead = 0;
+                    int bytesRead;
+                    while ((bytesRead = await stream.ReadAsync(buffer.AsMemory(), ct)) > 0)
+                    {
+                        totalBytesRead += bytesRead;
+                        if (totalBytesRead > _maxFileSizeBytes)
+                        {
+                            // Clean up partial file before throwing
+                            fileStream.Close();
+                            File.Delete(fullPath);
+                            throw new InvalidOperationException($"File size exceeds the maximum limit of {_maxFileSizeBytes / (1024 * 1024)}MB");
+                        }
+                        await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), ct);
+                    }
+                }
             }
 
             return relativePath;
@@ -57,7 +79,16 @@ namespace document_sharing_manager.Infrastructure.Storage
 
         public Task<Stream> GetFileAsync(string path, CancellationToken ct = default)
         {
-            var fullPath = Path.Combine(_basePath, path);
+            // Strict Path Validation for Path Traversal prevention
+            var root = Path.GetFullPath(_basePath);
+            if (!root.EndsWith(Path.DirectorySeparatorChar.ToString())) root += Path.DirectorySeparatorChar;
+
+            var fullPath = Path.GetFullPath(Path.Combine(root, path));
+            if (!fullPath.StartsWith(root, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new UnauthorizedAccessException("Access denied: Path is outside storage root.");
+            }
+
             if (!File.Exists(fullPath))
             {
                 throw new FileNotFoundException("File not found in local storage", fullPath);
