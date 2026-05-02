@@ -236,7 +236,8 @@ namespace document_sharing_manager.Documents
                         kichThuoc,
                         chkQuanTrong.Checked,
                         UserSession.CurrentUserId,
-                        _currentVersion, // Use preserved version
+                        _currentVersion + 1, // New version
+                        _currentVersion,     // Old version
                         tags
                     );
 

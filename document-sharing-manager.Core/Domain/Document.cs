@@ -18,7 +18,7 @@ namespace document_sharing_manager.Core.Domain
         [MaxLength(1000)]
         public string GhiChu { get; set; } = string.Empty;
 
-        public DateTime NgayThem { get; set; } = DateTime.Now;
+        public DateTime NgayThem { get; set; } = DateTime.UtcNow;
         public decimal? KichThuoc { get; set; }
         public bool QuanTrong { get; set; }
 
@@ -47,7 +47,7 @@ namespace document_sharing_manager.Core.Domain
         public void SoftDelete()
         {
             IsDeleted = true;
-            DeletedAt = DateTime.Now;
+            DeletedAt = DateTime.UtcNow;
             Update();
         }
     }

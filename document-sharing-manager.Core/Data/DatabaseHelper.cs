@@ -548,7 +548,7 @@ namespace document_sharing_manager.Core.Data
         /// </summary>
         public static bool UpdateDocument(int id, string ten, string dinhDang,
             string duongDan, string ghiChu, decimal? kichThuoc, bool quanTrong,
-            int userId, int version, string? tags = null)
+            int userId, int newVersion, int expectedVersion, string? tags = null)
         {
             string query = @"UPDATE tai_lieu SET
                 ten = @ten,
@@ -559,8 +559,8 @@ namespace document_sharing_manager.Core.Data
                 quan_trong = @quan_trong,
                 tags = @tags,
                 user_id = @user_id,
-                version = @version
-                WHERE id = @id";
+                version = @new_version
+                WHERE id = @id AND version = @expected_version";
 
             System.Data.SQLite.SQLiteParameter[] parameters = 
             [
@@ -573,7 +573,8 @@ namespace document_sharing_manager.Core.Data
                 new("@quan_trong", quanTrong ? 1 : 0),
                 new("@tags", string.IsNullOrEmpty(tags) ? DBNull.Value : (object)tags!),
                 new("@user_id", userId),
-                new("@version", version)
+                new("@new_version", newVersion),
+                new("@expected_version", expectedVersion)
             ];
 
             int result = ExecuteNonQuery(query, parameters);

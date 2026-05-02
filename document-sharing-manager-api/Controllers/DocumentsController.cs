@@ -14,6 +14,12 @@ namespace document_sharing_manager_api.Controllers
     [Authorize]
     public class DocumentsController(IDocumentRepository repository, IStorageService storageService) : ControllerBase
     {
+        private string SanitizeFileName(string fileName)
+        {
+            var invalidChars = System.IO.Path.GetInvalidFileNameChars();
+            return string.Join("_", fileName.Split(invalidChars, StringSplitOptions.RemoveEmptyEntries));
+        }
+
         private readonly IDocumentRepository _repository = repository;
         private readonly IStorageService _storageService = storageService;
 
@@ -114,9 +120,22 @@ namespace document_sharing_manager_api.Controllers
             // Handle content synchronization if provided
             if (!string.IsNullOrEmpty(request.Content))
             {
-                using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(request.Content));
-                string extension = string.IsNullOrEmpty(document.DinhDang) ? "txt" : document.DinhDang.ToLower();
-                string fileName = $"{document.Ten}_{document.Version}.{extension}";
+                byte[] data;
+                try
+                {
+                    // standard practice to transmit binary data as Base64-encoded string
+                    data = Convert.FromBase64String(request.Content);
+                }
+                catch (FormatException)
+                {
+                    // Fallback to UTF-8 if legacy or plain text
+                    data = System.Text.Encoding.UTF8.GetBytes(request.Content);
+                }
+
+                using var stream = new MemoryStream(data);
+                string extension = string.IsNullOrEmpty(document.DinhDang) ? "bin" : document.DinhDang.ToLower();
+                string safeName = SanitizeFileName(document.Ten);
+                string fileName = $"{safeName}_{document.Version}.{extension}";
                 
                 document.DuongDan = await _storageService.UploadFileAsync(stream, fileName, "sync", ct);
             }

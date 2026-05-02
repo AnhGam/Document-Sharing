@@ -131,7 +131,9 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
 
         public bool Update(Document doc)
         {
-             return DatabaseHelper.UpdateDocument(doc.Id, doc.Ten, doc.DinhDang, doc.DuongDan, doc.GhiChu, doc.KichThuoc, doc.QuanTrong, doc.UserId, doc.Version, doc.Tags);
+             // For concurrency, we assume doc.Version was already incremented.
+             // We check against (doc.Version - 1)
+             return DatabaseHelper.UpdateDocument(doc.Id, doc.Ten, doc.DinhDang, doc.DuongDan, doc.GhiChu, doc.KichThuoc, doc.QuanTrong, doc.UserId, doc.Version, doc.Version - 1, doc.Tags);
         }
 
         public bool Delete(int id)
@@ -150,7 +152,7 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
 
         public async Task<Document?> GetByIdAsync(int id, CancellationToken ct = default)
         {
-            return await Task.FromResult<Document?>(GetById(id)); 
+            return await Task.Run(() => GetById(id)); 
         }
 
         public async Task<IEnumerable<Document>> GetAllAsync(CancellationToken ct = default)

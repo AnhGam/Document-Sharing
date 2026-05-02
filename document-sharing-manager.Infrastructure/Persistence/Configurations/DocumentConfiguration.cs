@@ -33,7 +33,8 @@ namespace document_sharing_manager.Infrastructure.Persistence.Configurations
 
             builder.Property(d => d.Version)
                 .IsRequired()
-                .HasDefaultValue(1);
+                .HasDefaultValue(1)
+                .IsConcurrencyToken();
 
             builder.Property(d => d.UserId)
                 .IsRequired();
