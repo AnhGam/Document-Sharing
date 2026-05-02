@@ -32,9 +32,9 @@ namespace document_sharing_manager_api.Controllers
 
         [HttpPost("refresh")]
         [AllowAnonymous]
-        public async Task<IActionResult> Refresh([FromBody] string refreshToken, CancellationToken ct)
+        public async Task<IActionResult> Refresh([FromBody] RefreshRequest request, CancellationToken ct)
         {
-            var response = await _authService.RefreshTokenAsync(refreshToken, ct);
+            var response = await _authService.RefreshTokenAsync(request, ct);
             return Ok(response);
         }
     }

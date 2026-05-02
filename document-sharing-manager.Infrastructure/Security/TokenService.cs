@@ -11,14 +11,9 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace document_sharing_manager.Infrastructure.Security
 {
-    public class TokenService : ITokenService
+    public class TokenService(IConfiguration config) : ITokenService
     {
-        private readonly IConfiguration _config;
-
-        public TokenService(IConfiguration config)
-        {
-            _config = config;
-        }
+        private readonly IConfiguration _config = config;
 
         public string GenerateAccessToken(User user)
         {

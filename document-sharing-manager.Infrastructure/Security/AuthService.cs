@@ -11,16 +11,10 @@ using BC = BCrypt.Net.BCrypt;
 
 namespace document_sharing_manager.Infrastructure.Security
 {
-    public class AuthService : IAuthService
+    public class AuthService(AppDbContext context, ITokenService tokenService) : IAuthService
     {
-        private readonly AppDbContext _context;
-        private readonly ITokenService _tokenService;
-
-        public AuthService(AppDbContext context, ITokenService tokenService)
-        {
-            _context = context;
-            _tokenService = tokenService;
-        }
+        private readonly AppDbContext _context = context;
+        private readonly ITokenService _tokenService = tokenService;
 
         public async Task<AuthResponse> LoginAsync(LoginRequest request, CancellationToken ct = default)
         {
@@ -81,21 +75,25 @@ namespace document_sharing_manager.Infrastructure.Security
             return await LoginAsync(new LoginRequest { Username = request.Username, Password = request.Password }, ct);
         }
 
-        public async Task<AuthResponse> RefreshTokenAsync(string refreshToken, CancellationToken ct = default)
+        public async Task<AuthResponse> RefreshTokenAsync(RefreshRequest request, CancellationToken ct = default)
         {
             var tokenEntity = await _context.RefreshTokens
                 .Include(u => u.User)
-                .FirstOrDefaultAsync(t => t.Token == refreshToken, ct);
+                .FirstOrDefaultAsync(t => t.Token == request.RefreshToken, ct);
 
             if (tokenEntity == null || !tokenEntity.IsActive)
             {
                 throw new UnauthorizedAccessException("Refresh token không hợp lệ hoặc đã hết hạn.");
             }
 
+            var user = tokenEntity.User!;
+            if (!user.IsActive)
+            {
+                throw new UnauthorizedAccessException("Tài khoản đã bị khóa.");
+            }
+
             // Revoke old token
             tokenEntity.IsRevoked = true;
-            
-            var user = tokenEntity.User!;
             var newAccessToken = _tokenService.GenerateAccessToken(user);
             var newRefreshToken = _tokenService.GenerateRefreshToken();
 

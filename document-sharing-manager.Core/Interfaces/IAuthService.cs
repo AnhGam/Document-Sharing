@@ -8,6 +8,6 @@ namespace document_sharing_manager.Core.Interfaces
     {
         Task<AuthResponse> LoginAsync(LoginRequest request, CancellationToken ct = default);
         Task<AuthResponse> RegisterAsync(RegisterRequest request, CancellationToken ct = default);
-        Task<AuthResponse> RefreshTokenAsync(string refreshToken, CancellationToken ct = default);
+        Task<AuthResponse> RefreshTokenAsync(RefreshRequest request, CancellationToken ct = default);
     }
 }
