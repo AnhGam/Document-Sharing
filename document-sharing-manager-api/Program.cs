@@ -52,6 +52,7 @@ var jwtKey = builder.Configuration["JWT:Key"];
 if (jwtKey != null && jwtKey.Contains("${JWT_SECRET_KEY}"))
 {
     jwtKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
+    builder.Configuration["JWT:Key"] = jwtKey;
 }
 
 if (string.IsNullOrEmpty(jwtKey))

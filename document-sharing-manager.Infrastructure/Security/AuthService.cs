@@ -72,16 +72,10 @@ namespace document_sharing_manager.Infrastructure.Security
             if (tokenEntity.IsRevoked)
             {
                 // Reuse detection: revoke all tokens for this user
-                var activeTokens = await _context.RefreshTokens
+                await _context.RefreshTokens
                     .Where(t => t.UserId == tokenEntity.UserId && !t.IsRevoked)
-                    .ToListAsync(ct);
+                    .ExecuteUpdateAsync(s => s.SetProperty(t => t.IsRevoked, true), ct);
 
-                foreach (var token in activeTokens)
-                {
-                    token.IsRevoked = true;
-                }
-
-                await _context.SaveChangesAsync(ct);
                 throw new UnauthorizedAccessException("Refresh token reuse detected. All sessions revoked.");
             }
 
