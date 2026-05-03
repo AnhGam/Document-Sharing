@@ -101,22 +101,26 @@ namespace document_sharing_manager.Services
 
                     if (doc != null)
                     {
+                        int newLocalVersion = doc.LocalVersion + 1;
+
+                        // 1. Update DB synchronously on background thread
+                        await _repository.UpdateSyncStatusAsync(doc.Id, 1, null, null, newLocalVersion, _cts.Token);
+
+                        // 2. Update object on UI thread via Post
                         void UpdateLocal()
                         {
                             doc.SyncStatus = 1; // 1: PendingUpload
-                            doc.LocalVersion++;
+                            doc.LocalVersion = newLocalVersion;
                         }
 
                         if (_syncContext != null)
                         {
-                            _syncContext.Post(_ => UpdateLocal(), null);
+                            _syncContext.Send(_ => UpdateLocal(), null);
                         }
                         else
                         {
                             UpdateLocal();
                         }
-
-                        await _repository.UpdateAsync(doc, _cts.Token);
 
                         // Signal engine to process
                         _engine.Enqueue(doc, SyncType.Upload);
@@ -132,6 +136,7 @@ namespace document_sharing_manager.Services
 
         public void Dispose()
         {
+            Stop();
             _watcher.Dispose();
             _cts.Dispose();
             foreach (var timer in _debouncers.Values)

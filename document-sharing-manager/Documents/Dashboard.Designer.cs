@@ -50,6 +50,7 @@ namespace document_sharing_manager.Documents
             this.toolBtnBackup = new System.Windows.Forms.ToolStripButton();
             this.toolBtnDuplicate = new System.Windows.Forms.ToolStripButton();
             this.toolBtnStats = new System.Windows.Forms.ToolStripButton();
+            this.toolBtnSettings = new System.Windows.Forms.ToolStripButton();
 
             this.contextMenuDocument = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.ctxMenuOpen = new System.Windows.Forms.ToolStripMenuItem();
@@ -120,7 +121,8 @@ namespace document_sharing_manager.Documents
             this.toolBtnRecent,
             this.toolBtnBackup,
             this.toolBtnDuplicate,
-            this.toolBtnStats});
+            this.toolBtnStats,
+            this.toolBtnSettings});
             this.toolStrip.Location = new System.Drawing.Point(0, 0);
             this.toolStrip.Name = "toolStrip";
             this.toolStrip.Padding = new System.Windows.Forms.Padding(8, 4, 1, 4);
@@ -204,6 +206,12 @@ namespace document_sharing_manager.Documents
             this.toolBtnStats.Size = new System.Drawing.Size(84, 29);
             this.toolBtnStats.Text = "Thống kê";
             this.toolBtnStats.Click += new System.EventHandler(this.BtnThongKeClick);
+            // 
+            // toolBtnSettings
+            // 
+            this.toolBtnSettings.Name = "toolBtnSettings";
+            this.toolBtnSettings.Size = new System.Drawing.Size(84, 29);
+            this.toolBtnSettings.Text = "Cài đặt";
             // 
             // contextMenuDocument
             // 
@@ -695,6 +703,7 @@ namespace document_sharing_manager.Documents
         private System.Windows.Forms.ToolStripButton toolBtnBackup;
         private System.Windows.Forms.ToolStripButton toolBtnDuplicate;
         private System.Windows.Forms.ToolStripButton toolBtnStats;
+        private System.Windows.Forms.ToolStripButton toolBtnSettings;
         private document_sharing_manager.UI.Controls.ModernPanel pnlSearch;
         private System.Windows.Forms.Label lblSearch;
         private System.Windows.Forms.TextBox txtSearch;

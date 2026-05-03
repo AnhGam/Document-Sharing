@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: docshare_db
+    environment:
+      POSTGRES_DB: docshare
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: docshare_api
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ConnectionStrings__DefaultConnection=Host=db;Database=docshare;Username=postgres;Password=${POSTGRES_PASSWORD}
+    ports:
+      - "${API_PORT}:5000"
+    volumes:
+      - api_uploads:/app/uploads
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
+  api_uploads:

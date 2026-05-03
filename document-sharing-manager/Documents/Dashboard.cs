@@ -52,7 +52,7 @@ namespace document_sharing_manager.Documents
         private DoubleBufferedTreeView treeCategory;
         private SplitContainer splitCategory;
         private TreeNode _hoveredNode;
-        private readonly Dictionary<string, Bitmap> _treeIconCache = new();
+        private readonly Dictionary<string, Bitmap> _treeIconCache = [];
 
         public Dashboard()
         {
@@ -194,6 +194,7 @@ namespace document_sharing_manager.Documents
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
             _syncEngine.Stop();
+            _syncEngine.Dispose();
             _syncWatcher.Dispose();
             base.OnFormClosing(e);
         }
@@ -299,6 +300,10 @@ namespace document_sharing_manager.Documents
 
             toolBtnStats.Image = IconHelper.CreateChartIcon(16, AppTheme.Primary);
             toolBtnStats.ToolTipText = "Thống kê";
+
+            toolBtnSettings.Image = IconHelper.CreateSettingsIcon(16, AppTheme.TextSecondary);
+            toolBtnSettings.ToolTipText = "Cài đặt kết nối";
+            toolBtnSettings.Click += (s, ev) => { using var form = new SettingsForm(); form.ShowDialog(); };
 
 
 
@@ -564,7 +569,7 @@ namespace document_sharing_manager.Documents
             // Get object from row bound item
             if (dgvDocuments.SelectedRows[0].DataBoundItem is Document doc)
             {
-                AddEditForm form = new(doc.Id);
+                using var form = new AddEditForm(doc.Id);
                 if (form.ShowDialog() == DialogResult.OK)
                 {
                     TriggerRefresh();
@@ -753,10 +758,8 @@ namespace document_sharing_manager.Documents
         {
             if (dgvDocuments.SelectedRows.Count > 0 && dgvDocuments.SelectedRows[0].DataBoundItem is Document doc)
             {
-                using (PersonalNoteForm form = new PersonalNoteForm(doc.Id, doc.Ten))
-                {
-                    form.ShowDialog();
-                }
+                using var form = new PersonalNoteForm(doc.Id, doc.Ten);
+                form.ShowDialog();
             }
         }
 
@@ -768,140 +771,136 @@ namespace document_sharing_manager.Documents
                 return;
             }
 
-            // Get existing collections
             var collections = DatabaseHelper.GetCollections();
+            using var dialog = new Form();
+            dialog.Text = "Thêm vào bộ sưu tập";
+            dialog.Size = new Size(380, 300);
+            dialog.FormBorderStyle = FormBorderStyle.FixedDialog;
+            dialog.StartPosition = FormStartPosition.CenterParent;
+            dialog.MaximizeBox = false;
+            dialog.MinimizeBox = false;
+            dialog.BackColor = AppTheme.BackgroundMain;
+            dialog.ShowInTaskbar = false;
+            if (this.Icon != null) dialog.Icon = this.Icon;
 
-            using (var dialog = new Form())
+            var lblInfo = new Label
             {
-                dialog.Text = "Thêm vào bộ sưu tập";
-                dialog.Size = new Size(380, 300);
-                dialog.FormBorderStyle = FormBorderStyle.FixedDialog;
-                dialog.StartPosition = FormStartPosition.CenterParent;
-                dialog.MaximizeBox = false;
-                dialog.MinimizeBox = false;
-                dialog.BackColor = AppTheme.BackgroundMain;
-                dialog.ShowInTaskbar = false;
-                if (this.Icon != null) dialog.Icon = this.Icon;
+                Text = $"Tài liệu: {doc.Ten}",
+                Font = AppTheme.FontSmallBold,
+                ForeColor = AppTheme.TextPrimary,
+                Location = new Point(20, 15),
+                AutoSize = true,
+                MaximumSize = new Size(330, 0)
+            };
 
-                var lblInfo = new Label
-                {
-                    Text = $"Tài liệu: {doc.Ten}",
-                    Font = AppTheme.FontSmallBold,
-                    ForeColor = AppTheme.TextPrimary,
-                    Location = new Point(20, 15),
-                    AutoSize = true,
-                    MaximumSize = new Size(330, 0)
-                };
+            var lblSelect = new Label
+            {
+                Text = "Chọn bộ sưu tập:",
+                Font = AppTheme.FontSmall,
+                ForeColor = AppTheme.TextSecondary,
+                Location = new Point(20, 50),
+                AutoSize = true
+            };
 
-                var lblSelect = new Label
-                {
-                    Text = "Chọn bộ sưu tập:",
-                    Font = AppTheme.FontSmall,
-                    ForeColor = AppTheme.TextSecondary,
-                    Location = new Point(20, 50),
-                    AutoSize = true
-                };
+            var lstCollections = new ListBox
+            {
+                Location = new Point(20, 72),
+                Size = new Size(325, 100),
+                Font = AppTheme.FontBody,
+                BackColor = AppTheme.InputBackground
+            };
 
-                var lstCollections = new ListBox
+            // Populate list
+            foreach (DataRow row in collections.Rows)
+            {
+                lstCollections.Items.Add(new CollectionItem
                 {
-                    Location = new Point(20, 72),
-                    Size = new Size(325, 100),
-                    Font = AppTheme.FontBody,
-                    BackColor = AppTheme.InputBackground
-                };
+                    Id = Convert.ToInt32(row["id"]),
+                    Name = row["name"].ToString(),
+                    Count = Convert.ToInt32(row["item_count"])
+                });
+            }
 
-                // Populate list
-                foreach (DataRow row in collections.Rows)
+            var lblNew = new Label
+            {
+                Text = "Hoặc tạo mới:",
+                Font = AppTheme.FontSmall,
+                ForeColor = AppTheme.TextSecondary,
+                Location = new Point(20, 180),
+                AutoSize = true
+            };
+
+            var txtNew = new TextBox
+            {
+                Location = new Point(20, 200),
+                Size = new Size(220, 25),
+                Font = AppTheme.FontBody,
+                BackColor = AppTheme.InputBackground,
+                Text = "Tên bộ sưu tập mới...",
+                ForeColor = Color.Gray
+            };
+            txtNew.GotFocus += (s2, e2) => { if (txtNew.ForeColor == Color.Gray) { txtNew.Text = ""; txtNew.ForeColor = AppTheme.TextPrimary; } };
+            txtNew.LostFocus += (s2, e2) => { if (string.IsNullOrWhiteSpace(txtNew.Text)) { txtNew.Text = "Tên bộ sưu tập mới..."; txtNew.ForeColor = Color.Gray; } };
+
+            var btnAdd = new Button
+            {
+                Text = "Thêm",
+                Size = new Size(90, 32),
+                Location = new Point(250, 198),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = AppTheme.StatusSuccess,
+                ForeColor = Color.White,
+                Font = AppTheme.FontButton,
+                Cursor = Cursors.Hand
+            };
+            btnAdd.FlatAppearance.BorderSize = 0;
+
+            btnAdd.Click += (s, ev) =>
+            {
+                int collectionId = -1;
+
+                // Create new collection if text entered
+                if (!string.IsNullOrWhiteSpace(txtNew.Text) && txtNew.ForeColor != Color.Gray)
                 {
-                    lstCollections.Items.Add(new CollectionItem
+                    DatabaseHelper.CreateCollection(txtNew.Text.Trim(), "");
+                    // Get new collection id
+                    var updated = DatabaseHelper.GetCollections();
+                    foreach (DataRow row in updated.Rows)
                     {
-                        Id = Convert.ToInt32(row["id"]),
-                        Name = row["name"].ToString(),
-                        Count = Convert.ToInt32(row["item_count"])
-                    });
-                }
-
-                var lblNew = new Label
-                {
-                    Text = "Hoặc tạo mới:",
-                    Font = AppTheme.FontSmall,
-                    ForeColor = AppTheme.TextSecondary,
-                    Location = new Point(20, 180),
-                    AutoSize = true
-                };
-
-                var txtNew = new TextBox
-                {
-                    Location = new Point(20, 200),
-                    Size = new Size(220, 25),
-                    Font = AppTheme.FontBody,
-                    BackColor = AppTheme.InputBackground,
-                    Text = "Tên bộ sưu tập mới...",
-                    ForeColor = Color.Gray
-                };
-                txtNew.GotFocus += (s2, e2) => { if (txtNew.ForeColor == Color.Gray) { txtNew.Text = ""; txtNew.ForeColor = AppTheme.TextPrimary; } };
-                txtNew.LostFocus += (s2, e2) => { if (string.IsNullOrWhiteSpace(txtNew.Text)) { txtNew.Text = "Tên bộ sưu tập mới..."; txtNew.ForeColor = Color.Gray; } };
-
-                var btnAdd = new Button
-                {
-                    Text = "Thêm",
-                    Size = new Size(90, 32),
-                    Location = new Point(250, 198),
-                    FlatStyle = FlatStyle.Flat,
-                    BackColor = AppTheme.StatusSuccess,
-                    ForeColor = Color.White,
-                    Font = AppTheme.FontButton,
-                    Cursor = Cursors.Hand
-                };
-                btnAdd.FlatAppearance.BorderSize = 0;
-
-                btnAdd.Click += (s, ev) =>
-                {
-                    int collectionId = -1;
-
-                    // Create new collection if text entered
-                    if (!string.IsNullOrWhiteSpace(txtNew.Text) && txtNew.ForeColor != Color.Gray)
-                    {
-                        DatabaseHelper.CreateCollection(txtNew.Text.Trim(), "");
-                        // Get new collection id
-                        var updated = DatabaseHelper.GetCollections();
-                        foreach (DataRow row in updated.Rows)
+                        if (row["name"].ToString() == txtNew.Text.Trim())
                         {
-                            if (row["name"].ToString() == txtNew.Text.Trim())
-                            {
-                                collectionId = Convert.ToInt32(row["id"]);
-                                break;
-                            }
+                            collectionId = Convert.ToInt32(row["id"]);
+                            break;
                         }
                     }
-                    else if (lstCollections.SelectedItem is CollectionItem selected)
+                }
+                else if (lstCollections.SelectedItem is CollectionItem selected)
+                {
+                    collectionId = selected.Id;
+                }
+                else
+                {
+                    MessageBox.Show("Vui lòng chọn hoặc tạo bộ sưu tập.", "Thông báo");
+                    return;
+                }
+
+                if (collectionId > 0)
+                {
+                    bool added = DatabaseHelper.AddDocumentToCollection(collectionId, doc.Id);
+                    if (added)
                     {
-                        collectionId = selected.Id;
+                        ToastNotification.Success($"Đã thêm vào bộ sưu tập!");
+                        dialog.Close();
                     }
                     else
                     {
-                        MessageBox.Show("Vui lòng chọn hoặc tạo bộ sưu tập.", "Thông báo");
-                        return;
+                        MessageBox.Show("Tài liệu đã có trong bộ sưu tập này.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
+                }
+            };
 
-                    if (collectionId > 0)
-                    {
-                        bool added = DatabaseHelper.AddDocumentToCollection(collectionId, doc.Id);
-                        if (added)
-                        {
-                            ToastNotification.Success($"Đã thêm vào bộ sưu tập!");
-                            dialog.Close();
-                        }
-                        else
-                        {
-                            MessageBox.Show("Tài liệu đã có trong bộ sưu tập này.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        }
-                    }
-                };
-
-                dialog.Controls.AddRange([lblInfo, lblSelect, lstCollections, lblNew, txtNew, btnAdd]);
-                dialog.ShowDialog(this);
-            }
+            dialog.Controls.AddRange([lblInfo, lblSelect, lstCollections, lblNew, txtNew, btnAdd]);
+            dialog.ShowDialog(this);
         }
 
         private void MenuCollectionsClick(object sender, EventArgs e) { new Management.CollectionManagementForm().ShowDialog(); }
@@ -910,104 +909,103 @@ namespace document_sharing_manager.Documents
         private void MenuFileExitClick(object sender, EventArgs e) => Application.Exit();
         private void MenuHelpAboutClick(object sender, EventArgs e)
         {
-            using (var aboutForm = new Form())
+            using var aboutForm = new Form();
+            aboutForm.Text = "Giới thiệu";
+            aboutForm.Size = new Size(420, 360);
+            aboutForm.FormBorderStyle = FormBorderStyle.FixedDialog;
+            aboutForm.StartPosition = FormStartPosition.CenterParent;
+            aboutForm.MaximizeBox = false;
+            aboutForm.MinimizeBox = false;
+            aboutForm.BackColor = AppTheme.BackgroundMain;
+            aboutForm.ShowInTaskbar = false;
+            if (this.Icon != null) aboutForm.Icon = this.Icon;
+
+            var lblAppName = new Label
             {
-                aboutForm.Text = "Giới thiệu";
-                aboutForm.Size = new Size(420, 360);
-                aboutForm.FormBorderStyle = FormBorderStyle.FixedDialog;
-                aboutForm.StartPosition = FormStartPosition.CenterParent;
-                aboutForm.MaximizeBox = false;
-                aboutForm.MinimizeBox = false;
-                aboutForm.BackColor = AppTheme.BackgroundMain;
-                aboutForm.ShowInTaskbar = false;
-                if (this.Icon != null) aboutForm.Icon = this.Icon;
+                Text = "Document Sharing Manager",
+                Font = new Font(AppTheme.FontFamily, 18F, FontStyle.Bold),
+                ForeColor = AppTheme.Primary,
+                Location = new Point(30, 25),
+                AutoSize = true
+            };
 
-                var lblAppName = new Label
-                {
-                    Text = "Document Sharing Manager",
-                    Font = new Font(AppTheme.FontFamily, 18F, FontStyle.Bold),
-                    ForeColor = AppTheme.Primary,
-                    Location = new Point(30, 25),
-                    AutoSize = true
-                };
+            var lblEdition = new Label
+            {
+                Text = "Professional Edition",
+                Font = new Font(AppTheme.FontFamily, 10F, FontStyle.Italic),
+                ForeColor = AppTheme.TextSecondary,
+                Location = new Point(32, 60),
+                AutoSize = true
+            };
 
-                var lblEdition = new Label
-                {
-                    Text = "Professional Edition",
-                    Font = new Font(AppTheme.FontFamily, 10F, FontStyle.Italic),
-                    ForeColor = AppTheme.TextSecondary,
-                    Location = new Point(32, 60),
-                    AutoSize = true
-                };
+            var lblVersion = new Label
+            {
+                Text = $"Phiên bản {AppVersion.Current}",
+                Font = AppTheme.FontBody,
+                ForeColor = AppTheme.TextPrimary,
+                Location = new Point(32, 95),
+                AutoSize = true
+            };
 
-                var lblVersion = new Label
-                {
-                    Text = $"Phiên bản {AppVersion.Current}",
-                    Font = AppTheme.FontBody,
-                    ForeColor = AppTheme.TextPrimary,
-                    Location = new Point(32, 95),
-                    AutoSize = true
-                };
+            var lblDesc = new Label
+            {
+                Text = "Document Sharing Manager\nProfessional OneDrive-style File Management",
+                Font = AppTheme.FontSmall,
+                ForeColor = AppTheme.TextSecondary,
+                Location = new Point(32, 125),
+                AutoSize = true
+            };
 
-                var lblDesc = new Label
-                {
-                    Text = "Document Sharing Manager\nProfessional OneDrive-style File Management",
-                    Font = AppTheme.FontSmall,
-                    ForeColor = AppTheme.TextSecondary,
-                    Location = new Point(32, 125),
-                    AutoSize = true
-                };
+            var lblStudent = new Label
+            {
+                Text = "Sinh viên thực hiện: Vũ Đức Dũng - TT601-K14\nCán bộ hướng dẫn: Lê Thị Mai",
+                Font = AppTheme.FontSmall,
+                ForeColor = AppTheme.TextPrimary,
+                Location = new Point(32, 170),
+                AutoSize = true
+            };
 
-                var lblStudent = new Label
-                {
-                    Text = "Sinh viên thực hiện: Vũ Đức Dũng - TT601-K14\nCán bộ hướng dẫn: Lê Thị Mai",
-                    Font = AppTheme.FontSmall,
-                    ForeColor = AppTheme.TextPrimary,
-                    Location = new Point(32, 170),
-                    AutoSize = true
-                };
+            var lblCopyright = new Label
+            {
+                Text = "© 2024-2025 hayato-shino05",
+                Font = AppTheme.FontSmall,
+                ForeColor = AppTheme.TextMuted,
+                Location = new Point(32, 215),
+                AutoSize = true
+            };
 
-                var lblCopyright = new Label
-                {
-                    Text = "© 2024-2025 hayato-shino05",
-                    Font = AppTheme.FontSmall,
-                    ForeColor = AppTheme.TextMuted,
-                    Location = new Point(32, 215),
-                    AutoSize = true
-                };
+            var lnkGitHub = new LinkLabel
+            {
+                Text = "GitHub: hayato-shino05/Document-Sharing",
+                Font = AppTheme.FontSmall,
+                Location = new Point(32, 240),
+                AutoSize = true
+            };
+            lnkGitHub.LinkClicked += (s, ev) =>
+                System.Diagnostics.Process.Start("https://github.com/hayato-shino05/Document-Sharing");
 
-                var lnkGitHub = new LinkLabel
-                {
-                    Text = "GitHub: hayato-shino05/Document-Sharing",
-                    Font = AppTheme.FontSmall,
-                    Location = new Point(32, 240),
-                    AutoSize = true
-                };
-                lnkGitHub.LinkClicked += (s, ev) =>
-                    System.Diagnostics.Process.Start("https://github.com/hayato-shino05/Document-Sharing");
+            var btnClose = new Button
+            {
+                Text = "Đóng",
+                Size = new Size(100, 36),
+                Location = new Point(290, 275),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = AppTheme.Primary,
+                ForeColor = Color.White,
+                Font = AppTheme.FontBody,
+                Cursor = Cursors.Hand,
+                DialogResult = DialogResult.OK
+            };
+            btnClose.FlatAppearance.BorderSize = 0;
 
-                var btnClose = new Button
-                {
-                    Text = "Đóng",
-                    Size = new Size(100, 36),
-                    Location = new Point(290, 275),
-                    FlatStyle = FlatStyle.Flat,
-                    BackColor = AppTheme.Primary,
-                    ForeColor = Color.White,
-                    Font = AppTheme.FontBody,
-                    Cursor = Cursors.Hand,
-                    DialogResult = DialogResult.OK
-                };
-                btnClose.FlatAppearance.BorderSize = 0;
+            aboutForm.Controls.AddRange([
+                lblAppName, lblEdition, lblVersion, lblDesc,
+                lblStudent, lblCopyright, lnkGitHub, btnClose
+            ]);
 
-                aboutForm.Controls.AddRange([
-                    lblAppName, lblEdition, lblVersion, lblDesc,
-                    lblStudent, lblCopyright, lnkGitHub, btnClose
-                ]);
-                aboutForm.AcceptButton = btnClose;
-                aboutForm.ShowDialog(this);
-            }
+            aboutForm.ShowDialog(this);
         }
+
         private void BtnThongKeClick(object sender, EventArgs e) { new Report().ShowDialog(); }
         private void BtnXuatClick(object sender, EventArgs e)
         {
@@ -1017,60 +1015,58 @@ namespace document_sharing_manager.Documents
                 return;
             }
 
-            using (var sfd = new SaveFileDialog())
+            using var sfd = new SaveFileDialog();
+            sfd.Title = "Xuất dữ liệu";
+            sfd.Filter = "CSV files (*.csv)|*.csv|Text files (*.txt)|*.txt";
+            sfd.FileName = $"DirectoryDocuments_{DateTime.Now:yyyyMMdd}";
+            sfd.DefaultExt = "csv";
+
+            if (sfd.ShowDialog() == DialogResult.OK)
             {
-                sfd.Title = "Xuất dữ liệu";
-                sfd.Filter = "CSV files (*.csv)|*.csv|Text files (*.txt)|*.txt";
-                sfd.FileName = $"DirectoryDocuments_{DateTime.Now:yyyyMMdd}";
-                sfd.DefaultExt = "csv";
-
-                if (sfd.ShowDialog() == DialogResult.OK)
+                try
                 {
-                    try
+                    using (var writer = new System.IO.StreamWriter(sfd.FileName, false, System.Text.Encoding.UTF8))
                     {
-                        using (var writer = new System.IO.StreamWriter(sfd.FileName, false, System.Text.Encoding.UTF8))
-                        {
-                            // Header
-                            writer.WriteLine("Tên tài liệu,Định dạng,Ngày thêm,Kích thước,Quan trọng,Tags,Đường dẫn");
+                        // Header
+                        writer.WriteLine("Tên tài liệu,Định dạng,Ngày thêm,Kích thước,Quan trọng,Tags,Đường dẫn");
 
-                            // Data from current binding
-                            var docs = dgvDocuments.DataSource as System.ComponentModel.BindingList<Document>
-                                      ?? (System.Collections.IEnumerable)dgvDocuments.DataSource as System.Collections.Generic.IEnumerable<Document>;
-                            if (docs != null)
+                        // Data from current binding
+                        var docs = dgvDocuments.DataSource as System.ComponentModel.BindingList<Document>
+                                  ?? (System.Collections.IEnumerable)dgvDocuments.DataSource as System.Collections.Generic.IEnumerable<Document>;
+                        if (docs != null)
+                        {
+                            foreach (var doc in docs)
                             {
-                                foreach (var doc in docs)
-                                {
-                                    string line = string.Join(",",
-                                        EscapeCsv(doc.Ten),
-                                        EscapeCsv(doc.DinhDang),
-                                        doc.NgayThem.ToString("dd/MM/yyyy"),
-                                        doc.KichThuocFormatted,
-                                        doc.QuanTrong ? "Có" : "Không",
-                                        EscapeCsv(doc.Tags ?? ""),
-                                        EscapeCsv(doc.DuongDan ?? "")
-                                    );
-                                    writer.WriteLine(line);
-                                }
+                                string line = string.Join(",",
+                                    EscapeCsv(doc.Ten),
+                                    EscapeCsv(doc.DinhDang),
+                                    doc.NgayThem.ToString("dd/MM/yyyy"),
+                                    doc.KichThuocFormatted,
+                                    doc.QuanTrong ? "Có" : "Không",
+                                    EscapeCsv(doc.Tags ?? ""),
+                                    EscapeCsv(doc.DuongDan ?? "")
+                                );
+                                writer.WriteLine(line);
                             }
                         }
-
-                        int exportedCount = 0;
-                        if (dgvDocuments.DataSource is System.ComponentModel.BindingList<Document> bl) exportedCount = bl.Count;
-                        else if (dgvDocuments.DataSource is List<Document> ll) exportedCount = ll.Count;
-
-                        var openResult = MessageBox.Show(
-                            $"Đã xuất thành công {exportedCount} tài liệu!\n\nBạn có muốn mở file?",
-                            "Xuất dữ liệu",
-                            MessageBoxButtons.YesNo,
-                            MessageBoxIcon.Information);
-
-                        if (openResult == DialogResult.Yes)
-                            System.Diagnostics.Process.Start(sfd.FileName);
                     }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show($"Lỗi khi xuất: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
+
+                    int exportedCount = 0;
+                    if (dgvDocuments.DataSource is System.ComponentModel.BindingList<Document> bl) exportedCount = bl.Count;
+                    else if (dgvDocuments.DataSource is List<Document> ll) exportedCount = ll.Count;
+
+                    var openResult = MessageBox.Show(
+                        $"Đã xuất thành công {exportedCount} tài liệu!\n\nBạn có muốn mở file?",
+                        "Xuất dữ liệu",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Information);
+
+                    if (openResult == DialogResult.Yes)
+                        System.Diagnostics.Process.Start(sfd.FileName);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Lỗi khi xuất: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
         }
@@ -1121,19 +1117,17 @@ namespace document_sharing_manager.Documents
 
         private void MenuBackupClick(object sender, EventArgs e)
         {
-            using (var sfd = new SaveFileDialog())
+            using var sfd = new SaveFileDialog();
+            sfd.Filter = "SQLite Database|*.db";
+            sfd.FileName = $"doc_sharing_backup_{DateTime.Now:yyyyMMdd_HHmmss}.db";
+            if (sfd.ShowDialog() == DialogResult.OK)
             {
-                sfd.Filter = "SQLite Database|*.db";
-                sfd.FileName = $"doc_sharing_backup_{DateTime.Now:yyyyMMdd_HHmmss}.db";
-                if (sfd.ShowDialog() == DialogResult.OK)
+                try
                 {
-                    try
-                    {
-                        DatabaseHelper.BackupDatabase(sfd.FileName);
-                        ToastNotification.Success("Đã sao lưu thành công!");
-                    }
-                    catch (Exception ex) { ShowError("Lỗi sao lưu: " + ex.Message); }
+                    DatabaseHelper.BackupDatabase(sfd.FileName);
+                    ToastNotification.Success("Đã sao lưu thành công!");
                 }
+                catch (Exception ex) { ShowError("Lỗi sao lưu: " + ex.Message); }
             }
         }
 
@@ -1147,19 +1141,17 @@ namespace document_sharing_manager.Documents
 
             if (confirm != DialogResult.Yes) return;
 
-            using (var ofd = new OpenFileDialog())
+            using var ofd = new OpenFileDialog();
+            ofd.Filter = "SQLite Database|*.db";
+            if (ofd.ShowDialog() == DialogResult.OK)
             {
-                ofd.Filter = "SQLite Database|*.db";
-                if (ofd.ShowDialog() == DialogResult.OK)
+                try
                 {
-                    try
-                    {
-                        DatabaseHelper.RestoreDatabase(ofd.FileName);
-                        MessageBox.Show("Khôi phục thành công! Ứng dụng sẽ khởi động lại.", "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        Application.Restart();
-                    }
-                    catch (Exception ex) { ShowError("Lỗi khôi phục: " + ex.Message); }
+                    DatabaseHelper.RestoreDatabase(ofd.FileName);
+                    MessageBox.Show("Khôi phục thành công! Ứng dụng sẽ khởi động lại.", "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    Application.Restart();
                 }
+                catch (Exception ex) { ShowError("Lỗi khôi phục: " + ex.Message); }
             }
         }
 
@@ -1260,8 +1252,8 @@ namespace document_sharing_manager.Documents
             };
             headerPanel.Paint += (s, ev) =>
             {
-                using (var pen = new Pen(AppTheme.BorderLight))
-                    ev.Graphics.DrawLine(pen, 0, headerPanel.Height - 1, headerPanel.Width, headerPanel.Height - 1);
+                using var pen = new Pen(AppTheme.BorderLight);
+                ev.Graphics.DrawLine(pen, 0, headerPanel.Height - 1, headerPanel.Width, headerPanel.Height - 1);
             };
             headerPanel.Controls.Add(lblTreeHeader);
 
@@ -1278,10 +1270,10 @@ namespace document_sharing_manager.Documents
             // Right border for tree panel
             splitCategory.Panel1.Paint += (s, ev) =>
             {
-                using (var pen = new Pen(AppTheme.BorderLight))
-                    ev.Graphics.DrawLine(pen,
-                        splitCategory.Panel1.Width - 1, 0,
-                        splitCategory.Panel1.Width - 1, splitCategory.Panel1.Height);
+                using var pen = new Pen(AppTheme.BorderLight);
+                ev.Graphics.DrawLine(pen,
+                    splitCategory.Panel1.Width - 1, 0,
+                    splitCategory.Panel1.Width - 1, splitCategory.Panel1.Height);
             };
 
             splitCategory.Panel1.Controls.Add(pnlTree);
@@ -1406,9 +1398,9 @@ namespace document_sharing_manager.Documents
             else if (isHovered)
             {
                 var hoverRect = new Rectangle(4, e.Bounds.Y + 2, treeWidth - 8, e.Bounds.Height - 4);
-                using (var path = AppTheme.CreateRoundedRectangle(hoverRect, 6))
-                using (var brush = new SolidBrush(Color.FromArgb(10, 0, 0, 0)))
-                    g.FillPath(brush, path);
+                using var path = AppTheme.CreateRoundedRectangle(hoverRect, 6);
+                using var brush = new SolidBrush(Color.FromArgb(10, 0, 0, 0));
+                g.FillPath(brush, path);
             }
 
             // Layout
@@ -1444,8 +1436,8 @@ namespace document_sharing_manager.Documents
             // Separator line above (if not first node) - push down for breathing room
             if (node.PrevNode != null)
             {
-                using (var pen = new Pen(AppTheme.BorderLight))
-                    g.DrawLine(pen, 12, e.Bounds.Y + 6, treeWidth - 12, e.Bounds.Y + 6);
+                using var pen = new Pen(AppTheme.BorderLight);
+                g.DrawLine(pen, 12, e.Bounds.Y + 6, treeWidth - 12, e.Bounds.Y + 6);
             }
 
             // Header text (uppercase, small, muted) - pushed to lower part of cell
@@ -1466,44 +1458,38 @@ namespace document_sharing_manager.Documents
         private void DrawCountBadge(Graphics g, int count, int treeWidth, int centerY, bool isSelected)
         {
             string countText = count.ToString();
-            using (var countFont = new Font(AppTheme.FontFamily, 7.5f))
-            {
-                var countSize = TextRenderer.MeasureText(countText, countFont);
-                int badgeW = Math.Max(countSize.Width + 2, 22);
-                int badgeX = treeWidth - badgeW - 10;
-                int badgeY = centerY - 9;
+            using var countFont = new Font(AppTheme.FontFamily, 7.5f);
+            var countSize = TextRenderer.MeasureText(countText, countFont);
+            int badgeW = Math.Max(countSize.Width + 2, 22);
+            int badgeX = treeWidth - badgeW - 10;
+            int badgeY = centerY - 9;
 
-                using (var path = AppTheme.CreateRoundedRectangle(new Rectangle(badgeX, badgeY, badgeW, 18), 9))
-                {
-                    var badgeBg = isSelected ? AppTheme.Primary : Color.FromArgb(229, 229, 229);
-                    var badgeFg = isSelected ? Color.White : AppTheme.TextSecondary;
+            using var path = AppTheme.CreateRoundedRectangle(new Rectangle(badgeX, badgeY, badgeW, 18), 9);
+            var badgeBg = isSelected ? AppTheme.Primary : Color.FromArgb(229, 229, 229);
+            var badgeFg = isSelected ? Color.White : AppTheme.TextSecondary;
 
-                    using (var brush = new SolidBrush(badgeBg))
-                        g.FillPath(brush, path);
+            using var brush = new SolidBrush(badgeBg);
+            g.FillPath(brush, path);
 
-                    TextRenderer.DrawText(g, countText, countFont,
-                        new Rectangle(badgeX, badgeY, badgeW, 18), badgeFg,
-                        TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
-                }
-            }
+            TextRenderer.DrawText(g, countText, countFont,
+                new Rectangle(badgeX, badgeY, badgeW, 18), badgeFg,
+                TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
         }
 
         private void DrawChevron(Graphics g, bool expanded, int x, int y, Color color)
         {
-            using (var pen = new Pen(color, 1.5f))
+            using var pen = new Pen(color, 1.5f);
+            pen.StartCap = LineCap.Round;
+            pen.EndCap = LineCap.Round;
+            if (expanded)
             {
-                pen.StartCap = LineCap.Round;
-                pen.EndCap = LineCap.Round;
-                if (expanded)
-                {
-                    g.DrawLine(pen, x - 3, y - 2, x, y + 1);
-                    g.DrawLine(pen, x, y + 1, x + 3, y - 2);
-                }
-                else
-                {
-                    g.DrawLine(pen, x - 1, y - 3, x + 2, y);
-                    g.DrawLine(pen, x + 2, y, x - 1, y + 3);
-                }
+                g.DrawLine(pen, x - 3, y - 2, x, y + 1);
+                g.DrawLine(pen, x, y + 1, x + 3, y - 2);
+            }
+            else
+            {
+                g.DrawLine(pen, x - 1, y - 3, x + 2, y);
+                g.DrawLine(pen, x + 2, y, x - 1, y + 3);
             }
         }
 
@@ -1601,7 +1587,7 @@ namespace document_sharing_manager.Documents
                     WHERE ci.collection_id = @collectionId AND (t.is_deleted IS NULL OR t.is_deleted = 0)
                     ORDER BY t.ngay_them DESC";
                 var param = new System.Data.SQLite.SQLiteParameter("@collectionId", collectionId);
-                var dt = DatabaseHelper.ExecuteQuery(query, new[] { param });
+                var dt = DatabaseHelper.ExecuteQuery(query, [param]);
 
                 var docs = new List<Document>();
                 foreach (DataRow row in dt.Rows)
@@ -1642,17 +1628,11 @@ namespace document_sharing_manager.Documents
             }
         }
 
-        private class TreeFilterInfo
+        private class TreeFilterInfo(string filterType, string filterValue)
         {
-            public string FilterType { get; }
-            public string FilterValue { get; }
+            public string FilterType { get; } = filterType;
+            public string FilterValue { get; } = filterValue;
             public int Count { get; set; }
-
-            public TreeFilterInfo(string filterType, string filterValue)
-            {
-                FilterType = filterType;
-                FilterValue = filterValue;
-            }
         }
 
         #endregion
@@ -1693,7 +1673,7 @@ namespace document_sharing_manager.Documents
             };
         }
 
-        private static readonly string[] PreviewableExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".ico", ".tiff", ".tif", ".webp", ".mp4", ".avi", ".mkv", ".mov", ".wmv", ".webm", ".flv", ".m4v" };
+        private static readonly string[] PreviewableExtensions = [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".ico", ".tiff", ".tif", ".webp", ".mp4", ".avi", ".mkv", ".mov", ".wmv", ".webm", ".flv", ".m4v"];
 
         private void UpdatePreview()
         {
@@ -1756,7 +1736,7 @@ namespace document_sharing_manager.Documents
                     // Call logic to add file...
                     // Here we should probably call a Service method directly
                     // For now, open AddEditForm
-                    AddEditForm form = new AddEditForm();
+                    using var form = new AddEditForm();
                     form.txtDuongDan.Text = file;
                     form.txtTen.Text = Path.GetFileNameWithoutExtension(file);
                     form.ShowDialog();
@@ -1783,7 +1763,7 @@ namespace document_sharing_manager.Documents
             {
                 DataTable dt = DatabaseHelper.ExecuteQuery("SELECT id, ten, duong_dan FROM tai_lieu");
                 int missingCount = 0;
-                List<int> missingIds = new List<int>();
+                List<int> missingIds = [];
 
                 foreach (DataRow row in dt.Rows)
                 {
@@ -1810,7 +1790,7 @@ namespace document_sharing_manager.Documents
                         {
                             DatabaseHelper.ExecuteNonQuery(
                                 "UPDATE tai_lieu SET ten = '[MISSING] ' || ten WHERE id = @id AND ten NOT LIKE '[MISSING]%'",
-                                new System.Data.SQLite.SQLiteParameter[] { new System.Data.SQLite.SQLiteParameter("@id", id) });
+                                [new System.Data.SQLite.SQLiteParameter("@id", id)]);
                         }
                         ToastNotification.Success($"Đã đánh dấu {missingCount} tài liệu bị thiếu.");
                         TriggerRefresh();
