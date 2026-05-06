@@ -301,6 +301,10 @@ namespace document_sharing_manager.Documents
             toolBtnStats.Image = IconHelper.CreateChartIcon(16, AppTheme.Primary);
             toolBtnStats.ToolTipText = "Thống kê";
 
+            toolBtnSettings.Image = IconHelper.CreateSettingsIcon(16, AppTheme.TextSecondary);
+            toolBtnSettings.ToolTipText = "Cài đặt kết nối";
+            toolBtnSettings.Click += (s, ev) => { using var form = new SettingsForm(); form.ShowDialog(); };
+
 
 
             // Initialize Presenter

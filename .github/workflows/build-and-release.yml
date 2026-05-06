@@ -1,0 +1,73 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Add msbuild to PATH
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Restore NuGet Packages
+      run: msbuild -t:restore
+
+    # 1. Build Client (WinForms)
+    - name: Build WinForms Client
+      run: msbuild document-sharing-manager\document-sharing-manager.csproj /p:Configuration=Release /p:OutputPath=..\publish\client
+
+    # 2. Build Server (API)
+    - name: Build API Server
+      run: dotnet publish document-sharing-manager-api\document-sharing-manager-api.csproj -c Release -o publish/server
+
+    # 3. Prepare Packages
+    - name: Create Packages
+      shell: pwsh
+      run: |
+        # Create Client-Only Zip
+        Compress-Archive -Path publish/client/* -DestinationPath publish/DocumentSharing_Client_Only.zip
+        
+        # Create Server-Only Zip
+        Compress-Archive -Path publish/server/* -DestinationPath publish/DocumentSharing_Server_Only.zip
+        
+        # Create Full Bundle (Combined)
+        New-Item -ItemType Directory -Force -Path publish/full_bundle/Client
+        New-Item -ItemType Directory -Force -Path publish/full_bundle/Server
+        Copy-Item -Path publish/client/* -Destination publish/full_bundle/Client -Recurse
+        Copy-Item -Path publish/server/* -Destination publish/full_bundle/Server -Recurse
+        
+        # Add a quick start script for Full Bundle
+        "@echo off`nstart Client\document-sharing-manager.exe`necho Server is starting...`ncd Server`ndotnet document-sharing-manager-api.dll" | Out-File -FilePath publish/full_bundle/Start_FullStack.bat -Encoding ascii
+        
+        Compress-Archive -Path publish/full_bundle/* -DestinationPath publish/DocumentSharing_Full_Bundle.zip
+
+    # 4. Upload Artifacts
+    - name: Upload Client Package
+      uses: actions/upload-artifact@v4
+      with:
+        name: DocumentSharing_Client_Only
+        path: publish/DocumentSharing_Client_Only.zip
+
+    - name: Upload Server Package
+      uses: actions/upload-artifact@v4
+      with:
+        name: DocumentSharing_Server_Only
+        path: publish/DocumentSharing_Server_Only.zip
+
+    - name: Upload Full Bundle
+      uses: actions/upload-artifact@v4
+      with:
+        name: DocumentSharing_Full_Bundle
+        path: publish/DocumentSharing_Full_Bundle.zip
