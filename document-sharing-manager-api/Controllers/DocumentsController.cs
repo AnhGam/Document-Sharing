@@ -96,6 +96,49 @@ namespace document_sharing_manager_api.Controllers
             return NoContent();
         }
 
+        [HttpGet("{id}/download")]
+        public async Task<IActionResult> Download(int id, CancellationToken ct)
+        {
+            var document = await _repository.GetByIdAndUserIdAsync(id, CurrentUserId, ct);
+            if (document == null)
+                return NotFound();
+
+            return await SendFileResponse(document, ct);
+        }
+
+        [HttpGet("remote/{remoteId}/download")]
+        public async Task<IActionResult> DownloadByRemoteId(Guid remoteId, CancellationToken ct)
+        {
+            var document = await _repository.GetByRemoteIdAsync(remoteId, ct);
+            if (document == null || document.UserId != CurrentUserId)
+                return NotFound();
+
+            return await SendFileResponse(document, ct);
+        }
+
+        private async Task<IActionResult> SendFileResponse(Document document, CancellationToken ct)
+        {
+            try
+            {
+                var stream = await _storageService.GetFileAsync(document.DuongDan, ct);
+                string extension = System.IO.Path.GetExtension(document.DuongDan).ToLowerInvariant();
+                string contentType = extension switch
+                {
+                    ".pdf" => "application/pdf",
+                    ".jpg" or ".jpeg" => "image/jpeg",
+                    ".png" => "image/png",
+                    ".txt" => "text/plain",
+                    _ => "application/octet-stream"
+                };
+
+                return File(stream, contentType, document.Ten);
+            }
+            catch (System.IO.FileNotFoundException)
+            {
+                return NotFound(new { Message = "File not found on server storage." });
+            }
+        }
+
         [HttpPost("sync-stream")]
         public async Task<ActionResult<SyncResponse>> SyncStream([FromForm] Guid remoteId, [FromForm] int localVersion, [FromForm] string? ten, [FromForm] string? ghiChu, IFormFile? file, CancellationToken ct)
         {
@@ -235,7 +278,7 @@ namespace document_sharing_manager_api.Controllers
             [FromQuery] bool? isImportant,
             CancellationToken ct)
         {
-            var results = await _repository.SearchAdvancedAsync(keyword ?? "", format ?? "", fromDate, toDate, minSize, maxSize, isImportant, CurrentUserId, ct);
+            var results = await _repository.SearchAdvancedAsync(keyword ?? "", format ?? "", fromDate, toDate, minSize, maxSize, isImportant, CurrentUserId, null, ct);
             return Ok(results);
         }
     }

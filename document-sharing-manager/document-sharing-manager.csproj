@@ -158,6 +158,9 @@
     <Compile Include="Management\FileIntegrityCheckForm.Designer.cs">
       <DependentUpon>FileIntegrityCheckForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Management\JoinServerForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <EmbeddedResource Include="Documents\AddEditForm.resx">
       <DependentUpon>AddEditForm.cs</DependentUpon>
     </EmbeddedResource>

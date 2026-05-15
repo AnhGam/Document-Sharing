@@ -112,7 +112,23 @@ namespace document_sharing_manager.Core.Data
                     version INTEGER DEFAULT 1,
                     sync_status INTEGER DEFAULT 0, -- 0: Synced, 1: PendingUpload, 2: PendingDownload, 3: Conflict
                     local_version INTEGER DEFAULT 1,
-                    remote_id TEXT NOT NULL
+                    remote_id TEXT NOT NULL,
+                    server_id INTEGER
+                );
+
+                -- Bảng quản lý các server đã kết nối
+                CREATE TABLE IF NOT EXISTS managed_servers (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    base_url TEXT NOT NULL UNIQUE,
+                    access_token TEXT,
+                    refresh_token TEXT,
+                    server_password TEXT,
+                    is_active INTEGER DEFAULT 1,
+                    last_sync_date DATETIME,
+                    connection_status INTEGER DEFAULT 0, -- 0: Connected, 1: Unauthorized, 2: Offline
+                    created_at DATETIME DEFAULT (datetime('now', 'localtime')),
+                    updated_at DATETIME
                 );
 
                 -- Bảng collections (bộ sưu tập)
@@ -165,6 +181,7 @@ namespace document_sharing_manager.Core.Data
             MigrateAddColumn(conn, "tai_lieu", "sync_status", "INTEGER DEFAULT 0");
             MigrateAddColumn(conn, "tai_lieu", "local_version", "INTEGER DEFAULT 1");
             MigrateAddColumn(conn, "tai_lieu", "remote_id", "TEXT");
+            MigrateAddColumn(conn, "tai_lieu", "server_id", "INTEGER");
             
             // Ensure all documents have a remote_id if they don't
             using (var cmdFill = new SQLiteCommand("UPDATE tai_lieu SET remote_id = lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-' || '4' || substr(hex(randomblob(2)), 2) || '-' || substr('89ab', abs(random()) % 4 + 1, 1) || substr(hex(randomblob(2)), 2) || '-' || hex(randomblob(6))) WHERE remote_id IS NULL OR remote_id = ''", conn))
@@ -1223,6 +1240,101 @@ namespace document_sharing_manager.Core.Data
                 LIMIT 5";
             
             return ExecuteQuery(query, [new("@docId", docId)]);
+        }
+
+        #endregion
+
+        #region Managed Servers Methods
+
+        /// <summary>
+        /// Lấy danh sách tất cả các server đã join
+        /// </summary>
+        public static List<ManagedServer> GetManagedServers()
+        {
+            string query = "SELECT * FROM managed_servers ORDER BY created_at DESC";
+            DataTable dt = ExecuteQuery(query);
+            List<ManagedServer> servers = [];
+
+            foreach (DataRow row in dt.Rows)
+            {
+                servers.Add(new ManagedServer
+                {
+                    Id = Convert.ToInt32(row["id"]),
+                    Name = row["name"].ToString(),
+                    BaseUrl = row["base_url"].ToString(),
+                    AccessToken = row["access_token"].ToString(),
+                    RefreshToken = row["refresh_token"].ToString(),
+                    ServerPassword = row["server_password"].ToString(),
+                    IsActive = Convert.ToInt32(row["is_active"]) == 1,
+                    ConnectionStatus = Convert.ToInt32(row["connection_status"]),
+                    LastSyncDate = row["last_sync_date"] != DBNull.Value ? (DateTime?)Convert.ToDateTime(row["last_sync_date"]) : null
+                });
+            }
+
+            return servers;
+        }
+
+        /// <summary>
+        /// Thêm một server mới
+        /// </summary>
+        public static bool InsertServer(string name, string url, string? accessToken = null, string? refreshToken = null, string? password = null)
+        {
+            string query = @"INSERT INTO managed_servers (name, base_url, access_token, refresh_token, server_password)
+                            VALUES (@name, @url, @token, @refresh, @pass)";
+
+            System.Data.SQLite.SQLiteParameter[] parameters = 
+            [
+                new("@name", name),
+                new("@url", url.TrimEnd('/')),
+                new("@token", accessToken ?? (object)DBNull.Value),
+                new("@refresh", refreshToken ?? (object)DBNull.Value),
+                new("@pass", password ?? (object)DBNull.Value)
+            ];
+
+            return ExecuteNonQuery(query, parameters) > 0;
+        }
+
+        /// <summary>
+        /// Cập nhật thông tin Server (ví dụ sau khi sync xong hoặc đổi token)
+        /// </summary>
+        public static bool UpdateServer(ManagedServer server)
+        {
+            string query = @"UPDATE managed_servers SET 
+                            name = @name, 
+                            access_token = @token, 
+                            refresh_token = @refresh, 
+                            is_active = @active, 
+                            last_sync_date = @sync,
+                            connection_status = @status,
+                            updated_at = datetime('now', 'localtime')
+                            WHERE id = @id";
+
+            System.Data.SQLite.SQLiteParameter[] parameters = 
+            [
+                new("@id", server.Id),
+                new("@name", server.Name),
+                new("@token", server.AccessToken),
+                new("@refresh", server.RefreshToken),
+                new("@active", server.IsActive ? 1 : 0),
+                new("@sync", server.LastSyncDate.HasValue ? (object)server.LastSyncDate.Value : DBNull.Value),
+                new("@status", server.ConnectionStatus)
+            ];
+
+            return ExecuteNonQuery(query, parameters) > 0;
+        }
+
+        /// <summary>
+        /// Xóa server khỏi danh sách (ngắt kết nối)
+        /// </summary>
+        public static bool DeleteServer(int serverId)
+        {
+            // Xóa tài liệu thuộc server này hoặc để lại tùy business logic. Ở đây ta giữ lại tài liệu nhưng xóa server_id?
+            // Tốt nhất là xóa luôn tài liệu metadata để tránh rác.
+            string deleteDocs = "UPDATE tai_lieu SET is_deleted = 1 WHERE server_id = @id";
+            ExecuteNonQuery(deleteDocs, [new("@id", serverId)]);
+
+            string query = "DELETE FROM managed_servers WHERE id = @id";
+            return ExecuteNonQuery(query, [new("@id", serverId)]) > 0;
         }
 
         #endregion

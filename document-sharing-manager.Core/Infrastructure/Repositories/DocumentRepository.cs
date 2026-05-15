@@ -56,6 +56,13 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
             return ExecuteAndMap("SELECT * FROM tai_lieu WHERE (is_deleted IS NULL OR is_deleted = 0) ORDER BY ngay_them DESC");
         }
 
+        public List<Document> GetByServer(int serverId)
+        {
+            string query = "SELECT * FROM tai_lieu WHERE server_id = @serverId AND (is_deleted IS NULL OR is_deleted = 0) ORDER BY ngay_them DESC";
+            SQLiteParameter[] parameters = [new("@serverId", serverId)];
+            return ExecuteAndMap(query, parameters);
+        }
+
         public async Task<Document?> GetByPathAsync(string path, CancellationToken ct = default)
         {
             return await Task.Run(() => 
@@ -87,7 +94,7 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
              return ExecuteAndMap(query, parameters);
         }
 
-        public List<Document> SearchAdvanced(string keyword, string format, DateTime? fromDate, DateTime? toDate, decimal? minSize, decimal? maxSize, bool? isImportant)
+        public List<Document> SearchAdvanced(string keyword, string format, DateTime? fromDate, DateTime? toDate, decimal? minSize, decimal? maxSize, bool? isImportant, int? serverId = null)
         {
             string baseQuery = @"SELECT * FROM tai_lieu WHERE (is_deleted IS NULL OR is_deleted = 0)";
             List<SQLiteParameter> parameterList = [];
@@ -131,6 +138,12 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
             if (isImportant.HasValue && isImportant.Value == true)
             {
                 baseQuery += " AND quan_trong = 1";
+            }
+
+            if (serverId.HasValue)
+            {
+                baseQuery += " AND server_id = @serverId";
+                parameterList.Add(new("@serverId", serverId.Value));
             }
 
             baseQuery += " ORDER BY ngay_them DESC";
@@ -255,7 +268,7 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
             return await Task.Run(() => ExecuteAndMap(query, parameters));
         }
 
-        public async Task<List<Document>> SearchAdvancedAsync(string keyword, string format, DateTime? fromDate, DateTime? toDate, decimal? minSize, decimal? maxSize, bool? isImportant, int userId, CancellationToken ct = default)
+        public async Task<List<Document>> SearchAdvancedAsync(string keyword, string format, DateTime? fromDate, DateTime? toDate, decimal? minSize, decimal? maxSize, bool? isImportant, int userId, int? serverId = null, CancellationToken ct = default)
         {
             string baseQuery = @"SELECT * FROM tai_lieu WHERE (is_deleted IS NULL OR is_deleted = 0) AND user_id = @userId";
             List<SQLiteParameter> parameterList = [];
@@ -300,6 +313,12 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
             if (isImportant.HasValue && isImportant.Value == true)
             {
                 baseQuery += " AND quan_trong = 1";
+            }
+
+            if (serverId.HasValue)
+            {
+                baseQuery += " AND server_id = @serverId";
+                parameterList.Add(new("@serverId", serverId.Value));
             }
 
             baseQuery += " ORDER BY ngay_them DESC";

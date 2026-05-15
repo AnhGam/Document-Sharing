@@ -123,7 +123,7 @@ namespace document_sharing_manager.Services
                         }
 
                         // Signal engine to process
-                        _engine.Enqueue(doc, SyncType.Upload);
+                        _engine.Enqueue(doc, SyncType.Upload, doc.ServerId ?? 0);
                     
                     System.Diagnostics.Debug.WriteLine($"File change detected and enqueued: {fileName}");
                 }

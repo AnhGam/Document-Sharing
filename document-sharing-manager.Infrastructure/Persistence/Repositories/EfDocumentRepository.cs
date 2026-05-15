@@ -105,14 +105,14 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
             return await query.ToListAsync(ct);
         }
 
-        public async Task<List<Document>> SearchAdvancedAsync(string keyword, string format, DateTime? fromDate, DateTime? toDate, decimal? minSize, decimal? maxSize, bool? isImportant, int userId, CancellationToken ct = default)
+        public async Task<List<Document>> SearchAdvancedAsync(string keyword, string format, DateTime? fromDate, DateTime? toDate, decimal? minSize, decimal? maxSize, bool? isImportant, int userId, int? serverId = null, CancellationToken ct = default)
         {
             var query = _context.Documents.AsNoTracking().Where(d => d.UserId == userId).AsQueryable();
 
             if (!string.IsNullOrEmpty(keyword))
                 query = query.Where(d => d.Ten.Contains(keyword));
 
-            if (!string.IsNullOrEmpty(format))
+            if (!string.IsNullOrEmpty(format) && format != "Tất cả")
                 query = query.Where(d => d.DinhDang == format);
 
             if (fromDate.HasValue)
@@ -130,6 +130,9 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
             if (isImportant.HasValue)
                 query = query.Where(d => d.QuanTrong == isImportant.Value);
 
+            if (serverId.HasValue)
+                query = query.Where(d => d.ServerId == serverId.Value);
+
             return await query.ToListAsync(ct);
         }
 
@@ -137,7 +140,12 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
 
         public List<Document> GetAll()
         {
-            return [.. _context.Documents.AsNoTracking()];
+            return [.. _context.Documents.AsNoTracking().Where(d => !d.IsDeleted)];
+        }
+
+        public List<Document> GetByServer(int serverId)
+        {
+            return [.. _context.Documents.AsNoTracking().Where(d => d.ServerId == serverId && !d.IsDeleted)];
         }
 
         public Document? GetById(int id)
@@ -155,14 +163,14 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
                 .Where(d => d.Ten.Contains(keyword) || (d.GhiChu != null && d.GhiChu.Contains(keyword)))];
         }
 
-        public List<Document> SearchAdvanced(string keyword, string format, DateTime? fromDate, DateTime? toDate, decimal? minSize, decimal? maxSize, bool? isImportant)
+        public List<Document> SearchAdvanced(string keyword, string format, DateTime? fromDate, DateTime? toDate, decimal? minSize, decimal? maxSize, bool? isImportant, int? serverId = null)
         {
-            var query = _context.Documents.AsNoTracking().AsQueryable();
+            var query = _context.Documents.AsNoTracking().Where(d => !d.IsDeleted).AsQueryable();
 
             if (!string.IsNullOrEmpty(keyword))
                 query = query.Where(d => d.Ten.Contains(keyword));
 
-            if (!string.IsNullOrEmpty(format))
+            if (!string.IsNullOrEmpty(format) && format != "Tất cả")
                 query = query.Where(d => d.DinhDang == format);
 
             if (fromDate.HasValue)
@@ -179,6 +187,9 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
 
             if (isImportant.HasValue)
                 query = query.Where(d => d.QuanTrong == isImportant.Value);
+
+            if (serverId.HasValue)
+                query = query.Where(d => d.ServerId == serverId.Value);
 
             return [.. query];
         }

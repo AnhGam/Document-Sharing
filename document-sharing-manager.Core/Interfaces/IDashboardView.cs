@@ -13,6 +13,7 @@ namespace document_sharing_manager.Core.Interfaces
         decimal? FilterMinSize { get; }
         decimal? FilterMaxSize { get; }
         bool FilterIsImportant { get; }
+        int? SelectedServerId { get; }
 
         event EventHandler SearchRequested;
         event EventHandler FilterApplied;

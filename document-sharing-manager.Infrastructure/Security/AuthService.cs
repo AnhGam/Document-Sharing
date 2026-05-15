@@ -39,7 +39,7 @@ namespace document_sharing_manager.Infrastructure.Security
             return await CreateAuthResponseAsync(user, ct);
         }
 
-        public async Task<AuthResponse> RegisterAsync(RegisterRequest request, CancellationToken ct = default)
+        public async Task<UserDto> RegisterAsync(RegisterRequest request, CancellationToken ct = default)
         {
             var normalizedUsername = request.Username?.ToLowerInvariant() ?? string.Empty;
             var normalizedEmail = request.Email?.ToLowerInvariant() ?? string.Empty;
@@ -60,7 +60,13 @@ namespace document_sharing_manager.Infrastructure.Security
             await _context.Users.AddAsync(user, ct);
             await _context.SaveChangesAsync(ct);
 
-            return await CreateAuthResponseAsync(user, ct);
+            return new UserDto
+            {
+                Username = user.Username,
+                Email = user.Email,
+                Role = user.Role.ToString(),
+                Message = "User registered successfully. Please login to get your access token."
+            };
         }
 
         public async Task<AuthResponse> RefreshTokenAsync(RefreshRequest request, CancellationToken ct = default)

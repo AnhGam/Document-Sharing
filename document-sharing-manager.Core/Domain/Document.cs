@@ -31,6 +31,7 @@ namespace document_sharing_manager.Core.Domain
         public int LocalVersion { get; set; } = 1;
         public int SyncStatus { get; set; } = 0; // 0: Synced, 1: PendingUpload, 2: PendingDownload, 3: Conflict
         public int UserId { get; set; }
+        public int? ServerId { get; set; }
 
         public string KichThuocFormatted => FormatFileSize(KichThuoc ?? 0m);
 

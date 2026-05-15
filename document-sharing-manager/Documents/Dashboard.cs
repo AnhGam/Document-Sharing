@@ -10,6 +10,8 @@ using document_sharing_manager.UI.Presenters;
 using document_sharing_manager.Services;
 using document_sharing_manager.Reports;
 using document_sharing_manager.UI.Controls;
+using System.Linq;
+using System.Net.Http;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -36,6 +38,7 @@ namespace document_sharing_manager.Documents
         public decimal? FilterMinSize => chkEnableSizeFilter.Checked ? (decimal?)nudMinSize.Value : (decimal?)null;
         public decimal? FilterMaxSize => chkEnableSizeFilter.Checked ? (decimal?)nudMaxSize.Value : (decimal?)null;
         public bool FilterIsImportant => chkImportantOnly.Checked;
+        public int? SelectedServerId { get; set; }
 
         // Events
         public event EventHandler SearchRequested;
@@ -63,11 +66,16 @@ namespace document_sharing_manager.Documents
             _repository = new DocumentRepository();
             _presenter = new DashboardPresenter(this, _repository);
 
-            // Initialize Sync Engine and Watcher
-            string apiUrl = System.Configuration.ConfigurationManager.AppSettings["ApiBaseUrl"] ?? "http://localhost:5247/api/documents";
-            _syncEngine = new SyncEngine(_repository, apiUrl);
+            // Initialize Sync Engine and Watcher (Multi-server)
+            _syncEngine = new SyncEngine(_repository);
             _syncWatcher = new SyncWatcher(_syncEngine, _repository);
             
+            // Auto refresh when sync completes (e.g. new files from server)
+            _syncEngine.SyncCompleted += (s, e) => {
+                if (this.InvokeRequired) this.Invoke(new Action(TriggerRefresh));
+                else TriggerRefresh();
+            };
+
             // Start background processes
             _syncEngine.Start();
             _syncWatcher.Start();
@@ -131,6 +139,12 @@ namespace document_sharing_manager.Documents
             ToolStripMenuItem ctxMenuAddToCollection = new("Thêm vào bộ sưu tập...");
             ctxMenuAddToCollection.Click += CtxMenuAddToCollectionClick;
             contextMenuDocument.Items.Add(ctxMenuAddToCollection);
+
+            contextMenuDocument.Items.Add(new ToolStripSeparator());
+            ToolStripMenuItem ctxMenuDownloadAs = new("Tải về máy...");
+            ctxMenuDownloadAs.Image = IconHelper.CreateBackupIcon(16, AppTheme.StatusInfo);
+            ctxMenuDownloadAs.Click += CtxMenuDownloadAsClick;
+            contextMenuDocument.Items.Add(ctxMenuDownloadAs);
         }
 
         private void RegisterEvents()
@@ -754,6 +768,60 @@ namespace document_sharing_manager.Documents
             }
         }
 
+        private async void CtxMenuDownloadAsClick(object sender, EventArgs e)
+        {
+            if (dgvDocuments.SelectedRows.Count == 0) return;
+            if (dgvDocuments.SelectedRows[0].DataBoundItem is Document doc)
+            {
+                using var sfd = new SaveFileDialog();
+                sfd.FileName = doc.Ten;
+                sfd.Filter = "All Files|*.*";
+                sfd.Title = "Chọn nơi lưu tài liệu";
+
+                if (sfd.ShowDialog() == DialogResult.OK)
+                {
+                    lblStatus.Text = "Đang tải: " + doc.Ten;
+                    try
+                    {
+                        // Get server info
+                        var servers = DatabaseHelper.GetManagedServers();
+                        var server = servers.FirstOrDefault(s => s.Id == doc.ServerId);
+                        
+                        if (server == null)
+                        {
+                            ShowError("Không tìm thấy thông tin server cho tài liệu này.");
+                            return;
+                        }
+
+                        using var client = new HttpClient();
+                        if (!string.IsNullOrEmpty(server.AccessToken))
+                        {
+                            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", server.AccessToken);
+                        }
+
+                        string downloadUrl = $"{server.BaseUrl}/remote/{doc.RemoteId}/download";
+                        var response = await client.GetAsync(downloadUrl);
+                        
+                        if (response.IsSuccessStatusCode)
+                        {
+                            using var fileStream = new FileStream(sfd.FileName, FileMode.Create, FileAccess.Write, FileShare.None);
+                            await response.Content.CopyToAsync(fileStream);
+                            ToastNotification.Success("Đã tải xong!");
+                            lblStatus.Text = "Đã tải về: " + sfd.FileName;
+                        }
+                        else
+                        {
+                            ShowError($"Lỗi server: {response.StatusCode}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        ShowError("Lỗi tải file: " + ex.Message);
+                    }
+                }
+            }
+        }
+
         private void CtxMenuPersonalNoteClick(object sender, EventArgs e)
         {
             if (dgvDocuments.SelectedRows.Count > 0 && dgvDocuments.SelectedRows[0].DataBoundItem is Document doc)
@@ -1348,6 +1416,28 @@ namespace document_sharing_manager.Documents
             }
             catch { }
 
+            // Servers (header) - NEW
+            var nodeServers = treeCategory.Nodes.Add("servers", "Máy chủ đã tham gia");
+            nodeServers.Tag = new TreeFilterInfo("header", null);
+            try
+            {
+                var servers = DatabaseHelper.GetManagedServers();
+                foreach (var server in servers)
+                {
+                    var child = nodeServers.Nodes.Add("srv_" + server.Id, server.Name);
+                    child.Tag = new TreeFilterInfo("server", server.Id.ToString());
+                    
+                    // Add status indicator if offline etc. (simplified for now)
+                    if (!server.IsActive) child.ForeColor = Color.Gray;
+                }
+            }
+            catch { }
+
+            var nodeJoin = nodeServers.Nodes.Add("join", "(+) Kết nối Server mới...");
+            nodeJoin.Tag = new TreeFilterInfo("join", null);
+            nodeJoin.NodeFont = new Font(treeCategory.Font, FontStyle.Italic);
+            nodeJoin.ForeColor = AppTheme.Primary;
+
             treeCategory.ExpandAll();
             treeCategory.EndUpdate();
 
@@ -1519,6 +1609,12 @@ namespace document_sharing_manager.Documents
                 case "collection":
                     icon = IconHelper.CreateBookmarkIcon(size, AppTheme.Primary);
                     break;
+                case "server":
+                    icon = IconHelper.CreateBackupIcon(size, AppTheme.StatusInfo);
+                    break;
+                case "join":
+                    icon = IconHelper.CreateImportIcon(size, AppTheme.Primary);
+                    break;
             }
 
             if (icon != null)
@@ -1573,6 +1669,23 @@ namespace document_sharing_manager.Documents
 
                     case "collection":
                         FilterByCollection(int.Parse(filter.FilterValue));
+                        break;
+
+                    case "server":
+                        SelectedServerId = int.Parse(filter.FilterValue);
+                        FilterApplied?.Invoke(this, EventArgs.Empty);
+                        break;
+
+                    case "join":
+                        using (var form = new Management.JoinServerForm())
+                        {
+                            if (form.ShowDialog() == DialogResult.OK)
+                            {
+                                PopulateCategoryTree(); // Refresh list to show new server
+                                // New server added - SyncEngine will pick it up or we can notify it
+                                TriggerRefresh();
+                            }
+                        }
                         break;
                 }
             }

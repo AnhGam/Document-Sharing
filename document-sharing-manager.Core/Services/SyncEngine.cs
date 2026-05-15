@@ -23,11 +23,13 @@ namespace document_sharing_manager.Core.Services
     {
         public Document Document { get; set; } = null!;
         public SyncType Type { get; set; }
+        public int ServerId { get; set; }
     }
 
-    public class SyncEngine : ISyncService, IDisposable
+    public class SyncEngine(IDocumentRepository repository) : ISyncService, IDisposable
     {
-        private readonly IDocumentRepository _repository;
+        public event EventHandler? SyncCompleted;
+        private readonly IDocumentRepository _repository = repository;
         
         // Static HttpClient to prevent socket exhaustion
         private static readonly HttpClient _httpClient = new();
@@ -44,19 +46,19 @@ namespace document_sharing_manager.Core.Services
         private readonly ConcurrentDictionary<string, byte> _enqueuedTasks = new();
         
         private readonly SemaphoreSlim _signal = new(0);
-        private readonly string _apiUrl; 
+        private readonly List<ManagedServer> _servers = [.. DatabaseHelper.GetManagedServers().Where(s => s.IsActive)];
         private readonly CancellationTokenSource _cts = new();
-        private readonly SynchronizationContext _syncContext;
+        private readonly SynchronizationContext _syncContext = SynchronizationContext.Current;
         private bool _isRunning = false;
 
-        public SyncEngine(IDocumentRepository repository, string apiUrl)
+        public void AddServer(ManagedServer server)
         {
-            _repository = repository;
-            if (string.IsNullOrWhiteSpace(apiUrl))
-                throw new ArgumentException("API URL must be provided.", nameof(apiUrl));
-            
-            _apiUrl = apiUrl.TrimEnd('/');
-            _syncContext = SynchronizationContext.Current;
+            if (!_servers.Any(s => s.Id == server.Id))
+            {
+                _servers.Add(server);
+                // Trigger immediate sync for this new server
+                _ = SyncServerAsync(server, _cts.Token);
+            }
         }
 
         public void Start()
@@ -65,8 +67,11 @@ namespace document_sharing_manager.Core.Services
             _isRunning = true;
             Task.Run(ProcessQueueAsync, _cts.Token);
             
-            // Trigger initial sync
-            _ = SyncAsync(_cts.Token);
+            // Trigger initial sync for all servers
+            foreach (var server in _servers)
+            {
+                _ = SyncServerAsync(server, _cts.Token);
+            }
         }
 
         public void Stop()
@@ -85,20 +90,91 @@ namespace document_sharing_manager.Core.Services
 
         public async Task<Result> SyncAsync(CancellationToken ct = default)
         {
+            var tasks = _servers.Select(s => SyncServerAsync(s, ct));
+            await Task.WhenAll(tasks);
+            return Result.Success();
+        }
+
+        public async Task<Result> SyncServerAsync(ManagedServer server, CancellationToken ct = default)
+        {
             try
             {
+                // 1. Pull from this specific server
+                await PullFromServerAsync(server, ct);
+
+                // 2. Enqueue pending tasks for this server
+                // Note: GetPendingSyncDocumentsAsync should be updated to filter by ServerId if needed
+                // But for now, we'll filter here
                 var documents = await _repository.GetPendingSyncDocumentsAsync(UserSession.CurrentUserId, ct);
-                foreach (var doc in documents.Where(d => d.SyncStatus == 1)) // 1: PendingUpload
+                foreach (var doc in documents.Where(d => d.SyncStatus == 1 && (d.ServerId == server.Id || d.ServerId == null)))
                 {
-                    Enqueue(doc, SyncType.Upload);
+                    doc.ServerId ??= server.Id;
+                    Enqueue(doc, SyncType.Upload, server.Id);
                 }
 
-                foreach (var doc in documents.Where(d => d.SyncStatus == 2)) // 2: PendingDownload
-                {
-                    Enqueue(doc, SyncType.Download);
-                }
-                
                 return Result.Success();
+            }
+            catch (Exception ex)
+            {
+                return Result.Failure(ex.Message);
+            }
+        }
+
+        public async Task<Result> PullFromServerAsync(ManagedServer server, CancellationToken ct = default)
+        {
+            try
+            {
+                using var request = new HttpRequestMessage(HttpMethod.Get, $"{server.BaseUrl}/api/Sync");
+                if (!string.IsNullOrEmpty(server.AccessToken))
+                {
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", server.AccessToken);
+                }
+
+                var response = await _httpClient.SendAsync(request, ct);
+                if (response.IsSuccessStatusCode)
+                {
+                    var json = await response.Content.ReadAsStringAsync();
+                    var serverDocs = JsonConvert.DeserializeObject<List<Document>>(json);
+                    if (serverDocs == null) return Result.Failure("Failed to parse server response.");
+
+                    foreach (var serverDoc in serverDocs)
+                    {
+                        var localDoc = await _repository.GetByRemoteIdAsync(serverDoc.RemoteId, ct);
+                        if (localDoc == null)
+                        {
+                            // New document from server - reset local identity
+                            serverDoc.Id = 0; 
+                            serverDoc.SyncStatus = 2; // PendingDownload
+                            serverDoc.LocalVersion = 0; // Haven't downloaded file content yet
+                            
+                            // Map DuongDan to local pattern
+                            serverDoc.DuongDan = Path.Combine(FileStorageService.DefaultFolder, serverDoc.Ten);
+                            serverDoc.ServerId = server.Id;
+                            
+                            await _repository.AddAsync(serverDoc, ct);
+                            Enqueue(serverDoc, SyncType.Download, server.Id);
+                        }
+                        else if (serverDoc.Version > localDoc.Version)
+                        {
+                            // Newer version on server
+                            localDoc.Version = serverDoc.Version;
+                            localDoc.Ten = serverDoc.Ten;
+                            localDoc.DinhDang = serverDoc.DinhDang;
+                            localDoc.GhiChu = serverDoc.GhiChu;
+                            localDoc.SyncStatus = 2; // PendingDownload
+                            localDoc.ServerId = server.Id;
+                            await _repository.UpdateAsync(localDoc, ct);
+                            Enqueue(localDoc, SyncType.Download, server.Id);
+                        }
+                    }
+                    if (serverDocs.Count > 0)
+                    {
+                        if (_syncContext != null) _syncContext.Post(_ => SyncCompleted?.Invoke(this, EventArgs.Empty), null);
+                        else SyncCompleted?.Invoke(this, EventArgs.Empty);
+                    }
+                    return Result.Success();
+                }
+                return Result.Failure($"Server returned {response.StatusCode}");
             }
             catch (Exception ex)
             {
@@ -121,12 +197,12 @@ namespace document_sharing_manager.Core.Services
              return Result<IEnumerable<DocumentDto>>.Success(dtos);
         }
 
-        public void Enqueue(Document doc, SyncType type)
+        public void Enqueue(Document doc, SyncType type, int serverId)
         {
-            string key = $"{doc.Id}_{type}";
+            string key = $"{doc.Id}_{type}_{serverId}";
             if (_enqueuedTasks.TryAdd(key, 0))
             {
-                _taskQueue.Enqueue(new SyncTask { Document = doc, Type = type });
+                _taskQueue.Enqueue(new SyncTask { Document = doc, Type = type, ServerId = serverId });
                 _signal.Release();
             }
         }
@@ -138,16 +214,26 @@ namespace document_sharing_manager.Core.Services
                 try
                 {
                     await _signal.WaitAsync(_cts.Token);
+                    
                     if (_taskQueue.TryDequeue(out var task))
                     {
-                        string key = $"{task.Document.Id}_{task.Type}";
+                        var server = _servers.FirstOrDefault(s => s.Id == task.ServerId);
+                        if (server == null) continue;
+
+                        string taskKey = $"{task.Document.Id}_{task.Type}_{task.ServerId}";
                         try
                         {
-                            await ProcessTaskAsync(task);
+                            if (task.Type == SyncType.Upload)
+                                await HandleUploadAsync(task.Document, server, _cts.Token);
+                            else if (task.Type == SyncType.Download)
+                                await HandleDownloadAsync(task.Document, server, _cts.Token);
+                            
+                            // Trigger UI refresh if needed
+                            _syncContext?.Post(_ => SyncCompleted?.Invoke(this, EventArgs.Empty), null);
                         }
                         finally
                         {
-                            _enqueuedTasks.TryRemove(key, out _);
+                            _enqueuedTasks.TryRemove(taskKey, out _);
                         }
                     }
                 }
@@ -160,21 +246,8 @@ namespace document_sharing_manager.Core.Services
             }
         }
 
-        private async Task ProcessTaskAsync(SyncTask task)
-        {
-            var ct = _cts.Token;
-            switch (task.Type)
-            {
-                case SyncType.Upload:
-                    await HandleUploadAsync(task.Document, ct);
-                    break;
-                case SyncType.Download:
-                    // TODO: Implement Download
-                    break;
-            }
-        }
 
-        private async Task HandleUploadAsync(Document doc, CancellationToken ct)
+        private async Task HandleUploadAsync(Document doc, ManagedServer server, CancellationToken ct)
         {
             try
             {
@@ -190,14 +263,14 @@ namespace document_sharing_manager.Core.Services
                 if (!string.IsNullOrEmpty(doc.Ten)) content.Add(new StringContent(doc.Ten), "ten");
                 if (doc.GhiChu != null) content.Add(new StringContent(doc.GhiChu), "ghiChu");
 
-                using var request = new HttpRequestMessage(HttpMethod.Post, $"{_apiUrl}/sync-stream")
+                using var request = new HttpRequestMessage(HttpMethod.Post, $"{server.BaseUrl}/sync-stream")
                 {
                     Content = content
                 };
 
-                if (!string.IsNullOrEmpty(UserSession.AccessToken))
+                if (!string.IsNullOrEmpty(server.AccessToken))
                 {
-                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", UserSession.AccessToken);
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", server.AccessToken);
                 }
 
                 using var fileStream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, useAsync: true);
@@ -246,6 +319,61 @@ namespace document_sharing_manager.Core.Services
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Upload failed for {doc.Ten}: {ex.Message}");
+            }
+        }
+
+        private async Task HandleDownloadAsync(Document doc, ManagedServer server, CancellationToken ct)
+        {
+            try
+            {
+                // Download by RemoteId to be safe
+                string downloadUrl = $"{server.BaseUrl}/remote/{doc.RemoteId}/download";
+                using var request = new HttpRequestMessage(HttpMethod.Get, downloadUrl);
+                
+                if (!string.IsNullOrEmpty(server.AccessToken))
+                {
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", server.AccessToken);
+                }
+
+                var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
+                if (response.IsSuccessStatusCode)
+                {
+                    string targetPath = FileStorageService.ResolvePath(doc.DuongDan);
+                    string? directory = Path.GetDirectoryName(targetPath);
+                    if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                    {
+                        Directory.CreateDirectory(directory);
+                    }
+
+                    using (var stream = await response.Content.ReadAsStreamAsync())
+                    using (var fileStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, useAsync: true))
+                    {
+                        await stream.CopyToAsync(fileStream, 8192, ct);
+                    }
+
+                    // Update DB status
+                    await _repository.UpdateSyncStatusAsync(doc.Id, 0, doc.Version, null, doc.Version, ct);
+
+                    // Update UI object
+                    void UpdateLocal()
+                    {
+                        doc.SyncStatus = 0; // Synced
+                        doc.LocalVersion = doc.Version;
+                    }
+
+                    if (_syncContext != null)
+                    {
+                        _syncContext.Post(_ => UpdateLocal(), null);
+                    }
+                    else
+                    {
+                        UpdateLocal();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Download failed for {doc.Ten}: {ex.Message}");
             }
         }
 

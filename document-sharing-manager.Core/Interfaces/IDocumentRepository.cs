@@ -15,7 +15,7 @@ namespace document_sharing_manager.Core.Interfaces
         Task<Document?> GetByRemoteIdAsync(Guid remoteId, CancellationToken ct = default);
 
         Task<List<Document>> SearchAsync(string keyword, int userId, CancellationToken ct = default);
-        Task<List<Document>> SearchAdvancedAsync(string keyword, string format, DateTime? fromDate, DateTime? toDate, decimal? minSize, decimal? maxSize, bool? isImportant, int userId, CancellationToken ct = default);
+        Task<List<Document>> SearchAdvancedAsync(string keyword, string format, DateTime? fromDate, DateTime? toDate, decimal? minSize, decimal? maxSize, bool? isImportant, int userId, int? serverId = null, CancellationToken ct = default);
         Task<List<Document>> GetPendingSyncDocumentsAsync(int userId, CancellationToken ct = default);
         Task UpdateSyncStatusAsync(int id, int syncStatus, int? newVersion = null, int? expectedVersion = null, int? newLocalVersion = null, CancellationToken ct = default);
 
@@ -23,7 +23,7 @@ namespace document_sharing_manager.Core.Interfaces
         List<Document> GetAll();
         Document? GetById(int id);
         List<Document> Search(string keyword);
-        List<Document> SearchAdvanced(string keyword, string format, DateTime? fromDate, DateTime? toDate, decimal? minSize, decimal? maxSize, bool? isImportant);
+        List<Document> SearchAdvanced(string keyword, string format, DateTime? fromDate, DateTime? toDate, decimal? minSize, decimal? maxSize, bool? isImportant, int? serverId = null);
         bool Update(Document doc);
         bool Delete(int id);
         List<string> GetDistinctFormats();
