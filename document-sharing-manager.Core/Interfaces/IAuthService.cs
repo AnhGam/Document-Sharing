@@ -7,7 +7,7 @@ namespace document_sharing_manager.Core.Interfaces
     public interface IAuthService
     {
         Task<AuthResponse> LoginAsync(LoginRequest request, CancellationToken ct = default);
-        Task<UserDto> RegisterAsync(RegisterRequest request, CancellationToken ct = default);
+        Task<AuthResponse> RegisterAsync(RegisterRequest request, CancellationToken ct = default);
         Task<AuthResponse> RefreshTokenAsync(RefreshRequest request, CancellationToken ct = default);
     }
 }

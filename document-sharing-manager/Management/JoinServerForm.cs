@@ -19,6 +19,7 @@ namespace document_sharing_manager.Management
         private Label lblStatus;
         
         public bool Success { get; private set; }
+        private static readonly HttpClient _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
 
         public JoinServerForm()
         {
@@ -120,12 +121,12 @@ namespace document_sharing_manager.Management
 
         private async Task<bool> TestServerConnection(string url)
         {
-            using var client = new HttpClient();
-            client.Timeout = TimeSpan.FromSeconds(10);
             try
             {
                 // Gọi thử endpoint Health để check
-                var response = await client.GetAsync($"{url.TrimEnd('/')}/api/Health");
+                // NOTE: In a real production scenario, we should also validate the server password 
+                // by attempting a specialized 'test-auth' or login request if the server requires it.
+                var response = await _httpClient.GetAsync($"{url.TrimEnd('/')}/api/Health");
                 return response.IsSuccessStatusCode;
             }
             catch { return false; }

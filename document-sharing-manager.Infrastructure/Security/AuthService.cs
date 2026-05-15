@@ -39,12 +39,12 @@ namespace document_sharing_manager.Infrastructure.Security
             return await CreateAuthResponseAsync(user, ct);
         }
 
-        public async Task<UserDto> RegisterAsync(RegisterRequest request, CancellationToken ct = default)
+        public async Task<AuthResponse> RegisterAsync(RegisterRequest request, CancellationToken ct = default)
         {
             var normalizedUsername = request.Username?.ToLowerInvariant() ?? string.Empty;
             var normalizedEmail = request.Email?.ToLowerInvariant() ?? string.Empty;
             
-            if (await _context.Users.AnyAsync(u => u.Username == normalizedUsername || u.Email.ToLower() == normalizedEmail, ct))
+            if (await _context.Users.AnyAsync(u => u.Username == normalizedUsername || u.Email.Equals(normalizedEmail, StringComparison.OrdinalIgnoreCase), ct))
             {
                 throw new InvalidOperationException("Username or Email already exists.");
             }
@@ -60,13 +60,7 @@ namespace document_sharing_manager.Infrastructure.Security
             await _context.Users.AddAsync(user, ct);
             await _context.SaveChangesAsync(ct);
 
-            return new UserDto
-            {
-                Username = user.Username,
-                Email = user.Email,
-                Role = user.Role.ToString(),
-                Message = "User registered successfully. Please login to get your access token."
-            };
+            return await CreateAuthResponseAsync(user, ct);
         }
 
         public async Task<AuthResponse> RefreshTokenAsync(RefreshRequest request, CancellationToken ct = default)
@@ -75,7 +69,7 @@ namespace document_sharing_manager.Infrastructure.Security
                 .Include(u => u.User)
                 .FirstOrDefaultAsync(t => t.Token == request.RefreshToken, ct);
 
-            if (tokenEntity == null)
+            if (tokenEntity is null)
             {
                 throw new UnauthorizedAccessException("Invalid refresh token.");
             }

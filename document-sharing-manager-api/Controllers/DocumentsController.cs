@@ -121,15 +121,11 @@ namespace document_sharing_manager_api.Controllers
             try
             {
                 var stream = await _storageService.GetFileAsync(document.DuongDan, ct);
-                string extension = System.IO.Path.GetExtension(document.DuongDan).ToLowerInvariant();
-                string contentType = extension switch
+                var provider = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
+                if (!provider.TryGetContentType(document.DuongDan, out string? contentType))
                 {
-                    ".pdf" => "application/pdf",
-                    ".jpg" or ".jpeg" => "image/jpeg",
-                    ".png" => "image/png",
-                    ".txt" => "text/plain",
-                    _ => "application/octet-stream"
-                };
+                    contentType = "application/octet-stream";
+                }
 
                 return File(stream, contentType, document.Ten);
             }

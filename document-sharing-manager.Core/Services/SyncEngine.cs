@@ -26,10 +26,10 @@ namespace document_sharing_manager.Core.Services
         public int ServerId { get; set; }
     }
 
-    public class SyncEngine(IDocumentRepository repository) : ISyncService, IDisposable
+    public class SyncEngine : ISyncService, IDisposable
     {
         public event EventHandler? SyncCompleted;
-        private readonly IDocumentRepository _repository = repository;
+        private readonly IDocumentRepository _repository;
         
         // Static HttpClient to prevent socket exhaustion
         private static readonly HttpClient _httpClient = new();
@@ -46,16 +46,25 @@ namespace document_sharing_manager.Core.Services
         private readonly ConcurrentDictionary<string, byte> _enqueuedTasks = new();
         
         private readonly SemaphoreSlim _signal = new(0);
-        private readonly List<ManagedServer> _servers = [.. DatabaseHelper.GetManagedServers().Where(s => s.IsActive)];
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<int, ManagedServer> _servers;
         private readonly CancellationTokenSource _cts = new();
         private readonly SynchronizationContext _syncContext = SynchronizationContext.Current;
         private bool _isRunning = false;
 
+        public SyncEngine(IDocumentRepository repository)
+        {
+            _repository = repository;
+            
+            // Load servers from DB
+            var activeServers = DatabaseHelper.GetManagedServers().Where(s => s.IsActive);
+            _servers = new System.Collections.Concurrent.ConcurrentDictionary<int, ManagedServer>(
+                activeServers.ToDictionary(s => s.Id, s => s));
+        }
+
         public void AddServer(ManagedServer server)
         {
-            if (!_servers.Any(s => s.Id == server.Id))
+            if (_servers.TryAdd(server.Id, server))
             {
-                _servers.Add(server);
                 // Trigger immediate sync for this new server
                 _ = SyncServerAsync(server, _cts.Token);
             }
@@ -68,7 +77,7 @@ namespace document_sharing_manager.Core.Services
             Task.Run(ProcessQueueAsync, _cts.Token);
             
             // Trigger initial sync for all servers
-            foreach (var server in _servers)
+            foreach (var server in _servers.Values)
             {
                 _ = SyncServerAsync(server, _cts.Token);
             }
@@ -90,7 +99,7 @@ namespace document_sharing_manager.Core.Services
 
         public async Task<Result> SyncAsync(CancellationToken ct = default)
         {
-            var tasks = _servers.Select(s => SyncServerAsync(s, ct));
+            var tasks = _servers.Values.Select(s => SyncServerAsync(s, ct));
             await Task.WhenAll(tasks);
             return Result.Success();
         }
@@ -128,7 +137,7 @@ namespace document_sharing_manager.Core.Services
         {
             try
             {
-                using var request = new HttpRequestMessage(HttpMethod.Get, $"{server.BaseUrl}/api/documents");
+                using var request = new HttpRequestMessage(HttpMethod.Get, $"{server.BaseUrl.TrimEnd('/')}/api/documents");
                 if (!string.IsNullOrEmpty(server.AccessToken))
                 {
                     request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", server.AccessToken);
@@ -151,8 +160,9 @@ namespace document_sharing_manager.Core.Services
                             serverDoc.SyncStatus = 2; // PendingDownload
                             serverDoc.LocalVersion = 0; // Haven't downloaded file content yet
                             
-                            // Map DuongDan to local pattern
-                            serverDoc.DuongDan = Path.Combine(FileStorageService.DefaultFolder, serverDoc.Ten);
+                            // Map DuongDan to local pattern - Sanitize filename to prevent path traversal
+                            string safeFileName = string.Join("_", serverDoc.Ten.Split(Path.GetInvalidFileNameChars()));
+                            serverDoc.DuongDan = Path.Combine(FileStorageService.DefaultFolder, safeFileName);
                             serverDoc.ServerId = server.Id;
                             
                             await _repository.AddAsync(serverDoc, ct);
@@ -221,8 +231,7 @@ namespace document_sharing_manager.Core.Services
                     
                     if (_taskQueue.TryDequeue(out var task))
                     {
-                        var server = _servers.FirstOrDefault(s => s.Id == task.ServerId);
-                        if (server == null) continue;
+                        if (!_servers.TryGetValue(task.ServerId, out var server)) continue;
 
                         string taskKey = $"{task.Document.Id}_{task.Type}_{task.ServerId}";
                         try
@@ -267,7 +276,8 @@ namespace document_sharing_manager.Core.Services
                 if (!string.IsNullOrEmpty(doc.Ten)) content.Add(new StringContent(doc.Ten), "ten");
                 if (doc.GhiChu != null) content.Add(new StringContent(doc.GhiChu), "ghiChu");
 
-                using var request = new HttpRequestMessage(HttpMethod.Post, $"{server.BaseUrl}/sync-stream")
+                string uploadUrl = $"{server.BaseUrl.TrimEnd('/')}/api/documents/sync-stream";
+                using var request = new HttpRequestMessage(HttpMethod.Post, uploadUrl)
                 {
                     Content = content
                 };
@@ -331,7 +341,7 @@ namespace document_sharing_manager.Core.Services
             try
             {
                 // Download by RemoteId to be safe
-                string downloadUrl = $"{server.BaseUrl}/remote/{doc.RemoteId}/download";
+                string downloadUrl = $"{server.BaseUrl.TrimEnd('/')}/api/documents/remote/{doc.RemoteId}/download";
                 using var request = new HttpRequestMessage(HttpMethod.Get, downloadUrl);
                 
                 if (!string.IsNullOrEmpty(server.AccessToken))

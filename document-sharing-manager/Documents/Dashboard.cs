@@ -55,7 +55,7 @@ namespace document_sharing_manager.Documents
         private DoubleBufferedTreeView treeCategory;
         private SplitContainer splitCategory;
         private TreeNode _hoveredNode;
-        private static readonly HttpClient _httpClient = new HttpClient();
+        private static readonly HttpClient _httpClient = new();
         private readonly Dictionary<string, Bitmap> _treeIconCache = [];
 
         public Dashboard()
@@ -142,8 +142,10 @@ namespace document_sharing_manager.Documents
             contextMenuDocument.Items.Add(ctxMenuAddToCollection);
 
             contextMenuDocument.Items.Add(new ToolStripSeparator());
-            ToolStripMenuItem ctxMenuDownloadAs = new("Tải về máy...");
-            ctxMenuDownloadAs.Image = IconHelper.CreateBackupIcon(16, AppTheme.StatusInfo);
+            ToolStripMenuItem ctxMenuDownloadAs = new("Tải về máy...")
+            {
+                Image = IconHelper.CreateBackupIcon(16, AppTheme.StatusInfo)
+            };
             ctxMenuDownloadAs.Click += CtxMenuDownloadAsClick;
             contextMenuDocument.Items.Add(ctxMenuDownloadAs);
         }
@@ -794,14 +796,13 @@ namespace document_sharing_manager.Documents
                             return;
                         }
 
-                        using var client = new HttpClient();
+                        using var request = new HttpRequestMessage(HttpMethod.Get, $"{server.BaseUrl.TrimEnd('/')}/api/documents/remote/{doc.RemoteId}/download");
                         if (!string.IsNullOrEmpty(server.AccessToken))
                         {
-                            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", server.AccessToken);
+                            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", server.AccessToken);
                         }
 
-                        string downloadUrl = $"{server.BaseUrl}/remote/{doc.RemoteId}/download";
-                        var response = await client.GetAsync(downloadUrl);
+                        var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
                         
                         if (response.IsSuccessStatusCode)
                         {
@@ -1837,57 +1838,6 @@ namespace document_sharing_manager.Documents
             };
             contextMenuDocument.Items.Add(menuRelated);
 
-            var menuDownloadAs = new ToolStripMenuItem("Tải về máy...");
-            menuDownloadAs.Click += async (s, ev) =>
-            {
-                if (dgvDocuments.SelectedRows.Count == 0) return;
-                if (dgvDocuments.SelectedRows[0].DataBoundItem is document_sharing_manager.Core.Domain.Document doc)
-                {
-                    if (doc.ServerId == null)
-                    {
-                        MessageBox.Show("Tài liệu này không thuộc server nào để tải xuống.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return;
-                    }
-
-                    var server = DatabaseHelper.GetManagedServers().FirstOrDefault(sv => sv.Id == doc.ServerId);
-                    if (server == null)
-                    {
-                        MessageBox.Show("Không tìm thấy thông tin server của tài liệu này.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        return;
-                    }
-
-                    using var sfd = new SaveFileDialog
-                    {
-                        FileName = doc.Ten + doc.DinhDang,
-                        Filter = $"File {doc.DinhDang}|*{doc.DinhDang}|Tất cả file|*.*"
-                    };
-
-                    if (sfd.ShowDialog() == DialogResult.OK)
-                    {
-                        try
-                        {
-                            var request = new HttpRequestMessage(HttpMethod.Get, $"{server.BaseUrl.TrimEnd('/')}/api/documents/download/{doc.RemoteId}");
-                            if (!string.IsNullOrEmpty(server.AccessToken))
-                            {
-                                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", server.AccessToken);
-                            }
-
-                            var response = await _httpClient.SendAsync(request);
-                            response.EnsureSuccessStatusCode();
-
-                            using var fs = new FileStream(sfd.FileName, FileMode.Create);
-                            await response.Content.CopyToAsync(fs);
-                            
-                            ToastNotification.Success("Đã tải xuống tài liệu thành công.");
-                        }
-                        catch (Exception ex)
-                        {
-                            MessageBox.Show("Lỗi khi tải xuống: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        }
-                    }
-                }
-            };
-            contextMenuDocument.Items.Add(menuDownloadAs);
         }
 
         private void EnableDragDrop()

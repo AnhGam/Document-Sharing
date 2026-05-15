@@ -108,7 +108,7 @@ namespace document_sharing_manager.Documents
             btnCancel.Click += (s, e) => this.Close();
 
             this.Size = new Size(450, 300);
-            this.Controls.AddRange(new Control[] { lblTitle, lblUrl, txtApiUrl, lblToken, txtAccessToken, lblStatus, btnSave, btnCancel });
+            this.Controls.AddRange([lblTitle, lblUrl, txtApiUrl, lblToken, txtAccessToken, lblStatus, btnSave, btnCancel]);
         }
 
         private void LoadSettings()
@@ -143,9 +143,6 @@ namespace document_sharing_manager.Documents
                 {
                     config.AppSettings.Settings["ApiBaseUrl"].Value = newUrl;
                 }
-                config.Save(ConfigurationSaveMode.Modified);
-                ConfigurationManager.RefreshSection("appSettings");
-
                 // Update token in config too
                 if (config.AppSettings.Settings["AccessToken"] == null)
                     config.AppSettings.Settings.Add("AccessToken", txtAccessToken.Text.Trim());
