@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using document_sharing_manager.Core.Data;
 using document_sharing_manager.Core.Domain;
 using document_sharing_manager.Core.Interfaces;
@@ -20,6 +21,7 @@ namespace document_sharing_manager.Documents
         private int _currentLocalVersion = 1;
         private int _currentSyncStatus = 0;
         private Guid _remoteId = Guid.NewGuid();
+        private int? _serverId = null;
 
         public AddEditForm()
         {
@@ -128,6 +130,11 @@ namespace document_sharing_manager.Documents
                     if (row["sync_status"] != DBNull.Value)
                     {
                         _currentSyncStatus = Convert.ToInt32(row["sync_status"]);
+                    }
+
+                    if (row["server_id"] != DBNull.Value)
+                    {
+                        _serverId = Convert.ToInt32(row["server_id"]);
                     }
                 }
             }
@@ -249,8 +256,9 @@ namespace document_sharing_manager.Documents
                         _remoteId,
                         _currentVersion,     // Server version stays the same during local edit
                         _currentVersion,     // Old version for atomic check
-                        1,                   // SyncStatus: PendingUpload
+                        _currentSyncStatus = 1,      // SyncStatus: PendingUpload
                         _currentLocalVersion + 1, // Increment local version
+                        _serverId,
                         tags
                     );
 

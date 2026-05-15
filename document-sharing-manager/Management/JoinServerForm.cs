@@ -5,6 +5,7 @@ using document_sharing_manager.UI;
 using document_sharing_manager.Core.Data;
 using document_sharing_manager.Core.Domain;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 
 namespace document_sharing_manager.Management
@@ -93,7 +94,7 @@ namespace document_sharing_manager.Management
             try
             {
                 // Thử kết nối và kiểm tra server
-                bool isConnected = await TestServerConnection(url);
+                bool isConnected = await TestServerConnection(url, password);
                 if (isConnected)
                 {
                     // Lưu vào DB
@@ -119,14 +120,21 @@ namespace document_sharing_manager.Management
             }
         }
 
-        private async Task<bool> TestServerConnection(string url)
+        private async Task<bool> TestServerConnection(string url, string? password)
         {
             try
             {
                 // Gọi thử endpoint Health để check
-                // NOTE: In a real production scenario, we should also validate the server password 
-                // by attempting a specialized 'test-auth' or login request if the server requires it.
-                var response = await _httpClient.GetAsync($"{url.TrimEnd('/')}/api/Health");
+                using var request = new HttpRequestMessage(HttpMethod.Get, $"{url.TrimEnd('/')}/api/Health");
+                
+                if (!string.IsNullOrEmpty(password))
+                {
+                    // For now, we use the password as a Bearer token or custom header 
+                    // to verify reachability AND basic authorization.
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", password);
+                }
+
+                var response = await _httpClient.SendAsync(request);
                 return response.IsSuccessStatusCode;
             }
             catch { return false; }

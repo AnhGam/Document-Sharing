@@ -159,7 +159,7 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
         public bool Update(Document doc)
         {
              // We pass doc.Version as the expected version to ensure the record hasn't changed.
-             return DatabaseHelper.UpdateDocument(doc.Id, doc.Ten, doc.DinhDang, doc.DuongDan, doc.GhiChu, doc.KichThuoc, doc.QuanTrong, doc.UserId, doc.RemoteId, doc.Version, doc.Version, doc.SyncStatus, doc.LocalVersion, doc.Tags);
+             return DatabaseHelper.UpdateDocument(doc.Id, doc.Ten, doc.DinhDang, doc.DuongDan, doc.GhiChu, doc.KichThuoc, doc.QuanTrong, doc.UserId, doc.RemoteId, doc.Version, doc.Version, doc.SyncStatus, doc.LocalVersion, doc.ServerId, doc.Tags);
         }
 
         public bool Delete(int id)

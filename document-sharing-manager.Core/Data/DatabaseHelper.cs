@@ -182,6 +182,7 @@ namespace document_sharing_manager.Core.Data
             MigrateAddColumn(conn, "tai_lieu", "local_version", "INTEGER DEFAULT 1");
             MigrateAddColumn(conn, "tai_lieu", "remote_id", "TEXT");
             MigrateAddColumn(conn, "tai_lieu", "server_id", "INTEGER");
+            MigrateRenameColumn(conn, "personal_notes", "content", "note_content");
             
             // Ensure all documents have a remote_id if they don't
             using (var cmdFill = new SQLiteCommand("UPDATE tai_lieu SET remote_id = lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-' || '4' || substr(hex(randomblob(2)), 2) || '-' || substr('89ab', abs(random()) % 4 + 1, 1) || substr(hex(randomblob(2)), 2) || '-' || hex(randomblob(6))) WHERE remote_id IS NULL OR remote_id = ''", conn))
@@ -577,7 +578,7 @@ namespace document_sharing_manager.Core.Data
         /// </summary>
         public static bool UpdateDocument(int id, string ten, string dinhDang,
             string duongDan, string ghiChu, decimal? kichThuoc, bool quanTrong,
-            int userId, Guid remoteId, int newVersion, int? expectedVersion, int syncStatus, int localVersion, string? tags = null)
+            int userId, Guid remoteId, int newVersion, int? expectedVersion, int syncStatus, int localVersion, int? serverId = null, string? tags = null)
         {
             string query = @"UPDATE tai_lieu SET
                 ten = @ten,
@@ -591,7 +592,8 @@ namespace document_sharing_manager.Core.Data
                 version = @new_version,
                 sync_status = @sync_status,
                 local_version = @local_version,
-                remote_id = @remote_id
+                remote_id = @remote_id,
+                server_id = @server_id
                 WHERE id = @id AND (@expected_version IS NULL OR version = @expected_version)";
 
             System.Data.SQLite.SQLiteParameter[] parameters = 
@@ -609,7 +611,8 @@ namespace document_sharing_manager.Core.Data
                 new("@expected_version", (object?)expectedVersion ?? DBNull.Value),
                 new("@sync_status", syncStatus),
                 new("@local_version", localVersion),
-                new("@remote_id", remoteId.ToString())
+                new("@remote_id", remoteId.ToString()),
+                new("@server_id", (object?)serverId ?? DBNull.Value)
             ];
 
             return ExecuteNonQuery(query, parameters) > 0;

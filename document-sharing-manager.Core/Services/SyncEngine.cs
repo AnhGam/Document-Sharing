@@ -49,6 +49,7 @@ namespace document_sharing_manager.Core.Services
         private readonly System.Collections.Concurrent.ConcurrentDictionary<int, ManagedServer> _servers;
         private readonly CancellationTokenSource _cts = new();
         private readonly SynchronizationContext _syncContext = SynchronizationContext.Current;
+        private readonly System.Threading.Timer _debounceTimer;
         private bool _isRunning = false;
 
         public SyncEngine(IDocumentRepository repository)
@@ -59,6 +60,21 @@ namespace document_sharing_manager.Core.Services
             var activeServers = DatabaseHelper.GetManagedServers().Where(s => s.IsActive);
             _servers = new System.Collections.Concurrent.ConcurrentDictionary<int, ManagedServer>(
                 activeServers.ToDictionary(s => s.Id, s => s));
+
+            _debounceTimer = new System.Threading.Timer(_ => TriggerSyncCompleted(), null, Timeout.Infinite, Timeout.Infinite);
+        }
+
+        private void TriggerSyncCompleted()
+        {
+            if (_syncContext != null)
+                _syncContext.Post(_ => SyncCompleted?.Invoke(this, EventArgs.Empty), null);
+            else
+                SyncCompleted?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void RequestSyncRefresh()
+        {
+            _debounceTimer.Change(500, Timeout.Infinite); // Debounce for 500ms
         }
 
         public void AddServer(ManagedServer server)
@@ -92,6 +108,7 @@ namespace document_sharing_manager.Core.Services
         public void Dispose()
         {
             Stop();
+            _debounceTimer?.Dispose();
             _cts.Dispose();
             _signal.Dispose();
             GC.SuppressFinalize(this);
@@ -160,9 +177,9 @@ namespace document_sharing_manager.Core.Services
                             serverDoc.SyncStatus = 2; // PendingDownload
                             serverDoc.LocalVersion = 0; // Haven't downloaded file content yet
                             
-                            // Map DuongDan to local pattern - Sanitize filename to prevent path traversal
+                            // Map DuongDan to local pattern - Sanitize filename and isolate by ServerId
                             string safeFileName = string.Join("_", serverDoc.Ten.Split(Path.GetInvalidFileNameChars()));
-                            serverDoc.DuongDan = Path.Combine(FileStorageService.DefaultFolder, safeFileName);
+                            serverDoc.DuongDan = Path.Combine(FileStorageService.DefaultFolder, server.Id.ToString(), safeFileName);
                             serverDoc.ServerId = server.Id;
                             
                             await _repository.AddAsync(serverDoc, ct);
@@ -183,8 +200,7 @@ namespace document_sharing_manager.Core.Services
                     }
                     if (serverDocs.Count > 0)
                     {
-                        if (_syncContext != null) _syncContext.Post(_ => SyncCompleted?.Invoke(this, EventArgs.Empty), null);
-                        else SyncCompleted?.Invoke(this, EventArgs.Empty);
+                        RequestSyncRefresh();
                     }
                     return Result.Success();
                 }
@@ -245,8 +261,8 @@ namespace document_sharing_manager.Core.Services
                         finally
                         {
                             _enqueuedTasks.TryRemove(taskKey, out _);
-                            // Trigger UI refresh if needed
-                            _syncContext?.Post(_ => SyncCompleted?.Invoke(this, EventArgs.Empty), null);
+                            // Trigger UI refresh debounced
+                            RequestSyncRefresh();
                         }
                     }
                 }

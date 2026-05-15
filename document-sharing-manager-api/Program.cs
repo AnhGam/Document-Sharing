@@ -168,8 +168,8 @@ using (var scope = app.Services.CreateScope())
             catch (Exception ex)
             {
                 retryCount++;
-                Console.WriteLine($"Database connection failed: {ex.Message}");
-                Console.WriteLine($"Waiting for Database to be ready... (Attempt {retryCount}/10)");
+                var logger = services.GetRequiredService<ILogger<Program>>();
+                logger.LogWarning(ex, "Database connection failed (Attempt {RetryCount}/10): {Message}", retryCount, ex.Message);
                 await Task.Delay(3000);
             }
         }
