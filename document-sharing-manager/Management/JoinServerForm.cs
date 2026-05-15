@@ -124,8 +124,8 @@ namespace document_sharing_manager.Management
             client.Timeout = TimeSpan.FromSeconds(10);
             try
             {
-                // Gọi thử endpoint Health hoặc Sync để check
-                var response = await client.GetAsync($"{url.TrimEnd('/')}/api/Sync/health");
+                // Gọi thử endpoint Health để check
+                var response = await client.GetAsync($"{url.TrimEnd('/')}/api/Health");
                 return response.IsSuccessStatusCode;
             }
             catch { return false; }

@@ -108,7 +108,11 @@ namespace document_sharing_manager.Core.Services
                 var documents = await _repository.GetPendingSyncDocumentsAsync(UserSession.CurrentUserId, ct);
                 foreach (var doc in documents.Where(d => d.SyncStatus == 1 && (d.ServerId == server.Id || d.ServerId == null)))
                 {
-                    doc.ServerId ??= server.Id;
+                    if (doc.ServerId == null)
+                    {
+                        doc.ServerId = server.Id;
+                        await _repository.UpdateAsync(doc, ct); // Persist the server assignment
+                    }
                     Enqueue(doc, SyncType.Upload, server.Id);
                 }
 
@@ -124,7 +128,7 @@ namespace document_sharing_manager.Core.Services
         {
             try
             {
-                using var request = new HttpRequestMessage(HttpMethod.Get, $"{server.BaseUrl}/api/Sync");
+                using var request = new HttpRequestMessage(HttpMethod.Get, $"{server.BaseUrl}/api/documents");
                 if (!string.IsNullOrEmpty(server.AccessToken))
                 {
                     request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", server.AccessToken);

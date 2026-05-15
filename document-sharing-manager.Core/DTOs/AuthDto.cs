@@ -22,7 +22,8 @@ namespace document_sharing_manager.Core.DTOs
         public string Email { get; set; } = string.Empty;
 
         [Required]
-        [MinLength(4)]
+        [MinLength(8)]
+        [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\da-zA-Z]).{8,}$", ErrorMessage = "Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, a digit, and a special character.")]
         public string Password { get; set; } = string.Empty;
     }
 
