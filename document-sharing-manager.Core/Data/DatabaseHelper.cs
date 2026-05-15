@@ -1288,14 +1288,75 @@ namespace document_sharing_manager.Core.Data
         }
 
         #region Security Configuration
-        // IMPORTANT: In production, these MUST be loaded from a secure configuration store.
-        // If they are missing, we throw an exception to prevent insecure defaults.
-        private static string EncryptionKey => Environment.GetEnvironmentVariable("DOC_SHARING_AES_KEY") 
-            ?? throw new InvalidOperationException("Cấu hình bảo mật 'DOC_SHARING_AES_KEY' bị thiếu. Vui lòng thiết lập biến môi trường.");
-        
-        private static string LegacyXorKey => Environment.GetEnvironmentVariable("DOC_SHARING_XOR_KEY") ?? "DocSharing_2024_Key";
+        private static byte[]? _cachedAesKey;
+        private static readonly string KeyFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DocSharingManager", "secret.dat");
 
-        private static readonly byte[] AesKey = Encoding.UTF8.GetBytes(EncryptionKey);
+        private static byte[] AesKey
+        {
+            get
+            {
+                if (_cachedAesKey != null) return _cachedAesKey;
+
+                // 1. Try Environment Variable first (highest priority)
+                string? envKey = Environment.GetEnvironmentVariable("DOC_SHARING_AES_KEY");
+                if (!string.IsNullOrEmpty(envKey))
+                {
+                    _cachedAesKey = Encoding.UTF8.GetBytes(envKey.PadRight(32).Substring(0, 32));
+                    return _cachedAesKey;
+                }
+
+                // 2. Try to load from local secure storage
+                _cachedAesKey = LoadOrGenerateSecureKey();
+                return _cachedAesKey;
+            }
+        }
+
+        private static byte[] LoadOrGenerateSecureKey()
+        {
+            try
+            {
+                if (File.Exists(KeyFilePath))
+                {
+                    byte[] obfuscatedKey = File.ReadAllBytes(KeyFilePath);
+                    return ObfuscateKey(obfuscatedKey); // De-obfuscate
+                }
+            }
+            catch { }
+
+            // Generate new random 32-byte key
+            byte[] newKey = new byte[32];
+            using (var rng = new RNGCryptoServiceProvider())
+            {
+                rng.GetBytes(newKey);
+            }
+
+            try
+            {
+                string? dir = Path.GetDirectoryName(KeyFilePath);
+                if (dir != null && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
+
+                byte[] obfuscatedKey = ObfuscateKey(newKey); // Obfuscate
+                File.WriteAllBytes(KeyFilePath, obfuscatedKey);
+            }
+            catch { }
+
+            return newKey;
+        }
+
+        private static byte[] ObfuscateKey(byte[] data)
+        {
+            // Simple machine-specific obfuscation using MachineName and UserName
+            // This prevents the key from being useful if stolen and moved to another machine
+            byte[] salt = Encoding.UTF8.GetBytes(Environment.MachineName + Environment.UserName);
+            byte[] result = new byte[data.Length];
+            for (int i = 0; i < data.Length; i++)
+            {
+                result[i] = (byte)(data[i] ^ salt[i % salt.Length]);
+            }
+            return result;
+        }
+
+        private static string LegacyXorKey => Environment.GetEnvironmentVariable("DOC_SHARING_XOR_KEY") ?? "DocSharing_2024_Key";
         #endregion
 
         private static string Encrypt(string? text)
