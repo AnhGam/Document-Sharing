@@ -86,6 +86,11 @@ namespace document_sharing_manager.Core.Services
             }
         }
 
+        public void RemoveServer(int serverId)
+        {
+            _servers.TryRemove(serverId, out _);
+        }
+
         public void Start()
         {
             if (_isRunning) return;
@@ -175,32 +180,30 @@ namespace document_sharing_manager.Core.Services
                 {
                     var json = await response.Content.ReadAsStringAsync();
                     var serverDocs = JsonConvert.DeserializeObject<List<Document>>(json);
-                    if (serverDocs == null) return Result.Failure("Failed to parse server response.");
+                    if (serverDocs == null) return Result.Failure("Invalid server response");
+
+                    // Get current local documents for this server to detect remote deletions
+                    var localDocsForServer = (await _repository.GetAllByUserIdAsync(UserSession.CurrentUserId, ct))
+                        .Where(d => d.ServerId == server.Id && !d.IsDeleted)
+                        .ToList();
+
+                    var serverRemoteIds = new HashSet<Guid>(serverDocs.Select(d => d.RemoteId));
 
                     foreach (var serverDoc in serverDocs)
                     {
                         var localDoc = await _repository.GetByRemoteIdAsync(serverDoc.RemoteId, ct);
                         if (localDoc == null)
                         {
-                            // New document from server - reset local identity
-                            serverDoc.Id = 0; 
-                            serverDoc.SyncStatus = 2; // PendingDownload
-                            serverDoc.LocalVersion = 0; // Haven't downloaded file content yet
-                            
-                            // Map DuongDan to local pattern - Sanitize filename and isolate by ServerId
-                            string safeFileName = string.Join("_", serverDoc.Ten.Split(Path.GetInvalidFileNameChars()));
-                            serverDoc.DuongDan = Path.Combine(FileStorageService.DefaultFolder, server.Id.ToString(), safeFileName);
+                            // Add new document from server
+                            serverDoc.UserId = UserSession.CurrentUserId;
                             serverDoc.ServerId = server.Id;
-                            serverDoc.UserId = UserSession.CurrentUserId; // Fix: Set local owner
+                            serverDoc.SyncStatus = 0; // Synced
+
+                            // Map DuongDan to local pattern - Include RemoteId to prevent collisions
+                            string safeFileName = string.Join("_", serverDoc.Ten.Split(Path.GetInvalidFileNameChars()));
+                            serverDoc.DuongDan = Path.Combine(FileStorageService.DefaultFolder, server.Id.ToString(), $"{serverDoc.RemoteId.ToString().Substring(0, 8)}_{safeFileName}");
                             
                             await _repository.AddAsync(serverDoc, ct);
-                            
-                            // Fix: Re-fetch from DB to get the actual generated ID before enqueuing
-                            var addedDoc = await _repository.GetByRemoteIdAsync(serverDoc.RemoteId, ct);
-                            if (addedDoc != null)
-                            {
-                                Enqueue(addedDoc, SyncType.Download, server.Id);
-                            }
                         }
                         else if (serverDoc.Version > localDoc.Version)
                         {

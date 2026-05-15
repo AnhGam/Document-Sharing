@@ -1281,7 +1281,12 @@ namespace document_sharing_manager.Documents
             treeCategory.NodeMouseClick += (s, ev) =>
             {
                 var filter = ev.Node.Tag as TreeFilterInfo;
-                if (filter?.FilterType == "header")
+                if (ev.Button == MouseButtons.Right && filter?.FilterType == "server")
+                {
+                    treeCategory.SelectedNode = ev.Node;
+                    ShowServerContextMenu(ev.Location, int.Parse(filter.FilterValue));
+                }
+                else if (filter?.FilterType == "header")
                 {
                     ev.Node.Toggle();
                     treeCategory.Invalidate();
@@ -1367,6 +1372,35 @@ namespace document_sharing_manager.Documents
 
             // Populate
             PopulateCategoryTree();
+        }
+
+        private void ShowServerContextMenu(Point location, int serverId)
+        {
+            ContextMenuStrip menu = new();
+            var deleteItem = new ToolStripMenuItem("Ngắt kết nối & Xóa Server", null, (s, e) =>
+            {
+                var confirm = MessageBox.Show(
+                    "Bạn có chắc chắn muốn ngắt kết nối và xóa server này?\nCác tài liệu thuộc server này sẽ bị xóa tạm (soft-delete).",
+                    "Xác nhận xóa",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning);
+
+                if (confirm == DialogResult.Yes)
+                {
+                    if (DatabaseHelper.DeleteServer(serverId))
+                    {
+                        _syncEngine.RemoveServer(serverId);
+                        PopulateCategoryTree();
+                        TriggerRefresh();
+                        ToastNotification.Success("Đã xóa server thành công!");
+                    }
+                }
+            })
+            {
+                ForeColor = Color.Red
+            };
+            menu.Items.Add(deleteItem);
+            menu.Show(treeCategory, location);
         }
 
         private void PopulateCategoryTree()

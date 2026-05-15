@@ -51,7 +51,7 @@ namespace document_sharing_manager.Management
             var lblUrl = new Label { Text = "Địa chỉ Server (IP/URL):", Location = new Point(left, top + 65), AutoSize = true };
             txtUrl = new TextBox { Location = new Point(left, top + 90), Width = width };
 
-            var lblPass = new Label { Text = "Mật khẩu (nếu có):", Location = new Point(left, top + 130), AutoSize = true };
+            var lblPass = new Label { Text = "Access Token / JWT (nếu có):", Location = new Point(left, top + 130), AutoSize = true };
             txtPassword = new TextBox { Location = new Point(left, top + 155), Width = width, UseSystemPasswordChar = true };
 
             lblStatus = new Label { Text = "", Location = new Point(left, top + 190), Width = width, AutoSize = false, Height = 20, ForeColor = AppTheme.StatusInfo };

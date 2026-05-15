@@ -89,8 +89,10 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
 
         public async Task<Document?> GetByRemoteIdAsync(Guid remoteId, CancellationToken ct = default)
         {
+            // Include deleted to prevent duplicates
             return await _context.Documents
-                .FirstOrDefaultAsync(d => d.RemoteId == remoteId && !d.IsDeleted, ct);
+                .IgnoreQueryFilters() 
+                .FirstOrDefaultAsync(d => d.RemoteId == remoteId, ct);
         }
         public async Task DeleteByRemoteIdAsync(Guid remoteId, CancellationToken ct = default)
         {

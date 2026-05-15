@@ -244,9 +244,10 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
         }
         public async Task<Document?> GetByRemoteIdAsync(Guid remoteId, CancellationToken ct = default)
         {
+            // We search including deleted records to avoid duplicates when syncing
             return await Task.Run(() => 
             {
-                string query = "SELECT * FROM tai_lieu WHERE remote_id = @remoteId AND (is_deleted IS NULL OR is_deleted = 0)";
+                string query = "SELECT * FROM tai_lieu WHERE remote_id = @remoteId";
                 SQLiteParameter[] parameters = [new("@remoteId", remoteId.ToString())];
                 var list = ExecuteAndMap(query, parameters);
                 return list.Count > 0 ? list[0] : null;
