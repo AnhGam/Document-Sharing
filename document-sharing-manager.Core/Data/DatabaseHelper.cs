@@ -1288,14 +1288,14 @@ namespace document_sharing_manager.Core.Data
         }
 
         #region Security Configuration
-        // IMPORTANT: In production, these should be loaded from a secure configuration store (e.g., Environment Variables, Azure Key Vault).
-        // HARDCODING KEYS IN SOURCE CODE IS A SECURITY RISK.
-        private static string EncryptionKey => Environment.GetEnvironmentVariable("DOC_SHARING_AES_KEY") ?? "DocSharing_2024_SecurityKey_32ch";
-        private static string EncryptionIV => Environment.GetEnvironmentVariable("DOC_SHARING_AES_IV") ?? "DocSharing_2024_";
+        // IMPORTANT: In production, these MUST be loaded from a secure configuration store.
+        // If they are missing, we throw an exception to prevent insecure defaults.
+        private static string EncryptionKey => Environment.GetEnvironmentVariable("DOC_SHARING_AES_KEY") 
+            ?? throw new InvalidOperationException("Cấu hình bảo mật 'DOC_SHARING_AES_KEY' bị thiếu. Vui lòng thiết lập biến môi trường.");
+        
         private static string LegacyXorKey => Environment.GetEnvironmentVariable("DOC_SHARING_XOR_KEY") ?? "DocSharing_2024_Key";
 
         private static readonly byte[] AesKey = Encoding.UTF8.GetBytes(EncryptionKey);
-        private static readonly byte[] AesIV = Encoding.UTF8.GetBytes(EncryptionIV);
         #endregion
 
         private static string Encrypt(string? text)
@@ -1305,12 +1305,18 @@ namespace document_sharing_manager.Core.Data
             {
                 using Aes aes = Aes.Create();
                 aes.Key = AesKey;
-                aes.IV = AesIV;
+                aes.GenerateIV(); // Use a unique IV for each encryption
                 
                 using var encryptor = aes.CreateEncryptor();
                 byte[] input = Encoding.UTF8.GetBytes(text);
                 byte[] output = encryptor.TransformFinalBlock(input, 0, input.Length);
-                return "AES:" + Convert.ToBase64String(output);
+                
+                // Combine IV and Ciphertext
+                byte[] combined = new byte[aes.IV.Length + output.Length];
+                Buffer.BlockCopy(aes.IV, 0, combined, 0, aes.IV.Length);
+                Buffer.BlockCopy(output, 0, combined, aes.IV.Length, output.Length);
+                
+                return "AES:" + Convert.ToBase64String(combined);
             }
             catch (Exception ex)
             {
@@ -1332,11 +1338,21 @@ namespace document_sharing_manager.Core.Data
             {
                 using Aes aes = Aes.Create();
                 aes.Key = AesKey;
-                aes.IV = AesIV;
+                
+                byte[] combined = Convert.FromBase64String(text.Substring(4));
+                int ivSize = aes.BlockSize / 8; // AES block size is 128 bits = 16 bytes
+                
+                if (combined.Length < ivSize) throw new InvalidOperationException("Dữ liệu mã hóa không hợp lệ.");
 
+                byte[] iv = new byte[ivSize];
+                byte[] ciphertext = new byte[combined.Length - ivSize];
+                
+                Buffer.BlockCopy(combined, 0, iv, 0, ivSize);
+                Buffer.BlockCopy(combined, ivSize, ciphertext, 0, ciphertext.Length);
+                
+                aes.IV = iv;
                 using var decryptor = aes.CreateDecryptor();
-                byte[] input = Convert.FromBase64String(text.Substring(4));
-                byte[] output = decryptor.TransformFinalBlock(input, 0, input.Length);
+                byte[] output = decryptor.TransformFinalBlock(ciphertext, 0, ciphertext.Length);
                 return Encoding.UTF8.GetString(output);
             }
             catch (Exception ex)
