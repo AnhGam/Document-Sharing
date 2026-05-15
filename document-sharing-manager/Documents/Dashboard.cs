@@ -1679,7 +1679,7 @@ namespace document_sharing_manager.Documents
                         break;
 
                     case "join":
-                        using (var form = new Management.JoinServerForm())
+                        using (var form = new Management.JoinServerForm(_syncEngine))
                         {
                             if (form.ShowDialog() == DialogResult.OK)
                             {

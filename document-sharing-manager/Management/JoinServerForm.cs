@@ -7,6 +7,7 @@ using document_sharing_manager.Core.Domain;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace document_sharing_manager.Management
 {
@@ -20,10 +21,12 @@ namespace document_sharing_manager.Management
         private Label lblStatus;
         
         public bool Success { get; private set; }
-        private static readonly HttpClient _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+        private static readonly HttpClient _httpClient = new() { Timeout = TimeSpan.FromSeconds(10) };
+        private readonly document_sharing_manager.Core.Services.SyncEngine _syncEngine;
 
-        public JoinServerForm()
+        public JoinServerForm(document_sharing_manager.Core.Services.SyncEngine syncEngine)
         {
+            _syncEngine = syncEngine;
             InitializeComponent();
             SetupUI();
             ApplyTheme();
@@ -98,7 +101,18 @@ namespace document_sharing_manager.Management
                 if (isConnected)
                 {
                     // Lưu vào DB
-                    DatabaseHelper.InsertServer(name, url, password: password);
+                    // Lưu vào DB. Hiện tại password đang được dùng làm Bearer token
+                    // trong bước kiểm tra kết nối, nên cần lưu cả vào accessToken để
+                    // các lần sync sau có thể gửi Authorization header nhất quán.
+                    DatabaseHelper.InsertServer(name, url, password: password, accessToken: password);
+                    
+                    // Fetch the newly inserted server to add it to SyncEngine
+                    var allServers = DatabaseHelper.GetManagedServers();
+                    var newServer = allServers.FirstOrDefault(s => s.BaseUrl.TrimEnd('/') == url.TrimEnd('/'));
+                    if (newServer != null)
+                    {
+                        _syncEngine?.AddServer(newServer);
+                    }
                     Success = true;
                     this.DialogResult = DialogResult.OK;
                     this.Close();
@@ -120,7 +134,7 @@ namespace document_sharing_manager.Management
             }
         }
 
-        private async Task<bool> TestServerConnection(string url, string? password)
+        private async Task<bool> TestServerConnection(string url, string password)
         {
             try
             {

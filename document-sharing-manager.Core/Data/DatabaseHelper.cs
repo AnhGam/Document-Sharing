@@ -488,12 +488,12 @@ namespace document_sharing_manager.Core.Data
 
         public static bool InsertDocument(string ten, string dinhDang,
             string duongDan, string ghiChu, decimal? kichThuoc, bool quanTrong,
-            int userId, Guid remoteId, int version = 1, string? tags = null, int syncStatus = 1, int localVersion = 1)
+            int userId, Guid remoteId, int version = 1, string? tags = null, int syncStatus = 1, int localVersion = 1, int? serverId = null)
         {
             string query = @"INSERT INTO tai_lieu
-                (ten, dinh_dang, duong_dan, ghi_chu, kich_thuoc, quan_trong, tags, user_id, version, sync_status, local_version, remote_id)
+                (ten, dinh_dang, duong_dan, ghi_chu, kich_thuoc, quan_trong, tags, user_id, version, sync_status, local_version, remote_id, server_id)
                 VALUES
-                (@ten, @dinh_dang, @duong_dan, @ghi_chu, @kich_thuoc, @quan_trong, @tags, @user_id, @version, @sync_status, @local_version, @remote_id)";
+                (@ten, @dinh_dang, @duong_dan, @ghi_chu, @kich_thuoc, @quan_trong, @tags, @user_id, @version, @sync_status, @local_version, @remote_id, @server_id)";
 
             System.Data.SQLite.SQLiteParameter[] parameters = 
             [
@@ -508,7 +508,8 @@ namespace document_sharing_manager.Core.Data
                 new("@version", version),
                 new("@sync_status", syncStatus),
                 new("@local_version", localVersion),
-                new("@remote_id", remoteId.ToString())
+                new("@remote_id", remoteId.ToString()),
+                new("@server_id", serverId.HasValue ? (object)serverId.Value : DBNull.Value)
             ];
 
             return ExecuteNonQuery(query, parameters) > 0;
@@ -528,9 +529,9 @@ namespace document_sharing_manager.Core.Data
             try
             {
                 string query = @"INSERT INTO tai_lieu
-                    (ten, dinh_dang, duong_dan, ghi_chu, kich_thuoc, quan_trong, tags, user_id, version, sync_status, local_version)
+                    (ten, dinh_dang, duong_dan, ghi_chu, kich_thuoc, quan_trong, tags, user_id, version, sync_status, local_version, remote_id, server_id)
                     VALUES
-                    (@ten, @dinh_dang, @duong_dan, @ghi_chu, @kich_thuoc, @quan_trong, @tags, @user_id, @version, @sync_status, @local_version)";
+                    (@ten, @dinh_dang, @duong_dan, @ghi_chu, @kich_thuoc, @quan_trong, @tags, @user_id, @version, @sync_status, @local_version, @remote_id, @server_id)";
 
                 using (var cmd = new SQLiteCommand(query, conn, transaction))
                 {
@@ -545,6 +546,8 @@ namespace document_sharing_manager.Core.Data
                     cmd.Parameters.Add("@version", System.Data.DbType.Int32);
                     cmd.Parameters.Add("@sync_status", System.Data.DbType.Int32);
                     cmd.Parameters.Add("@local_version", System.Data.DbType.Int32);
+                    cmd.Parameters.Add("@remote_id", System.Data.DbType.String);
+                    cmd.Parameters.Add("@server_id", System.Data.DbType.Int32);
 
                     foreach (var doc in documents)
                     {
@@ -559,6 +562,8 @@ namespace document_sharing_manager.Core.Data
                         cmd.Parameters["@version"].Value = doc.Version;
                         cmd.Parameters["@sync_status"].Value = doc.SyncStatus;
                         cmd.Parameters["@local_version"].Value = doc.LocalVersion;
+                        cmd.Parameters["@remote_id"].Value = doc.RemoteId.ToString();
+                        cmd.Parameters["@server_id"].Value = doc.ServerId.HasValue ? (object)doc.ServerId.Value : DBNull.Value;
 
                         if (cmd.ExecuteNonQuery() > 0) successCount++;
                     }
@@ -623,7 +628,8 @@ namespace document_sharing_manager.Core.Data
         /// </summary>
         public static bool DeleteDocument(int id)
         {
-            string query = "UPDATE tai_lieu SET is_deleted = 1, deleted_at = datetime('now','localtime') WHERE id = @id";
+            // Mark as deleted AND set sync_status to 1 (PendingSync/Upload) so the sync engine picks it up
+            string query = "UPDATE tai_lieu SET is_deleted = 1, sync_status = 1, deleted_at = datetime('now','localtime') WHERE id = @id";
 
             System.Data.SQLite.SQLiteParameter[] parameters = 
             [

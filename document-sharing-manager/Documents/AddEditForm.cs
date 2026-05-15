@@ -244,6 +244,7 @@ namespace document_sharing_manager.Documents
                         finalPath = FileStorageService.ImportFile(finalPath);
                     }
 
+                    _currentSyncStatus = 1;      // SyncStatus: PendingUpload
                     success = DatabaseHelper.UpdateDocument(
                         _documentId.Value,
                         txtTen.Text.Trim(),
@@ -256,7 +257,7 @@ namespace document_sharing_manager.Documents
                         _remoteId,
                         _currentVersion,     // Server version stays the same during local edit
                         _currentVersion,     // Old version for atomic check
-                        _currentSyncStatus = 1,      // SyncStatus: PendingUpload
+                        _currentSyncStatus,
                         _currentLocalVersion + 1, // Increment local version
                         _serverId,
                         tags

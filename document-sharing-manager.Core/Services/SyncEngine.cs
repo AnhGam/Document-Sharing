@@ -95,7 +95,7 @@ namespace document_sharing_manager.Core.Services
             // Trigger initial sync for all servers
             foreach (var server in _servers.Values)
             {
-                _ = SyncServerAsync(server, _cts.Token);
+                _ = Task.Run(() => SyncServerAsync(server, _cts.Token));
             }
         }
 
@@ -128,18 +128,28 @@ namespace document_sharing_manager.Core.Services
                 // 1. Pull from this specific server
                 await PullFromServerAsync(server, ct);
 
-                // 2. Enqueue pending tasks for this server
-                // Note: GetPendingSyncDocumentsAsync should be updated to filter by ServerId if needed
-                // But for now, we'll filter here
+                // 2. Claim documents with no server assigned yet and enqueue uploads/deletes
                 var documents = await _repository.GetPendingSyncDocumentsAsync(UserSession.CurrentUserId, ct);
-                foreach (var doc in documents.Where(d => d.SyncStatus == 1 && (d.ServerId == server.Id || d.ServerId == null)))
+                foreach (var doc in documents.Where(d => d.SyncStatus != 0 && (d.ServerId == server.Id || d.ServerId == null)))
                 {
                     if (doc.ServerId == null)
                     {
                         doc.ServerId = server.Id;
                         await _repository.UpdateAsync(doc, ct); // Persist the server assignment
                     }
-                    Enqueue(doc, SyncType.Upload, server.Id);
+                    
+                    // Re-check after update
+                    if (doc.ServerId == server.Id)
+                    {
+                        if (doc.IsDeleted)
+                        {
+                            Enqueue(doc, SyncType.Delete, server.Id);
+                        }
+                        else
+                        {
+                            Enqueue(doc, SyncType.Upload, server.Id);
+                        }
+                    }
                 }
 
                 return Result.Success();
@@ -181,9 +191,16 @@ namespace document_sharing_manager.Core.Services
                             string safeFileName = string.Join("_", serverDoc.Ten.Split(Path.GetInvalidFileNameChars()));
                             serverDoc.DuongDan = Path.Combine(FileStorageService.DefaultFolder, server.Id.ToString(), safeFileName);
                             serverDoc.ServerId = server.Id;
+                            serverDoc.UserId = UserSession.CurrentUserId; // Fix: Set local owner
                             
                             await _repository.AddAsync(serverDoc, ct);
-                            Enqueue(serverDoc, SyncType.Download, server.Id);
+                            
+                            // Fix: Re-fetch from DB to get the actual generated ID before enqueuing
+                            var addedDoc = await _repository.GetByRemoteIdAsync(serverDoc.RemoteId, ct);
+                            if (addedDoc != null)
+                            {
+                                Enqueue(addedDoc, SyncType.Download, server.Id);
+                            }
                         }
                         else if (serverDoc.Version > localDoc.Version)
                         {
@@ -247,16 +264,23 @@ namespace document_sharing_manager.Core.Services
                     
                     if (_taskQueue.TryDequeue(out var task))
                     {
-                        if (!_servers.TryGetValue(task.ServerId, out var server)) continue;
-
                         string taskKey = $"{task.Document.Id}_{task.Type}_{task.ServerId}";
+                        
+                        if (!_servers.TryGetValue(task.ServerId, out var server))
+                        {
+                            // Fix: Clear stale task entry even if server is missing
+                            _enqueuedTasks.TryRemove(taskKey, out _);
+                            continue;
+                        }
+
                         try
                         {
                             if (task.Type == SyncType.Upload)
                                 await HandleUploadAsync(task.Document, server, _cts.Token);
                             else if (task.Type == SyncType.Download)
                                 await HandleDownloadAsync(task.Document, server, _cts.Token);
-                            
+                            else if (task.Type == SyncType.Delete)
+                                await HandleRemoteDeleteAsync(task.Document, server, _cts.Token);
                         }
                         finally
                         {
@@ -349,6 +373,45 @@ namespace document_sharing_manager.Core.Services
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Upload failed for {doc.Ten}: {ex.Message}");
+            }
+        }
+
+        private async Task HandleRemoteDeleteAsync(Document doc, ManagedServer server, CancellationToken ct)
+        {
+            try
+            {
+                // We notify the server that this document (by its RemoteId) is deleted
+                string deleteUrl = $"{server.BaseUrl.TrimEnd('/')}/api/documents/remote/{doc.RemoteId}";
+                using var request = new HttpRequestMessage(HttpMethod.Delete, deleteUrl);
+                
+                if (!string.IsNullOrEmpty(server.AccessToken))
+                {
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", server.AccessToken);
+                }
+
+                var response = await _httpClient.SendAsync(request, ct);
+                
+                // If success or already gone (404), mark as synced locally
+                if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    await _repository.UpdateSyncStatusAsync(doc.Id, 0, ct: ct);
+                    
+                    void UpdateLocal()
+                    {
+                        doc.SyncStatus = 0; // Synced
+                    }
+
+                    if (_syncContext != null) _syncContext.Post(_ => UpdateLocal(), null);
+                    else UpdateLocal();
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"Remote delete failed for {doc.Ten}: {response.StatusCode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Remote delete error for {doc.Ten}: {ex.Message}");
             }
         }
 

@@ -92,6 +92,16 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
             return await _context.Documents
                 .FirstOrDefaultAsync(d => d.RemoteId == remoteId && !d.IsDeleted, ct);
         }
+        public async Task DeleteByRemoteIdAsync(Guid remoteId, CancellationToken ct = default)
+        {
+            var entity = await _context.Documents
+                .FirstOrDefaultAsync(d => d.RemoteId == remoteId, ct);
+            if (entity != null)
+            {
+                entity.SoftDelete();
+                await _context.SaveChangesAsync(ct);
+            }
+        }
 
         public async Task<List<Document>> SearchAsync(string keyword, int userId, CancellationToken ct = default)
         {
@@ -221,7 +231,7 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
         public async Task<List<Document>> GetPendingSyncDocumentsAsync(int userId, CancellationToken ct = default)
         {
             return await _context.Documents
-                .Where(d => d.UserId == userId && d.SyncStatus != 0 && !d.IsDeleted)
+                .Where(d => d.UserId == userId && d.SyncStatus != 0)
                 .OrderByDescending(d => d.CreatedAt)
                 .ToListAsync(ct);
         }

@@ -36,7 +36,8 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
                 Version = row["version"] != DBNull.Value ? Convert.ToInt32(row["version"]) : 1,
                 SyncStatus = row["sync_status"] != DBNull.Value ? Convert.ToInt32(row["sync_status"]) : 0,
                 LocalVersion = row["local_version"] != DBNull.Value ? Convert.ToInt32(row["local_version"]) : 1,
-                RemoteId = row["remote_id"] != DBNull.Value ? Guid.Parse(row["remote_id"].ToString()) : Guid.NewGuid()
+                RemoteId = row["remote_id"] != DBNull.Value ? Guid.Parse(row["remote_id"].ToString()) : Guid.NewGuid(),
+                ServerId = row["server_id"] != DBNull.Value ? Convert.ToInt32(row["server_id"]) : (int?)null
             };
         }
 
@@ -153,7 +154,7 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
 
         public bool Add(Document doc)
         {
-            return DatabaseHelper.InsertDocument(doc.Ten, doc.DinhDang, doc.DuongDan, doc.GhiChu, doc.KichThuoc, doc.QuanTrong, doc.UserId, doc.RemoteId, doc.Version, doc.Tags);
+            return DatabaseHelper.InsertDocument(doc.Ten, doc.DinhDang, doc.DuongDan, doc.GhiChu, doc.KichThuoc, doc.QuanTrong, doc.UserId, doc.RemoteId, doc.Version, doc.Tags, doc.SyncStatus, doc.LocalVersion, doc.ServerId);
         }
 
         public bool Update(Document doc)
@@ -251,6 +252,15 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
                 return list.Count > 0 ? list[0] : null;
             }, ct);
         }
+        public async Task DeleteByRemoteIdAsync(Guid remoteId, CancellationToken ct = default)
+        {
+            await Task.Run(() => 
+            {
+                string query = "UPDATE tai_lieu SET is_deleted = 1, deleted_at = datetime('now','localtime') WHERE remote_id = @remoteId";
+                SQLiteParameter[] parameters = [new("@remoteId", remoteId.ToString())];
+                DatabaseHelper.ExecuteNonQuery(query, parameters);
+            }, ct);
+        }
 
         public async Task<List<Document>> SearchAsync(string keyword, int userId, CancellationToken ct = default)
         {
@@ -327,7 +337,8 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
         }
         public async Task<List<Document>> GetPendingSyncDocumentsAsync(int userId, CancellationToken ct = default)
         {
-            string query = "SELECT * FROM tai_lieu WHERE (is_deleted IS NULL OR is_deleted = 0) AND user_id = @userId AND sync_status != 0 ORDER BY ngay_them DESC";
+            // We include is_deleted = 1 here because we need to sync deletions too
+            string query = "SELECT * FROM tai_lieu WHERE user_id = @userId AND sync_status != 0 ORDER BY ngay_them DESC";
             SQLiteParameter[] parameters = [new("@userId", userId)];
             return await Task.Run(() => ExecuteAndMap(query, parameters), ct);
         }

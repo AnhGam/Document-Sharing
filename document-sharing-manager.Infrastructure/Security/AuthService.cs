@@ -44,7 +44,7 @@ namespace document_sharing_manager.Infrastructure.Security
             var normalizedUsername = request.Username?.ToLowerInvariant() ?? string.Empty;
             var normalizedEmail = request.Email?.ToLowerInvariant() ?? string.Empty;
             
-            if (await _context.Users.AnyAsync(u => u.Username == normalizedUsername || u.Email.Equals(normalizedEmail, StringComparison.OrdinalIgnoreCase), ct))
+            if (await _context.Users.AnyAsync(u => u.Username == normalizedUsername || u.Email.ToLower() == normalizedEmail, ct))
             {
                 throw new InvalidOperationException("Username or Email already exists.");
             }

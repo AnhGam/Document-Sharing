@@ -116,6 +116,17 @@ namespace document_sharing_manager_api.Controllers
             return await SendFileResponse(document, ct);
         }
 
+        [HttpDelete("remote/{remoteId}")]
+        public async Task<IActionResult> DeleteByRemoteId(Guid remoteId, CancellationToken ct)
+        {
+            var document = await _repository.GetByRemoteIdAsync(remoteId, ct);
+            if (document == null || document.UserId != CurrentUserId)
+                return NotFound();
+
+            await _repository.DeleteByRemoteIdAsync(remoteId, ct);
+            return NoContent();
+        }
+
         private async Task<IActionResult> SendFileResponse(Document document, CancellationToken ct)
         {
             try
