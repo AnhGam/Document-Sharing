@@ -164,9 +164,10 @@ using (var scope = app.Services.CreateScope())
                 }
                 connected = true;
             }
-            catch
+            catch (Exception ex)
             {
                 retryCount++;
+                Console.WriteLine($"Database connection failed: {ex.Message}");
                 Console.WriteLine($"Waiting for Database to be ready... (Attempt {retryCount}/10)");
                 Thread.Sleep(3000);
             }

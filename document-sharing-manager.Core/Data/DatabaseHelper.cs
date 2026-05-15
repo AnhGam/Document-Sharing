@@ -1328,13 +1328,35 @@ namespace document_sharing_manager.Core.Data
         /// </summary>
         public static bool DeleteServer(int serverId)
         {
-            // Xóa tài liệu thuộc server này hoặc để lại tùy business logic. Ở đây ta giữ lại tài liệu nhưng xóa server_id?
-            // Tốt nhất là xóa luôn tài liệu metadata để tránh rác.
-            string deleteDocs = "UPDATE tai_lieu SET is_deleted = 1 WHERE server_id = @id";
-            ExecuteNonQuery(deleteDocs, [new("@id", serverId)]);
+            using var conn = new SQLiteConnection(ConnectionString);
+            conn.Open();
+            using var transaction = conn.BeginTransaction();
+            try
+            {
+                // Soft-delete documents belonging to this server
+                string deleteDocs = "UPDATE tai_lieu SET is_deleted = 1 WHERE server_id = @id";
+                using (var cmdDocs = new SQLiteCommand(deleteDocs, conn, transaction))
+                {
+                    cmdDocs.Parameters.AddWithValue("@id", serverId);
+                    cmdDocs.ExecuteNonQuery();
+                }
 
-            string query = "DELETE FROM managed_servers WHERE id = @id";
-            return ExecuteNonQuery(query, [new("@id", serverId)]) > 0;
+                // Delete the server record
+                string query = "DELETE FROM managed_servers WHERE id = @id";
+                using (var cmdServer = new SQLiteCommand(query, conn, transaction))
+                {
+                    cmdServer.Parameters.AddWithValue("@id", serverId);
+                    var result = cmdServer.ExecuteNonQuery() > 0;
+                    
+                    transaction.Commit();
+                    return result;
+                }
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                throw new InvalidOperationException("Lỗi khi xóa server: " + ex.Message, ex);
+            }
         }
 
         #endregion

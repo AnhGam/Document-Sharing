@@ -232,12 +232,12 @@ namespace document_sharing_manager.Core.Services
                             else if (task.Type == SyncType.Download)
                                 await HandleDownloadAsync(task.Document, server, _cts.Token);
                             
-                            // Trigger UI refresh if needed
-                            _syncContext?.Post(_ => SyncCompleted?.Invoke(this, EventArgs.Empty), null);
                         }
                         finally
                         {
                             _enqueuedTasks.TryRemove(taskKey, out _);
+                            // Trigger UI refresh if needed
+                            _syncContext?.Post(_ => SyncCompleted?.Invoke(this, EventArgs.Empty), null);
                         }
                     }
                 }

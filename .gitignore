@@ -363,4 +363,3 @@ FodyWeavers.xsd
 # Redistributable installers (binary, do not commit)
 redist/
 DOCKER_TEST_GUIDE.md
-DOCKER_TEST_GUIDE.md

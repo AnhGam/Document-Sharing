@@ -122,8 +122,12 @@ namespace document_sharing_manager.Services
                             UpdateLocal();
                         }
 
-                        // Signal engine to process
-                        _engine.Enqueue(doc, SyncType.Upload, doc.ServerId ?? 0);
+                        // Signal engine to process if server ID is assigned
+                        if (doc.ServerId.HasValue)
+                        {
+                            _engine.Enqueue(doc, SyncType.Upload, doc.ServerId.Value);
+                        }
+                        // If ServerId is null, the main sync loop will handle assigning it later.
                     
                     System.Diagnostics.Debug.WriteLine($"File change detected and enqueued: {fileName}");
                 }
