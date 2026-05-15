@@ -1,34 +1,64 @@
-# HƯỚNG DẪN TEST SERVER VỚI DOCKER
+# HƯỚNG DẪN TEST ĐỒNG BỘ ĐA MÁY VỚI DOCKER
 
-Tài liệu này giúp bạn chạy thử Server trên chính máy tính của mình nhưng vẫn đảm bảo tính chất giống như truy cập từ một mạng khác.
+Tài liệu này giúp bạn thực hiện bài test: **"Máy A upload, Máy B (sau khi xóa data) có thấy và tải lại được không?"**.
 
-## 1. Chuẩn bị file docker-compose.yml
-Tôi đã tạo sẵn file `docker-compose.yml` ở thư mục gốc. File này sẽ dựng lên:
-- **db**: Database PostgreSQL.
-- **api**: Web API của chúng ta (Server).
+## 1. Khởi động Server (Docker)
+1. Mở Terminal tại thư mục gốc của dự án.
+2. Chạy lệnh:
+   ```powershell
+   docker-compose up -d
+   ```
+3. Đợi các container `docshare_db` và `docshare_api` sẵn sàng.
 
-## 2. Cách khởi chạy
-Mở Terminal tại thư mục gốc của dự án và chạy lệnh:
-```bash
-docker-compose up -d
+## 2. Lấy Token truy cập (Authentication)
+Vì API có bảo mật JWT, bạn cần một Token để App có thể đồng bộ. Hãy thực hiện đăng ký và đăng nhập nhanh bằng 2 lệnh sau:
+
+### Bước 2.1: Đăng ký tài khoản test
+```powershell
+curl -X POST http://localhost:5000/api/Auth/register `
+     -H "Content-Type: application/json" `
+     -d '{"username": "testuser", "password": "Password123!", "email": "test@example.com"}'
 ```
 
-## 3. Cách test "Giả lập mạng ngoài"
-Để giả lập việc kết nối không phải qua `localhost` (như một máy khách thực thụ):
+### Bước 2.2: Đăng nhập để lấy Token
+```powershell
+curl -X POST http://localhost:5000/api/Auth/login `
+     -H "Content-Type: application/json" `
+     -d '{"username": "testuser", "password": "Password123!"}'
+```
+**Kết quả**: Bạn sẽ nhận được một chuỗi `accessToken`. Hãy copy chuỗi này.
 
-1. **Tìm IP máy tính của bạn**: 
-   - Trên Windows: Chạy lệnh `ipconfig` trong CMD. Tìm dòng `IPv4 Address` (Ví dụ: `192.168.1.15`).
-2. **Cấu hình Client**:
-   - Mở ứng dụng WinForms của bạn.
-   - Vào **Cài đặt**.
-   - Nhập URL dùng IP vừa tìm được: `http://192.168.1.15:5000/api/documents`.
-3. **Kiểm chứng**:
-   - Mặc dù Server và Client đang chạy trên cùng một máy vật lý, nhưng khi bạn gọi qua IP `192.168.1.15`, gói tin sẽ đi qua Card mạng và Docker sẽ tiếp nhận nó như một kết nối từ thiết bị ngoại vi.
+## 3. Cấu hình App (Máy A)
+1. Chạy ứng dụng WinForms.
+2. Click icon **Cài đặt (Bánh răng)**.
+3. **URL**: Nhập `http://localhost:5000/api/documents` (Nếu test cùng máy) hoặc IP máy (`http://192.168.1.x:5000/api/documents`).
+4. **Token**: Dán chuỗi `accessToken` vừa copy vào ô **JWT Access Token**.
+5. Nhấn **Lưu cấu hình**.
 
-## 4. Các lệnh hữu ích
-- **Xem log Server**: `docker-compose logs -f api`
-- **Dừng hệ thống**: `docker-compose down`
-- **Xóa sạch dữ liệu để làm mới**: `docker-compose down -v`
+## 4. Thực hiện bài Test Sync
 
-## 5. Lưu ý về File lưu trữ
-Dữ liệu file bạn upload lên Docker sẽ được lưu vào Volume `api_uploads`. Nếu bạn muốn xem trực tiếp file trên Windows, hãy kiểm tra phần `volumes` trong file docker-compose.
+### Giai đoạn 1: Upload (Máy A)
+1. Trên giao diện chính, nhấn **Import** (Ctrl+N) và chọn vài file (ảnh, pdf, txt...).
+2. Đợi vài giây để App tự động upload (Bạn có thể xem log Docker: `docker-compose logs -f api`).
+3. Khi file hiện trạng thái "Synced" (hoặc không còn icon pending), nghĩa là đã lên Server.
+
+### Giai đoạn 2: Giả lập Máy B (Xóa dữ liệu local)
+1. Tắt ứng dụng WinForms.
+2. Truy cập thư mục chạy app (thường là `document-sharing-manager/bin/Debug/`).
+3. **Xóa sạch**:
+   - File `document_sharing.db` (Xóa DB SQLite local).
+   - Folder `documents/` (Xóa file local đã import).
+4. Mở lại ứng dụng. **Lúc này App sẽ trắng trơn.**
+
+### Giai đoạn 3: Kiểm chứng (Máy B tải lại)
+1. Vào lại **Cài đặt**, nhập lại URL và Token (vì file config cũng bị ảnh hưởng hoặc bạn muốn chắc chắn).
+2. Nhấn nút **Làm mới (F5)**.
+3. **Kết quả**: 
+   - App sẽ tự động gọi API lấy danh sách file bạn đã úp từ Máy A.
+   - Các file sẽ xuất hiện trong danh sách.
+   - App sẽ tự động tải (Download) file vật lý từ Server về folder `documents/` mới.
+   - Bạn có thể nhấn đúp vào file để mở xem -> **Thành công!**
+
+## 5. Các lệnh hỗ trợ
+- **Xóa sạch toàn bộ Server để làm lại từ đầu**: `docker-compose down -v`
+- **Xem log API**: `docker-compose logs -f api`

@@ -148,6 +148,7 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
     try
     {
         var context = services.GetRequiredService<AppDbContext>();
@@ -168,7 +169,6 @@ using (var scope = app.Services.CreateScope())
             catch (Exception ex)
             {
                 retryCount++;
-                var logger = services.GetRequiredService<ILogger<Program>>();
                 logger.LogWarning(ex, "Database connection failed (Attempt {RetryCount}/10): {Message}", retryCount, ex.Message);
                 await Task.Delay(3000);
             }
@@ -176,7 +176,6 @@ using (var scope = app.Services.CreateScope())
     }
     catch (Exception ex)
     {
-        var logger = services.GetRequiredService<ILogger<Program>>();
         logger.LogError(ex, "An error occurred while migrating the database.");
     }
 }

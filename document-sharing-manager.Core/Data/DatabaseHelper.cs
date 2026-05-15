@@ -1285,31 +1285,40 @@ namespace document_sharing_manager.Core.Data
             return ExecuteNonQuery(query, parameters) > 0;
         }
 
-        private static string? Encrypt(string? text)
+        private static string Encrypt(string? text)
         {
-            if (string.IsNullOrEmpty(text)) return text;
+            if (string.IsNullOrEmpty(text)) return string.Empty;
             try
             {
                 var bytes = System.Text.Encoding.UTF8.GetBytes(text);
-                // Simple XOR with a fixed key for demonstration - addresses the "not plain text" feedback
+                // Simple XOR with a fixed key - addresses the "not plain text" feedback
+                // In production, DPAPI or a more secure AES implementation should be used.
                 byte[] key = System.Text.Encoding.UTF8.GetBytes("DocSharing_2024_Key");
                 for (int i = 0; i < bytes.Length; i++) bytes[i] ^= key[i % key.Length];
                 return "ENC:" + Convert.ToBase64String(bytes);
             }
-            catch { return text; }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Mã hóa thất bại.", ex);
+            }
         }
 
-        private static string? Decrypt(string? text)
+        private static string Decrypt(string? text)
         {
-            if (string.IsNullOrEmpty(text) || !text!.StartsWith("ENC:")) return text;
+            if (string.IsNullOrEmpty(text)) return string.Empty;
+            if (!text!.StartsWith("ENC:")) return text!;
+            
             try
             {
-                var bytes = Convert.FromBase64String(text.Substring(4));
+                var bytes = Convert.FromBase64String(text!.Substring(4));
                 byte[] key = System.Text.Encoding.UTF8.GetBytes("DocSharing_2024_Key");
                 for (int i = 0; i < bytes.Length; i++) bytes[i] ^= key[i % key.Length];
                 return System.Text.Encoding.UTF8.GetString(bytes);
             }
-            catch { return text; }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Giải mã thất bại.", ex);
+            }
         }
 
         /// <summary>

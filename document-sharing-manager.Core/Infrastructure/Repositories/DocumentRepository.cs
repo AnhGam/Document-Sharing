@@ -36,7 +36,7 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
                 Version = row["version"] != DBNull.Value ? Convert.ToInt32(row["version"]) : 1,
                 SyncStatus = row["sync_status"] != DBNull.Value ? Convert.ToInt32(row["sync_status"]) : 0,
                 LocalVersion = row["local_version"] != DBNull.Value ? Convert.ToInt32(row["local_version"]) : 1,
-                RemoteId = row["remote_id"] != DBNull.Value ? Guid.Parse(row["remote_id"].ToString()) : Guid.NewGuid(),
+                RemoteId = row["remote_id"] != DBNull.Value ? Guid.Parse(row["remote_id"].ToString()) : throw new InvalidOperationException("Dữ liệu lỗi: Thiếu RemoteId cho tài liệu ID " + row["id"]),
                 ServerId = row["server_id"] != DBNull.Value ? Convert.ToInt32(row["server_id"]) : (int?)null
             };
         }
