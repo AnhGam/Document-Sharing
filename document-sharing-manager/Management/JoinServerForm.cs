@@ -148,7 +148,7 @@ namespace document_sharing_manager.Management
                     request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", password);
                 }
 
-                var response = await _httpClient.SendAsync(request);
+                using var response = await _httpClient.SendAsync(request);
                 return response.IsSuccessStatusCode;
             }
             catch { return false; }

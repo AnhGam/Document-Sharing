@@ -4,6 +4,8 @@ using System.Data;
 using System.Data.SQLite;
 using System.IO;
 // using System.Windows.Forms; // Removed for Backend-Frontend Decoupling
+using System.Security.Cryptography;
+using System.Text;
 using document_sharing_manager.Core.Domain;
 
 namespace document_sharing_manager.Core.Data
@@ -1285,40 +1287,66 @@ namespace document_sharing_manager.Core.Data
             return ExecuteNonQuery(query, parameters) > 0;
         }
 
+        private static readonly byte[] AesKey = Encoding.UTF8.GetBytes("DocSharing_2024_SecurityKey_32ch"); // 32 bytes for AES-256
+        private static readonly byte[] AesIV = Encoding.UTF8.GetBytes("DocSharing_2024_"); // 16 bytes IV
+
         private static string Encrypt(string? text)
         {
             if (string.IsNullOrEmpty(text)) return string.Empty;
             try
             {
-                var bytes = System.Text.Encoding.UTF8.GetBytes(text);
-                // Simple XOR with a fixed key - addresses the "not plain text" feedback
-                // In production, DPAPI or a more secure AES implementation should be used.
-                byte[] key = System.Text.Encoding.UTF8.GetBytes("DocSharing_2024_Key");
-                for (int i = 0; i < bytes.Length; i++) bytes[i] ^= key[i % key.Length];
-                return "ENC:" + Convert.ToBase64String(bytes);
+                using Aes aes = Aes.Create();
+                aes.Key = AesKey;
+                aes.IV = AesIV;
+                
+                using var encryptor = aes.CreateEncryptor();
+                byte[] input = Encoding.UTF8.GetBytes(text);
+                byte[] output = encryptor.TransformFinalBlock(input, 0, input.Length);
+                return "AES:" + Convert.ToBase64String(output);
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException("Mã hóa thất bại.", ex);
+                throw new InvalidOperationException("Mã hóa AES thất bại.", ex);
             }
         }
 
         private static string Decrypt(string? text)
         {
             if (string.IsNullOrEmpty(text)) return string.Empty;
-            if (!text!.StartsWith("ENC:")) return text!;
+            if (!text!.StartsWith("AES:")) 
+            {
+                // Fallback for old XOR encrypted data (prefixed with ENC:)
+                if (text.StartsWith("ENC:")) return DecryptOld(text);
+                return text;
+            }
             
             try
             {
-                var bytes = Convert.FromBase64String(text!.Substring(4));
-                byte[] key = System.Text.Encoding.UTF8.GetBytes("DocSharing_2024_Key");
-                for (int i = 0; i < bytes.Length; i++) bytes[i] ^= key[i % key.Length];
-                return System.Text.Encoding.UTF8.GetString(bytes);
+                using Aes aes = Aes.Create();
+                aes.Key = AesKey;
+                aes.IV = AesIV;
+
+                using var decryptor = aes.CreateDecryptor();
+                byte[] input = Convert.FromBase64String(text.Substring(4));
+                byte[] output = decryptor.TransformFinalBlock(input, 0, input.Length);
+                return Encoding.UTF8.GetString(output);
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException("Giải mã thất bại.", ex);
+                throw new InvalidOperationException("Giải mã AES thất bại.", ex);
             }
+        }
+
+        private static string DecryptOld(string text)
+        {
+            try
+            {
+                var bytes = Convert.FromBase64String(text.Substring(4));
+                byte[] key = Encoding.UTF8.GetBytes("DocSharing_2024_Key");
+                for (int i = 0; i < bytes.Length; i++) bytes[i] ^= key[i % key.Length];
+                return Encoding.UTF8.GetString(bytes);
+            }
+            catch { return text; }
         }
 
         /// <summary>

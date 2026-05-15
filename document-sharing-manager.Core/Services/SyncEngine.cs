@@ -197,13 +197,14 @@ namespace document_sharing_manager.Core.Services
                             // Add new document from server
                             serverDoc.UserId = UserSession.CurrentUserId;
                             serverDoc.ServerId = server.Id;
-                            serverDoc.SyncStatus = 0; // Synced
+                            serverDoc.SyncStatus = 2; // PendingDownload - needs to download actual file content
 
                             // Map DuongDan to local pattern - Include RemoteId to prevent collisions
                             string safeFileName = string.Join("_", serverDoc.Ten.Split(Path.GetInvalidFileNameChars()));
                             serverDoc.DuongDan = Path.Combine(FileStorageService.DefaultFolder, server.Id.ToString(), $"{serverDoc.RemoteId.ToString().Substring(0, 8)}_{safeFileName}");
                             
                             await _repository.AddAsync(serverDoc, ct);
+                            Enqueue(serverDoc, SyncType.Download, server.Id);
                         }
                         else if (serverDoc.Version > localDoc.Version)
                         {
@@ -213,7 +214,9 @@ namespace document_sharing_manager.Core.Services
                             localDoc.DinhDang = serverDoc.DinhDang;
                             localDoc.GhiChu = serverDoc.GhiChu;
                             localDoc.SyncStatus = 2; // PendingDownload
+                            localDoc.IsDeleted = false; // Restore if it was soft-deleted locally but updated on server
                             localDoc.ServerId = server.Id;
+                            
                             await _repository.UpdateAsync(localDoc, ct);
                             Enqueue(localDoc, SyncType.Download, server.Id);
                         }
