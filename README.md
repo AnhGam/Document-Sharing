@@ -403,3 +403,9 @@ Archived build reports and AI analyses.
 | Date | Time | Commit | Status | Reports |
 | :--- | :--- | :--- | :--- | :--- |
 | 2026-05-15 | 17:38 | e0b0ded | success |  [View Reports](./reports/2026/05/15/e0b0ded26dc71d5622b12827d370eb505f0166b7-25932082886/) |
+
+## Build History Table
+
+| Date | Time | Commit | Status | Reports |
+| :--- | :--- | :--- | :--- | :--- |
+| 2026-05-15 | 18:11 | e4a3f56 | failure |  [View Reports](./reports/2026/05/15/e4a3f5699268e34bd03ff06b6ca9104805f70b01-25933672783/) |
