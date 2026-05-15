@@ -1287,8 +1287,16 @@ namespace document_sharing_manager.Core.Data
             return ExecuteNonQuery(query, parameters) > 0;
         }
 
-        private static readonly byte[] AesKey = Encoding.UTF8.GetBytes("DocSharing_2024_SecurityKey_32ch"); // 32 bytes for AES-256
-        private static readonly byte[] AesIV = Encoding.UTF8.GetBytes("DocSharing_2024_"); // 16 bytes IV
+        #region Security Configuration
+        // IMPORTANT: In production, these should be loaded from a secure configuration store (e.g., Environment Variables, Azure Key Vault).
+        // HARDCODING KEYS IN SOURCE CODE IS A SECURITY RISK.
+        private static string EncryptionKey => Environment.GetEnvironmentVariable("DOC_SHARING_AES_KEY") ?? "DocSharing_2024_SecurityKey_32ch";
+        private static string EncryptionIV => Environment.GetEnvironmentVariable("DOC_SHARING_AES_IV") ?? "DocSharing_2024_";
+        private static string LegacyXorKey => Environment.GetEnvironmentVariable("DOC_SHARING_XOR_KEY") ?? "DocSharing_2024_Key";
+
+        private static readonly byte[] AesKey = Encoding.UTF8.GetBytes(EncryptionKey);
+        private static readonly byte[] AesIV = Encoding.UTF8.GetBytes(EncryptionIV);
+        #endregion
 
         private static string Encrypt(string? text)
         {
@@ -1342,7 +1350,7 @@ namespace document_sharing_manager.Core.Data
             try
             {
                 var bytes = Convert.FromBase64String(text.Substring(4));
-                byte[] key = Encoding.UTF8.GetBytes("DocSharing_2024_Key");
+                byte[] key = Encoding.UTF8.GetBytes(LegacyXorKey);
                 for (int i = 0; i < bytes.Length; i++) bytes[i] ^= key[i % key.Length];
                 return Encoding.UTF8.GetString(bytes);
             }

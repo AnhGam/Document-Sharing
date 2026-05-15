@@ -127,13 +127,14 @@ namespace document_sharing_manager_api.Controllers
             return NoContent();
         }
 
+        private static readonly Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider _contentTypeProvider = new();
+
         private async Task<IActionResult> SendFileResponse(Document document, CancellationToken ct)
         {
             try
             {
                 var stream = await _storageService.GetFileAsync(document.DuongDan, ct);
-                var provider = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
-                if (!provider.TryGetContentType(document.DuongDan, out string? contentType))
+                if (!_contentTypeProvider.TryGetContentType(document.DuongDan, out string? contentType))
                 {
                     contentType = "application/octet-stream";
                 }

@@ -221,7 +221,17 @@ namespace document_sharing_manager.Core.Services
                             Enqueue(localDoc, SyncType.Download, server.Id);
                         }
                     }
-                    if (serverDocs.Count > 0)
+
+                    // Detect remote deletions: if a local doc for this server is not in serverDocs, it was deleted on server
+                    foreach (var localDoc in localDocsForServer)
+                    {
+                        if (!serverRemoteIds.Contains(localDoc.RemoteId))
+                        {
+                            await _repository.DeleteAsync(localDoc.Id, ct);
+                        }
+                    }
+
+                    if (serverDocs.Count > 0 || localDocsForServer.Any(ld => !serverRemoteIds.Contains(ld.RemoteId)))
                     {
                         RequestSyncRefresh();
                     }
