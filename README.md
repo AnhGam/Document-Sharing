@@ -379,3 +379,9 @@ Archived build reports and AI analyses.
 | Date | Time | Commit | Status | Reports |
 | :--- | :--- | :--- | :--- | :--- |
 | 2026-05-06 | 07:53 | 5f13b95 | success |  [View Reports](./reports/2026/05/06/5f13b95367ddd4f76b700844cb0d874bb154fe5f-25423094899/) |
+
+## Build History Table
+
+| Date | Time | Commit | Status | Reports |
+| :--- | :--- | :--- | :--- | :--- |
+| 2026-05-15 | 16:37 | db143d0 | success |  [View Reports](./reports/2026/05/15/db143d0b2bb964aa6d5a383ed2e922c11f1b21ae-25929359162/) |
