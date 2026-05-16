@@ -97,7 +97,20 @@ namespace document_sharing_manager.Infrastructure.Security
 
             // Revoke old token
             tokenEntity.IsRevoked = true;
+            await _context.SaveChangesAsync(ct);
             return await CreateAuthResponseAsync(user, ct);
+        }
+
+        public async Task LogoutAsync(string refreshToken, CancellationToken ct = default)
+        {
+            var tokenEntity = await _context.RefreshTokens
+                .FirstOrDefaultAsync(t => t.Token == refreshToken, ct);
+
+            if (tokenEntity != null)
+            {
+                tokenEntity.IsRevoked = true;
+                await _context.SaveChangesAsync(ct);
+            }
         }
 
         private async Task<AuthResponse> CreateAuthResponseAsync(User user, CancellationToken ct)
@@ -120,6 +133,7 @@ namespace document_sharing_manager.Infrastructure.Security
                 Token = accessToken,
                 RefreshToken = refreshToken,
                 Username = user.Username,
+                UserId = user.Id,
                 Role = user.Role.ToString()
             };
         }

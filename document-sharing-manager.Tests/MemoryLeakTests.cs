@@ -31,7 +31,8 @@ namespace document_sharing_manager.Tests
             DatabaseHelper.InitializeDatabase();
 
             // Thực hiện hành động (Mở và đóng Form)
-            Dashboard dashboard = new Dashboard();
+            var authClient = new document_sharing_manager.Core.Services.AuthServiceClient("http://localhost:5000");
+            Dashboard dashboard = new Dashboard(authClient);
             dashboard.Show();
             dashboard.Close();
             dashboard.Dispose();

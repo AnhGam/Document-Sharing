@@ -37,5 +37,13 @@ namespace document_sharing_manager_api.Controllers
             var response = await _authService.RefreshTokenAsync(request, ct);
             return Ok(response);
         }
+
+        [HttpPost("logout")]
+        [AllowAnonymous]
+        public async Task<IActionResult> Logout([FromBody] RefreshRequest request, CancellationToken ct)
+        {
+            await _authService.LogoutAsync(request.RefreshToken, ct);
+            return Ok(new { message = "Logged out successfully" });
+        }
     }
 }

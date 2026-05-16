@@ -6,6 +6,7 @@ using document_sharing_manager.Core.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using document_sharing_manager.Infrastructure.Persistence;
 using document_sharing_manager.Core.DTOs;
 
 namespace document_sharing_manager_api.Controllers
@@ -13,7 +14,7 @@ namespace document_sharing_manager_api.Controllers
     [ApiController]
     [Route("api/documents")]
     [Authorize]
-    public class DocumentsController(IDocumentRepository repository, IStorageService storageService) : ControllerBase
+    public class DocumentsController(IDocumentRepository repository, IStorageService storageService, AppDbContext context) : ControllerBase
     {
         private static string SanitizeFileName(string fileName)
         {
@@ -24,6 +25,20 @@ namespace document_sharing_manager_api.Controllers
 
         private readonly IDocumentRepository _repository = repository;
         private readonly IStorageService _storageService = storageService;
+        private readonly AppDbContext _context = context;
+
+        private async Task<bool> IsMemberOfServerAsync(int serverId, CancellationToken ct)
+        {
+            return await _context.Servers.AnyAsync(s => s.UserId == CurrentUserId && s.Id == serverId, ct);
+        }
+
+        private async Task<List<int>> GetUserServerIdsAsync(CancellationToken ct)
+        {
+            return await _context.Servers
+                .Where(s => s.UserId == CurrentUserId)
+                .Select(s => s.Id)
+                .ToListAsync(ct);
+        }
 
         private int CurrentUserId
         {
@@ -42,14 +57,16 @@ namespace document_sharing_manager_api.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Document>>> GetAll(CancellationToken ct)
         {
-            var documents = await _repository.GetAllByUserIdAsync(CurrentUserId, ct);
+            var serverIds = await GetUserServerIdsAsync(ct);
+            var documents = await _repository.GetSharedWithUserAsync(CurrentUserId, serverIds, ct);
             return Ok(documents);
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<Document>> GetById(int id, CancellationToken ct)
         {
-            var document = await _repository.GetByIdAndUserIdAsync(id, CurrentUserId, ct);
+            var serverIds = await GetUserServerIdsAsync(ct);
+            var document = await _repository.GetByIdSharedWithUserAsync(id, CurrentUserId, serverIds, ct);
             if (document == null)
                 return NotFound();
 
@@ -99,7 +116,8 @@ namespace document_sharing_manager_api.Controllers
         [HttpGet("{id}/download")]
         public async Task<IActionResult> Download(int id, CancellationToken ct)
         {
-            var document = await _repository.GetByIdAndUserIdAsync(id, CurrentUserId, ct);
+            var serverIds = await GetUserServerIdsAsync(ct);
+            var document = await _repository.GetByIdSharedWithUserAsync(id, CurrentUserId, serverIds, ct);
             if (document == null)
                 return NotFound();
 
@@ -109,9 +127,14 @@ namespace document_sharing_manager_api.Controllers
         [HttpGet("remote/{remoteId}/download")]
         public async Task<IActionResult> DownloadByRemoteId(Guid remoteId, CancellationToken ct)
         {
+            var serverIds = await GetUserServerIdsAsync(ct);
             var document = await _repository.GetByRemoteIdAsync(remoteId, ct);
-            if (document == null || document.UserId != CurrentUserId)
-                return NotFound();
+            
+            if (document == null || document.IsDeleted) return NotFound();
+
+            // Check permission
+            bool hasAccess = document.UserId == CurrentUserId || (document.ServerId.HasValue && serverIds.Contains(document.ServerId.Value));
+            if (!hasAccess) return Forbid();
 
             return await SendFileResponse(document, ct);
         }
@@ -148,11 +171,33 @@ namespace document_sharing_manager_api.Controllers
         }
 
         [HttpPost("sync-stream")]
-        public async Task<ActionResult<SyncResponse>> SyncStream([FromForm] Guid remoteId, [FromForm] int localVersion, [FromForm] string? ten, [FromForm] string? ghiChu, IFormFile? file, CancellationToken ct)
+        public async Task<ActionResult<SyncResponse>> SyncStream([FromForm] Guid remoteId, [FromForm] int localVersion, [FromForm] int serverId, [FromForm] string? ten, [FromForm] string? ghiChu, IFormFile? file, CancellationToken ct)
         {
+            if (!await IsMemberOfServerAsync(serverId, ct)) return Forbid();
+
             var document = await _repository.GetByRemoteIdAsync(remoteId, ct);
-            if (document == null || document.UserId != CurrentUserId)
+            
+            // If document doesn't exist, create it (First-time sync/upload)
+            if (document == null)
+            {
+                document = new Document
+                {
+                    RemoteId = remoteId,
+                    UserId = CurrentUserId,
+                    ServerId = serverId,
+                    Version = 0, // Will be incremented to 1 below
+                    Ten = ten ?? "Unnamed Document",
+                    GhiChu = ghiChu ?? "",
+                    DinhDang = file != null ? Path.GetExtension(file.FileName).TrimStart('.') : "bin",
+                    KichThuoc = file != null ? (decimal)file.Length : 0,
+                    DuongDan = "" // Will be set below
+                };
+                await _repository.AddAsync(document, ct);
+            }
+            else if (document.UserId != CurrentUserId)
+            {
                 return NotFound(new SyncResponse { Success = false, Message = "Document not found or access denied." });
+            }
 
             if (localVersion < document.Version)
             {
@@ -205,9 +250,31 @@ namespace document_sharing_manager_api.Controllers
         [HttpPost("sync")]
         public async Task<ActionResult<SyncResponse>> Sync([FromBody] SyncRequest request, CancellationToken ct)
         {
+            if (!await IsMemberOfServerAsync(request.ServerId, ct)) return Forbid();
+
             var document = await _repository.GetByRemoteIdAsync(request.RemoteId, ct);
-            if (document == null || document.UserId != CurrentUserId)
+            
+            // If document doesn't exist, create it
+            if (document == null)
+            {
+                document = new Document
+                {
+                    RemoteId = request.RemoteId,
+                    UserId = CurrentUserId,
+                    ServerId = request.ServerId,
+                    Version = 0,
+                    Ten = request.Ten ?? "Unnamed Document",
+                    GhiChu = request.GhiChu ?? "",
+                    DinhDang = "bin",
+                    KichThuoc = 0,
+                    DuongDan = ""
+                };
+                await _repository.AddAsync(document, ct);
+            }
+            else if (document.UserId != CurrentUserId)
+            {
                 return NotFound(new SyncResponse { Success = false, Message = "Document not found or access denied." });
+            }
 
             if (request.LocalVersion < document.Version)
             {
@@ -271,7 +338,8 @@ namespace document_sharing_manager_api.Controllers
         [HttpGet("search")]
         public async Task<ActionResult<IEnumerable<Document>>> Search([FromQuery] string keyword, CancellationToken ct)
         {
-            var results = await _repository.SearchAsync(keyword, CurrentUserId, ct);
+            var serverIds = await GetUserServerIdsAsync(ct);
+            var results = await _repository.SearchAdvancedAsync(keyword, "", null, null, null, null, null, CurrentUserId, serverIds, null, ct);
             return Ok(results);
         }
 
@@ -284,9 +352,11 @@ namespace document_sharing_manager_api.Controllers
             [FromQuery] decimal? minSize,
             [FromQuery] decimal? maxSize,
             [FromQuery] bool? isImportant,
+            [FromQuery] int? serverId,
             CancellationToken ct)
         {
-            var results = await _repository.SearchAdvancedAsync(keyword ?? "", format ?? "", fromDate, toDate, minSize, maxSize, isImportant, CurrentUserId, null, ct);
+            var serverIds = await GetUserServerIdsAsync(ct);
+            var results = await _repository.SearchAdvancedAsync(keyword ?? "", format ?? "", fromDate, toDate, minSize, maxSize, isImportant, CurrentUserId, serverIds, serverId, ct);
             return Ok(results);
         }
     }

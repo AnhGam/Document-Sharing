@@ -7,6 +7,7 @@ using document_sharing_manager.Core.Interfaces;
 using document_sharing_manager.Core.Data;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace document_sharing_manager.Core.Infrastructure.Repositories
 {
@@ -253,6 +254,28 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
                 return list.Count > 0 ? list[0] : null;
             }, ct);
         }
+
+        public async Task<IEnumerable<Document>> GetSharedWithUserAsync(int userId, IEnumerable<int> serverIds, CancellationToken ct = default)
+        {
+            // On client, we already have separate DBs per user, but we filter by serverIds if provided
+            string query = "SELECT * FROM tai_lieu WHERE (is_deleted IS NULL OR is_deleted = 0) AND user_id = @userId";
+            var serverIdList = serverIds.ToList();
+            if (serverIdList.Count > 0)
+            {
+                query += $" AND (server_id IS NULL OR server_id IN ({string.Join(",", serverIdList)}))";
+            }
+            
+            SQLiteParameter[] parameters = [new("@userId", userId)];
+            return await Task.Run(() => ExecuteAndMap(query, parameters), ct);
+        }
+
+        public async Task<Document?> GetByIdSharedWithUserAsync(int id, int userId, IEnumerable<int> serverIds, CancellationToken ct = default)
+        {
+            string query = "SELECT * FROM tai_lieu WHERE id = @id AND (is_deleted IS NULL OR is_deleted = 0) AND user_id = @userId";
+            SQLiteParameter[] parameters = [new("@id", id), new("@userId", userId)];
+            var list = await Task.Run(() => ExecuteAndMap(query, parameters), ct);
+            return list.Count > 0 ? list[0] : null;
+        }
         public async Task DeleteByRemoteIdAsync(Guid remoteId, CancellationToken ct = default)
         {
             await Task.Run(() => 
@@ -263,23 +286,7 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
             }, ct);
         }
 
-        public async Task<List<Document>> SearchAsync(string keyword, int userId, CancellationToken ct = default)
-        {
-            string query = @"SELECT * FROM tai_lieu
-                           WHERE (is_deleted IS NULL OR is_deleted = 0)
-                           AND user_id = @userId
-                           AND (ten LIKE @keyword OR ghi_chu LIKE @keyword)
-                           ORDER BY ngay_them DESC";
-
-            SQLiteParameter[] parameters = 
-            [
-                new("@keyword", "%" + keyword + "%"),
-                new("@userId", userId)
-            ];
-            return await Task.Run(() => ExecuteAndMap(query, parameters));
-        }
-
-        public async Task<List<Document>> SearchAdvancedAsync(string keyword, string format, DateTime? fromDate, DateTime? toDate, decimal? minSize, decimal? maxSize, bool? isImportant, int userId, int? serverId = null, CancellationToken ct = default)
+        public async Task<List<Document>> SearchAdvancedAsync(string keyword, string format, DateTime? fromDate, DateTime? toDate, decimal? minSize, decimal? maxSize, bool? isImportant, int userId, IEnumerable<int> serverIds, int? targetServerId = null, CancellationToken ct = default)
         {
             string baseQuery = @"SELECT * FROM tai_lieu WHERE (is_deleted IS NULL OR is_deleted = 0) AND user_id = @userId";
             List<SQLiteParameter> parameterList = [];
@@ -326,15 +333,15 @@ namespace document_sharing_manager.Core.Infrastructure.Repositories
                 baseQuery += " AND quan_trong = 1";
             }
 
-            if (serverId.HasValue)
+            if (targetServerId.HasValue)
             {
                 baseQuery += " AND server_id = @serverId";
-                parameterList.Add(new("@serverId", serverId.Value));
+                parameterList.Add(new("@serverId", targetServerId.Value));
             }
 
             baseQuery += " ORDER BY ngay_them DESC";
 
-            return await Task.Run(() => ExecuteAndMap(baseQuery, [.. parameterList]));
+            return await Task.Run(() => ExecuteAndMap(baseQuery, [.. parameterList]), ct);
         }
         public async Task<List<Document>> GetPendingSyncDocumentsAsync(int userId, CancellationToken ct = default)
         {
