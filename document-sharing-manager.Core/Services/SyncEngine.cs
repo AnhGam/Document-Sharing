@@ -23,10 +23,12 @@ namespace document_sharing_manager.Core.Services
     {
         public Document Document { get; set; } = null!;
         public SyncType Type { get; set; }
+        public int ServerId { get; set; }
     }
 
     public class SyncEngine : ISyncService, IDisposable
     {
+        public event EventHandler? SyncCompleted;
         private readonly IDocumentRepository _repository;
         
         // Static HttpClient to prevent socket exhaustion
@@ -44,19 +46,49 @@ namespace document_sharing_manager.Core.Services
         private readonly ConcurrentDictionary<string, byte> _enqueuedTasks = new();
         
         private readonly SemaphoreSlim _signal = new(0);
-        private readonly string _apiUrl; 
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<int, ManagedServer> _servers;
         private readonly CancellationTokenSource _cts = new();
-        private readonly SynchronizationContext _syncContext;
+        private readonly SynchronizationContext _syncContext = SynchronizationContext.Current;
+        private readonly System.Threading.Timer _debounceTimer;
         private bool _isRunning = false;
 
-        public SyncEngine(IDocumentRepository repository, string apiUrl)
+        public SyncEngine(IDocumentRepository repository)
         {
             _repository = repository;
-            if (string.IsNullOrWhiteSpace(apiUrl))
-                throw new ArgumentException("API URL must be provided.", nameof(apiUrl));
             
-            _apiUrl = apiUrl.TrimEnd('/');
-            _syncContext = SynchronizationContext.Current;
+            // Load servers from DB
+            var activeServers = DatabaseHelper.GetManagedServers().Where(s => s.IsActive);
+            _servers = new System.Collections.Concurrent.ConcurrentDictionary<int, ManagedServer>(
+                activeServers.ToDictionary(s => s.Id, s => s));
+
+            _debounceTimer = new System.Threading.Timer(_ => TriggerSyncCompleted(), null, Timeout.Infinite, Timeout.Infinite);
+        }
+
+        private void TriggerSyncCompleted()
+        {
+            if (_syncContext != null)
+                _syncContext.Post(_ => SyncCompleted?.Invoke(this, EventArgs.Empty), null);
+            else
+                SyncCompleted?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void RequestSyncRefresh()
+        {
+            _debounceTimer.Change(500, Timeout.Infinite); // Debounce for 500ms
+        }
+
+        public void AddServer(ManagedServer server)
+        {
+            if (_servers.TryAdd(server.Id, server))
+            {
+                // Trigger immediate sync for this new server
+                _ = SyncServerAsync(server, _cts.Token);
+            }
+        }
+
+        public void RemoveServer(int serverId)
+        {
+            _servers.TryRemove(serverId, out _);
         }
 
         public void Start()
@@ -65,8 +97,11 @@ namespace document_sharing_manager.Core.Services
             _isRunning = true;
             Task.Run(ProcessQueueAsync, _cts.Token);
             
-            // Trigger initial sync
-            _ = SyncAsync(_cts.Token);
+            // Trigger initial sync for all servers
+            foreach (var server in _servers.Values)
+            {
+                _ = Task.Run(() => SyncServerAsync(server, _cts.Token));
+            }
         }
 
         public void Stop()
@@ -78,6 +113,7 @@ namespace document_sharing_manager.Core.Services
         public void Dispose()
         {
             Stop();
+            _debounceTimer?.Dispose();
             _cts.Dispose();
             _signal.Dispose();
             GC.SuppressFinalize(this);
@@ -85,20 +121,123 @@ namespace document_sharing_manager.Core.Services
 
         public async Task<Result> SyncAsync(CancellationToken ct = default)
         {
+            var tasks = _servers.Values.Select(s => SyncServerAsync(s, ct));
+            await Task.WhenAll(tasks);
+            return Result.Success();
+        }
+
+        public async Task<Result> SyncServerAsync(ManagedServer server, CancellationToken ct = default)
+        {
             try
             {
+                // 1. Pull from this specific server
+                await PullFromServerAsync(server, ct);
+
+                // 2. Claim documents with no server assigned yet and enqueue uploads/deletes
                 var documents = await _repository.GetPendingSyncDocumentsAsync(UserSession.CurrentUserId, ct);
-                foreach (var doc in documents.Where(d => d.SyncStatus == 1)) // 1: PendingUpload
+                foreach (var doc in documents.Where(d => d.SyncStatus != 0 && (d.ServerId == server.Id || d.ServerId == null)))
                 {
-                    Enqueue(doc, SyncType.Upload);
+                    if (doc.ServerId == null)
+                    {
+                        doc.ServerId = server.Id;
+                        await _repository.UpdateAsync(doc, ct); // Persist the server assignment
+                    }
+                    
+                    // Re-check after update
+                    if (doc.ServerId == server.Id)
+                    {
+                        if (doc.IsDeleted)
+                        {
+                            Enqueue(doc, SyncType.Delete, server.Id);
+                        }
+                        else
+                        {
+                            Enqueue(doc, SyncType.Upload, server.Id);
+                        }
+                    }
                 }
 
-                foreach (var doc in documents.Where(d => d.SyncStatus == 2)) // 2: PendingDownload
-                {
-                    Enqueue(doc, SyncType.Download);
-                }
-                
                 return Result.Success();
+            }
+            catch (Exception ex)
+            {
+                return Result.Failure(ex.Message);
+            }
+        }
+
+        public async Task<Result> PullFromServerAsync(ManagedServer server, CancellationToken ct = default)
+        {
+            try
+            {
+                using var request = new HttpRequestMessage(HttpMethod.Get, $"{server.BaseUrl.TrimEnd('/')}/api/documents");
+                if (!string.IsNullOrEmpty(server.AccessToken))
+                {
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", server.AccessToken);
+                }
+
+                var response = await _httpClient.SendAsync(request, ct);
+                if (response.IsSuccessStatusCode)
+                {
+                    var json = await response.Content.ReadAsStringAsync();
+                    var serverDocs = JsonConvert.DeserializeObject<List<Document>>(json);
+                    if (serverDocs == null) return Result.Failure("Invalid server response");
+
+                    // Get current local documents for this server to detect remote deletions
+                    var localDocsForServer = (await _repository.GetAllByUserIdAsync(UserSession.CurrentUserId, ct))
+                        .Where(d => d.ServerId == server.Id && !d.IsDeleted)
+                        .ToList();
+
+                    var serverRemoteIds = new HashSet<Guid>(serverDocs.Select(d => d.RemoteId));
+
+                    foreach (var serverDoc in serverDocs)
+                    {
+                        var localDoc = await _repository.GetByRemoteIdAsync(serverDoc.RemoteId, ct);
+                        if (localDoc == null)
+                        {
+                            // Add new document from server
+                            serverDoc.UserId = UserSession.CurrentUserId;
+                            serverDoc.ServerId = server.Id;
+                            serverDoc.SyncStatus = 2; // PendingDownload - needs to download actual file content
+
+                            // Map DuongDan to local pattern - Include RemoteId to prevent collisions
+                            string safeFileName = string.Join("_", serverDoc.Ten.Split(Path.GetInvalidFileNameChars()));
+                            serverDoc.DuongDan = Path.Combine(FileStorageService.DefaultFolder, server.Id.ToString(), $"{serverDoc.RemoteId.ToString().Substring(0, 8)}_{safeFileName}");
+                            
+                            await _repository.AddAsync(serverDoc, ct);
+                            Enqueue(serverDoc, SyncType.Download, server.Id);
+                        }
+                        else if (serverDoc.Version > localDoc.Version)
+                        {
+                            // Newer version on server
+                            localDoc.Version = serverDoc.Version;
+                            localDoc.Ten = serverDoc.Ten;
+                            localDoc.DinhDang = serverDoc.DinhDang;
+                            localDoc.GhiChu = serverDoc.GhiChu;
+                            localDoc.SyncStatus = 2; // PendingDownload
+                            localDoc.IsDeleted = false; // Restore if it was soft-deleted locally but updated on server
+                            localDoc.ServerId = server.Id;
+                            
+                            await _repository.UpdateAsync(localDoc, ct);
+                            Enqueue(localDoc, SyncType.Download, server.Id);
+                        }
+                    }
+
+                    // Detect remote deletions: if a local doc for this server is not in serverDocs, it was deleted on server
+                    foreach (var localDoc in localDocsForServer)
+                    {
+                        if (!serverRemoteIds.Contains(localDoc.RemoteId))
+                        {
+                            await _repository.DeleteAsync(localDoc.Id, ct);
+                        }
+                    }
+
+                    if (serverDocs.Count > 0 || localDocsForServer.Any(ld => !serverRemoteIds.Contains(ld.RemoteId)))
+                    {
+                        RequestSyncRefresh();
+                    }
+                    return Result.Success();
+                }
+                return Result.Failure($"Server returned {response.StatusCode}");
             }
             catch (Exception ex)
             {
@@ -121,12 +260,12 @@ namespace document_sharing_manager.Core.Services
              return Result<IEnumerable<DocumentDto>>.Success(dtos);
         }
 
-        public void Enqueue(Document doc, SyncType type)
+        public void Enqueue(Document doc, SyncType type, int serverId)
         {
-            string key = $"{doc.Id}_{type}";
+            string key = $"{doc.Id}_{type}_{serverId}";
             if (_enqueuedTasks.TryAdd(key, 0))
             {
-                _taskQueue.Enqueue(new SyncTask { Document = doc, Type = type });
+                _taskQueue.Enqueue(new SyncTask { Document = doc, Type = type, ServerId = serverId });
                 _signal.Release();
             }
         }
@@ -138,16 +277,32 @@ namespace document_sharing_manager.Core.Services
                 try
                 {
                     await _signal.WaitAsync(_cts.Token);
+                    
                     if (_taskQueue.TryDequeue(out var task))
                     {
-                        string key = $"{task.Document.Id}_{task.Type}";
+                        string taskKey = $"{task.Document.Id}_{task.Type}_{task.ServerId}";
+                        
+                        if (!_servers.TryGetValue(task.ServerId, out var server))
+                        {
+                            // Fix: Clear stale task entry even if server is missing
+                            _enqueuedTasks.TryRemove(taskKey, out _);
+                            continue;
+                        }
+
                         try
                         {
-                            await ProcessTaskAsync(task);
+                            if (task.Type == SyncType.Upload)
+                                await HandleUploadAsync(task.Document, server, _cts.Token);
+                            else if (task.Type == SyncType.Download)
+                                await HandleDownloadAsync(task.Document, server, _cts.Token);
+                            else if (task.Type == SyncType.Delete)
+                                await HandleRemoteDeleteAsync(task.Document, server, _cts.Token);
                         }
                         finally
                         {
-                            _enqueuedTasks.TryRemove(key, out _);
+                            _enqueuedTasks.TryRemove(taskKey, out _);
+                            // Trigger UI refresh debounced
+                            RequestSyncRefresh();
                         }
                     }
                 }
@@ -160,21 +315,8 @@ namespace document_sharing_manager.Core.Services
             }
         }
 
-        private async Task ProcessTaskAsync(SyncTask task)
-        {
-            var ct = _cts.Token;
-            switch (task.Type)
-            {
-                case SyncType.Upload:
-                    await HandleUploadAsync(task.Document, ct);
-                    break;
-                case SyncType.Download:
-                    // TODO: Implement Download
-                    break;
-            }
-        }
 
-        private async Task HandleUploadAsync(Document doc, CancellationToken ct)
+        private async Task HandleUploadAsync(Document doc, ManagedServer server, CancellationToken ct)
         {
             try
             {
@@ -190,14 +332,15 @@ namespace document_sharing_manager.Core.Services
                 if (!string.IsNullOrEmpty(doc.Ten)) content.Add(new StringContent(doc.Ten), "ten");
                 if (doc.GhiChu != null) content.Add(new StringContent(doc.GhiChu), "ghiChu");
 
-                using var request = new HttpRequestMessage(HttpMethod.Post, $"{_apiUrl}/sync-stream")
+                string uploadUrl = $"{server.BaseUrl.TrimEnd('/')}/api/documents/sync-stream";
+                using var request = new HttpRequestMessage(HttpMethod.Post, uploadUrl)
                 {
                     Content = content
                 };
 
-                if (!string.IsNullOrEmpty(UserSession.AccessToken))
+                if (!string.IsNullOrEmpty(server.AccessToken))
                 {
-                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", UserSession.AccessToken);
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", server.AccessToken);
                 }
 
                 using var fileStream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, useAsync: true);
@@ -246,6 +389,100 @@ namespace document_sharing_manager.Core.Services
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Upload failed for {doc.Ten}: {ex.Message}");
+            }
+        }
+
+        private async Task HandleRemoteDeleteAsync(Document doc, ManagedServer server, CancellationToken ct)
+        {
+            try
+            {
+                // We notify the server that this document (by its RemoteId) is deleted
+                string deleteUrl = $"{server.BaseUrl.TrimEnd('/')}/api/documents/remote/{doc.RemoteId}";
+                using var request = new HttpRequestMessage(HttpMethod.Delete, deleteUrl);
+                
+                if (!string.IsNullOrEmpty(server.AccessToken))
+                {
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", server.AccessToken);
+                }
+
+                var response = await _httpClient.SendAsync(request, ct);
+                
+                // If success or already gone (404), mark as synced locally
+                if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    await _repository.UpdateSyncStatusAsync(doc.Id, 0, ct: ct);
+                    
+                    void UpdateLocal()
+                    {
+                        doc.SyncStatus = 0; // Synced
+                    }
+
+                    if (_syncContext != null) _syncContext.Post(_ => UpdateLocal(), null);
+                    else UpdateLocal();
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"Remote delete failed for {doc.Ten}: {response.StatusCode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Remote delete error for {doc.Ten}: {ex.Message}");
+            }
+        }
+
+        private async Task HandleDownloadAsync(Document doc, ManagedServer server, CancellationToken ct)
+        {
+            try
+            {
+                // Download by RemoteId to be safe
+                string downloadUrl = $"{server.BaseUrl.TrimEnd('/')}/api/documents/remote/{doc.RemoteId}/download";
+                using var request = new HttpRequestMessage(HttpMethod.Get, downloadUrl);
+                
+                if (!string.IsNullOrEmpty(server.AccessToken))
+                {
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", server.AccessToken);
+                }
+
+                var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
+                if (response.IsSuccessStatusCode)
+                {
+                    string targetPath = FileStorageService.ResolvePath(doc.DuongDan);
+                    string? directory = Path.GetDirectoryName(targetPath);
+                    if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                    {
+                        Directory.CreateDirectory(directory);
+                    }
+
+                    using (var stream = await response.Content.ReadAsStreamAsync())
+                    using (var fileStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, useAsync: true))
+                    {
+                        await stream.CopyToAsync(fileStream, 8192, ct);
+                    }
+
+                    // Update DB status
+                    await _repository.UpdateSyncStatusAsync(doc.Id, 0, doc.Version, null, doc.Version, ct);
+
+                    // Update UI object
+                    void UpdateLocal()
+                    {
+                        doc.SyncStatus = 0; // Synced
+                        doc.LocalVersion = doc.Version;
+                    }
+
+                    if (_syncContext != null)
+                    {
+                        _syncContext.Post(_ => UpdateLocal(), null);
+                    }
+                    else
+                    {
+                        UpdateLocal();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Download failed for {doc.Ten}: {ex.Message}");
             }
         }
 

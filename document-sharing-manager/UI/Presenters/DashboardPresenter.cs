@@ -68,7 +68,8 @@ namespace document_sharing_manager.UI.Presenters
                 _view.FilterToDate,
                 _view.FilterMinSize,
                 _view.FilterMaxSize,
-                _view.FilterIsImportant
+                _view.FilterIsImportant,
+                _view.SelectedServerId
             );
             _view.SetDocumentList(docs);
             _view.UpdateStatusCount(docs.Count);

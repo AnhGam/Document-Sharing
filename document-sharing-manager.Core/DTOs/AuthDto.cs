@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
 namespace document_sharing_manager.Core.DTOs
@@ -38,5 +39,13 @@ namespace document_sharing_manager.Core.DTOs
         public string RefreshToken { get; set; } = string.Empty;
         public string Username { get; set; } = string.Empty;
         public string Role { get; set; } = string.Empty;
+    }
+
+    public class UserDto
+    {
+        public string Username { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
     }
 }

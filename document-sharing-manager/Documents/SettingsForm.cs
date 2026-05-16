@@ -9,6 +9,7 @@ namespace document_sharing_manager.Documents
     public partial class SettingsForm : Form
     {
         private TextBox txtApiUrl;
+        private TextBox txtAccessToken;
         private Button btnSave;
         private Button btnCancel;
         private Label lblStatus;
@@ -54,12 +55,29 @@ namespace document_sharing_manager.Documents
                 Font = AppTheme.FontBody
             };
 
+            var lblToken = new Label
+            {
+                Text = "JWT Access Token (để đồng bộ):",
+                Font = AppTheme.FontBody,
+                ForeColor = AppTheme.TextPrimary,
+                Location = new Point(20, 120),
+                AutoSize = true
+            };
+
+            txtAccessToken = new TextBox
+            {
+                Location = new Point(20, 145),
+                Size = new Size(390, 25),
+                Font = AppTheme.FontBody,
+                PasswordChar = '*'
+            };
+
             lblStatus = new Label
             {
-                Text = "Lưu ý: Thay đổi sẽ có hiệu lực sau khi khởi động lại ứng dụng.",
+                Text = "Lưu ý: Thay đổi URL yêu cầu khởi động lại App.",
                 Font = AppTheme.FontSmall,
                 ForeColor = AppTheme.TextSecondary,
-                Location = new Point(20, 115),
+                Location = new Point(20, 180),
                 AutoSize = true
             };
 
@@ -67,7 +85,7 @@ namespace document_sharing_manager.Documents
             {
                 Text = "Lưu cấu hình",
                 Size = new Size(120, 35),
-                Location = new Point(170, 140),
+                Location = new Point(170, 205),
                 FlatStyle = FlatStyle.Flat,
                 BackColor = AppTheme.Primary,
                 ForeColor = Color.White,
@@ -80,7 +98,7 @@ namespace document_sharing_manager.Documents
             {
                 Text = "Hủy",
                 Size = new Size(100, 35),
-                Location = new Point(310, 140),
+                Location = new Point(310, 205),
                 FlatStyle = FlatStyle.Flat,
                 BackColor = Color.FromArgb(241, 245, 249),
                 ForeColor = AppTheme.TextPrimary,
@@ -89,12 +107,20 @@ namespace document_sharing_manager.Documents
             btnCancel.FlatAppearance.BorderColor = Color.FromArgb(226, 232, 240);
             btnCancel.Click += (s, e) => this.Close();
 
-            this.Controls.AddRange(new Control[] { lblTitle, lblUrl, txtApiUrl, lblStatus, btnSave, btnCancel });
+            this.Size = new Size(450, 300);
+            this.Controls.AddRange([lblTitle, lblUrl, txtApiUrl, lblToken, txtAccessToken, lblStatus, btnSave, btnCancel]);
         }
 
         private void LoadSettings()
         {
             txtApiUrl.Text = ConfigurationManager.AppSettings["ApiBaseUrl"] ?? "http://localhost:5247/api/documents";
+            txtAccessToken.Text = ConfigurationManager.AppSettings["AccessToken"] ?? "";
+            
+            // Apply to session immediately if exists
+            if (!string.IsNullOrEmpty(txtAccessToken.Text))
+            {
+                document_sharing_manager.Core.Data.UserSession.AccessToken = txtAccessToken.Text;
+            }
         }
 
         private void BtnSaveClick(object sender, EventArgs e)
@@ -117,10 +143,19 @@ namespace document_sharing_manager.Documents
                 {
                     config.AppSettings.Settings["ApiBaseUrl"].Value = newUrl;
                 }
+                // Update token in config too
+                if (config.AppSettings.Settings["AccessToken"] == null)
+                    config.AppSettings.Settings.Add("AccessToken", txtAccessToken.Text.Trim());
+                else
+                    config.AppSettings.Settings["AccessToken"].Value = txtAccessToken.Text.Trim();
+                
                 config.Save(ConfigurationSaveMode.Modified);
                 ConfigurationManager.RefreshSection("appSettings");
 
-                MessageBox.Show("Đã lưu cấu hình thành công! Vui lòng khởi động lại ứng dụng để áp dụng thay đổi.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                // Update Session
+                document_sharing_manager.Core.Data.UserSession.AccessToken = txtAccessToken.Text.Trim();
+
+                MessageBox.Show("Đã lưu cấu hình thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 this.DialogResult = DialogResult.OK;
                 this.Close();
             }

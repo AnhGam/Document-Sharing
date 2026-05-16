@@ -1,4 +1,3 @@
-version: '3.8'
 
 services:
   db:
@@ -8,6 +7,11 @@ services:
       POSTGRES_DB: docshare
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d docshare"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     ports:
       - "5432:5432"
     volumes:
@@ -22,12 +26,29 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - ConnectionStrings__DefaultConnection=Host=db;Database=docshare;Username=postgres;Password=${POSTGRES_PASSWORD}
+    develop:
+      watch:
+        - action: rebuild
+          path: .
+          target: /src
+          ignore:
+            - bin/
+            - obj/
+            - documents/
+            - .git/
+        - action: sync
+          path: ./Core
+          target: /src/Core
+        - action: sync
+          path: ./Infrastructure
+          target: /src/Infrastructure
     ports:
       - "${API_PORT}:5000"
     volumes:
       - api_uploads:/app/uploads
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
 volumes:
   postgres_data:

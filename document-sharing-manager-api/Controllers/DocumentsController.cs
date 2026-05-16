@@ -96,6 +96,57 @@ namespace document_sharing_manager_api.Controllers
             return NoContent();
         }
 
+        [HttpGet("{id}/download")]
+        public async Task<IActionResult> Download(int id, CancellationToken ct)
+        {
+            var document = await _repository.GetByIdAndUserIdAsync(id, CurrentUserId, ct);
+            if (document == null)
+                return NotFound();
+
+            return await SendFileResponse(document, ct);
+        }
+
+        [HttpGet("remote/{remoteId}/download")]
+        public async Task<IActionResult> DownloadByRemoteId(Guid remoteId, CancellationToken ct)
+        {
+            var document = await _repository.GetByRemoteIdAsync(remoteId, ct);
+            if (document == null || document.UserId != CurrentUserId)
+                return NotFound();
+
+            return await SendFileResponse(document, ct);
+        }
+
+        [HttpDelete("remote/{remoteId}")]
+        public async Task<IActionResult> DeleteByRemoteId(Guid remoteId, CancellationToken ct)
+        {
+            var document = await _repository.GetByRemoteIdAsync(remoteId, ct);
+            if (document == null || document.UserId != CurrentUserId)
+                return NotFound();
+
+            await _repository.DeleteByRemoteIdAsync(remoteId, ct);
+            return NoContent();
+        }
+
+        private static readonly Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider _contentTypeProvider = new();
+
+        private async Task<IActionResult> SendFileResponse(Document document, CancellationToken ct)
+        {
+            try
+            {
+                var stream = await _storageService.GetFileAsync(document.DuongDan, ct);
+                if (!_contentTypeProvider.TryGetContentType(document.DuongDan, out string? contentType))
+                {
+                    contentType = "application/octet-stream";
+                }
+
+                return File(stream, contentType, document.Ten);
+            }
+            catch (System.IO.FileNotFoundException)
+            {
+                return NotFound(new { Message = "File not found on server storage." });
+            }
+        }
+
         [HttpPost("sync-stream")]
         public async Task<ActionResult<SyncResponse>> SyncStream([FromForm] Guid remoteId, [FromForm] int localVersion, [FromForm] string? ten, [FromForm] string? ghiChu, IFormFile? file, CancellationToken ct)
         {
@@ -235,7 +286,7 @@ namespace document_sharing_manager_api.Controllers
             [FromQuery] bool? isImportant,
             CancellationToken ct)
         {
-            var results = await _repository.SearchAdvancedAsync(keyword ?? "", format ?? "", fromDate, toDate, minSize, maxSize, isImportant, CurrentUserId, ct);
+            var results = await _repository.SearchAdvancedAsync(keyword ?? "", format ?? "", fromDate, toDate, minSize, maxSize, isImportant, CurrentUserId, null, ct);
             return Ok(results);
         }
     }

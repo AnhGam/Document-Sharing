@@ -10,6 +10,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Scalar.AspNetCore;
+using document_sharing_manager_api.Filters;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -102,20 +104,15 @@ builder.Services.AddSwaggerGen(c =>
         Type = SecuritySchemeType.ApiKey,
         Scheme = "Bearer"
     });
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
-        }
-    });
+    c.OperationFilter<AuthorizeCheckOperationFilter>();
+
+    // Include XML Comments for Examples
+    var apiXmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var apiXmlPath = Path.Combine(AppContext.BaseDirectory, apiXmlFile);
+    if (File.Exists(apiXmlPath)) c.IncludeXmlComments(apiXmlPath);
+
+    var coreXmlPath = Path.Combine(AppContext.BaseDirectory, "document-sharing-manager.Core.xml");
+    if (File.Exists(coreXmlPath)) c.IncludeXmlComments(coreXmlPath);
 });
 
 var app = builder.Build();
@@ -123,11 +120,22 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler(); // Must be first
 
-if (app.Environment.IsDevelopment())
+app.UseSwagger(options =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    options.RouteTemplate = "openapi/{documentName}.json";
+});
+app.UseSwaggerUI(options =>
+{
+    options.RoutePrefix = "swagger";
+});
+
+app.MapScalarApiReference(options => 
+{
+    options.WithTitle("DocShare Management API")
+           .WithTheme(ScalarTheme.Kepler)
+           .WithDefaultHttpClient(ScalarTarget.Shell, ScalarClient.Curl)
+           .WithDocumentDownloadType(DocumentDownloadType.None);
+});
 
 app.UseHttpsRedirection();
 
@@ -135,5 +143,41 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Automatic Migration for Docker/Environment
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
+    try
+    {
+        var context = services.GetRequiredService<AppDbContext>();
+        // Check if database can be connected to, with retries (Docker DB might take a while to start)
+        int retryCount = 0;
+        bool connected = false;
+        while (retryCount < 10 && !connected)
+        {
+            try
+            {
+                var pendingMigrations = await context.Database.GetPendingMigrationsAsync();
+                if (pendingMigrations.Any())
+                {
+                    await context.Database.MigrateAsync();
+                }
+                connected = true;
+            }
+            catch (Exception ex)
+            {
+                retryCount++;
+                logger.LogWarning(ex, "Database connection failed (Attempt {RetryCount}/10): {Message}", retryCount, ex.Message);
+                await Task.Delay(3000);
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "An error occurred while migrating the database.");
+    }
+}
 
 app.Run();

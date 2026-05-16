@@ -69,7 +69,7 @@ namespace document_sharing_manager.Infrastructure.Security
                 .Include(u => u.User)
                 .FirstOrDefaultAsync(t => t.Token == request.RefreshToken, ct);
 
-            if (tokenEntity == null)
+            if (tokenEntity is null)
             {
                 throw new UnauthorizedAccessException("Invalid refresh token.");
             }
