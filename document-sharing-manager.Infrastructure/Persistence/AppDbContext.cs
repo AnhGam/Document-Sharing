@@ -13,6 +13,7 @@ namespace document_sharing_manager.Infrastructure.Persistence
         public DbSet<Document> Documents { get; set; } = null!;
         public DbSet<User> Users { get; set; } = null!;
         public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
+        public DbSet<ManagedServer> Servers { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

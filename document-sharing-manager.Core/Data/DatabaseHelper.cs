@@ -27,13 +27,21 @@ namespace document_sharing_manager.Core.Data
         {
             get
             {
-                if (string.IsNullOrEmpty(_databasePath))
-                {
-                    string appFolder = AppDomain.CurrentDomain.BaseDirectory;
-                    _databasePath = Path.Combine(appFolder, "data", "document_sharing.db");
-                }
-                return _databasePath;
+                // Ensure data folder exists
+                string appFolder = AppDomain.CurrentDomain.BaseDirectory;
+                string dataFolder = Path.Combine(appFolder, "data");
+                if (!Directory.Exists(dataFolder)) Directory.CreateDirectory(dataFolder);
+
+                string fileName = UserSession.CurrentUserId > 0 
+                    ? $"document_sharing_{UserSession.CurrentUserId}.db" 
+                    : "document_sharing.db";
+                return Path.Combine(dataFolder, fileName);
             }
+        }
+
+        public static void ResetConnection()
+        {
+            _connectionString = string.Empty;
         }
 
         /// <summary>
@@ -43,11 +51,9 @@ namespace document_sharing_manager.Core.Data
         {
             get
             {
-                if (string.IsNullOrEmpty(_connectionString))
-                {
-                    _connectionString = $"Data Source={DatabasePath};Version=3;Pooling=True;";
-                }
-                return _connectionString;
+                // Note: We no longer cache the connection string to ensure that switching users
+                // (which changes DatabasePath) is reflected immediately in new connections.
+                return $"Data Source={DatabasePath};Version=3;Pooling=True;Journal Mode=WAL;Synchronous=Normal;Busy Timeout=5000;";
             }
         }
 
@@ -122,7 +128,7 @@ namespace document_sharing_manager.Core.Data
                 CREATE TABLE IF NOT EXISTS managed_servers (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL,
-                    base_url TEXT NOT NULL UNIQUE,
+                    base_url TEXT NOT NULL,
                     access_token TEXT,
                     refresh_token TEXT,
                     server_password TEXT,
@@ -130,7 +136,10 @@ namespace document_sharing_manager.Core.Data
                     last_sync_date DATETIME,
                     connection_status INTEGER DEFAULT 0, -- 0: Connected, 1: Unauthorized, 2: Offline
                     created_at DATETIME DEFAULT (datetime('now', 'localtime')),
-                    updated_at DATETIME
+                    updated_at DATETIME,
+                    user_id INTEGER NOT NULL DEFAULT 1,
+                    remote_id INTEGER,
+                    UNIQUE(base_url, user_id)
                 );
 
                 -- Bảng collections (bộ sưu tập)
@@ -169,7 +178,6 @@ namespace document_sharing_manager.Core.Data
                 CREATE INDEX IF NOT EXISTS idx_tai_lieu_ngay_them ON tai_lieu(ngay_them);
                 CREATE INDEX IF NOT EXISTS idx_collection_items_collection ON collection_items(collection_id);
                 CREATE INDEX IF NOT EXISTS idx_collection_items_document ON collection_items(document_id);
-                CREATE INDEX IF NOT EXISTS idx_tai_lieu_user_id ON tai_lieu(user_id);
             ";
 
             using var conn = new SQLiteConnection(ConnectionString);
@@ -184,8 +192,15 @@ namespace document_sharing_manager.Core.Data
             MigrateAddColumn(conn, "tai_lieu", "local_version", "INTEGER DEFAULT 1");
             MigrateAddColumn(conn, "tai_lieu", "remote_id", "TEXT");
             MigrateAddColumn(conn, "tai_lieu", "server_id", "INTEGER");
+            MigrateAddColumn(conn, "managed_servers", "user_id", "INTEGER NOT NULL DEFAULT 1");
+            MigrateAddColumn(conn, "managed_servers", "remote_id", "INTEGER");
             MigrateRenameColumn(conn, "personal_notes", "content", "note_content");
-            
+
+            // Create indexes for migrated columns
+            using (var cmdIdx = new SQLiteCommand("CREATE INDEX IF NOT EXISTS idx_tai_lieu_user_id ON tai_lieu(user_id);", conn))
+            {
+                cmdIdx.ExecuteNonQuery();
+            }
             // Ensure all documents have a remote_id if they don't
             using (var cmdFill = new SQLiteCommand("UPDATE tai_lieu SET remote_id = lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-' || '4' || substr(hex(randomblob(2)), 2) || '-' || substr('89ab', abs(random()) % 4 + 1, 1) || substr(hex(randomblob(2)), 2) || '-' || hex(randomblob(6))) WHERE remote_id IS NULL OR remote_id = ''", conn))
             {
@@ -346,8 +361,8 @@ namespace document_sharing_manager.Core.Data
         /// </summary>
         public static DataTable GetAllDocuments()
         {
-            string query = "SELECT * FROM tai_lieu WHERE (is_deleted IS NULL OR is_deleted = 0) ORDER BY ngay_them DESC";
-            return ExecuteQuery(query);
+            string query = "SELECT * FROM tai_lieu WHERE (is_deleted IS NULL OR is_deleted = 0) AND user_id = @userId ORDER BY ngay_them DESC";
+            return ExecuteQuery(query, [new("@userId", UserSession.CurrentUserId)]);
         }
 
         /// <summary>
@@ -1250,7 +1265,7 @@ namespace document_sharing_manager.Core.Data
 
             foreach (DataRow row in dt.Rows)
             {
-                servers.Add(new ManagedServer
+                var server = new ManagedServer
                 {
                     Id = Convert.ToInt32(row["id"]),
                     Name = row["name"].ToString() ?? string.Empty,
@@ -1261,30 +1276,57 @@ namespace document_sharing_manager.Core.Data
                     IsActive = Convert.ToInt32(row["is_active"]) == 1,
                     ConnectionStatus = Convert.ToInt32(row["connection_status"]),
                     LastSyncDate = row["last_sync_date"] != DBNull.Value ? (DateTime?)Convert.ToDateTime(row["last_sync_date"]) : null
-                });
+                };
+                if (row.Table.Columns.Contains("remote_id") && row["remote_id"] != DBNull.Value)
+                {
+                    server.CloudId = Convert.ToInt32(row["remote_id"]);
+                }
+                servers.Add(server);
             }
 
             return servers;
         }
 
-        /// <summary>
-        /// Thêm một server mới
-        /// </summary>
-        public static bool InsertServer(string name, string url, string? accessToken = null, string? refreshToken = null, string? password = null)
+        public static bool InsertServer(string name, string url, string? accessToken = null, 
+            string? refreshToken = null, string? password = null, int? remoteId = null)
         {
-            string query = @"INSERT INTO managed_servers (name, base_url, access_token, refresh_token, server_password)
-                            VALUES (@name, @url, @token, @refresh, @pass)";
+            string query = @"INSERT INTO managed_servers 
+                (name, base_url, access_token, refresh_token, server_password, user_id, remote_id) 
+                VALUES (@name, @url, @access, @refresh, @pass, @user, @remote)
+                ON CONFLICT(base_url, user_id) DO UPDATE SET
+                    name = excluded.name,
+                    access_token = excluded.access_token,
+                    server_password = excluded.server_password,
+                    remote_id = excluded.remote_id";
 
             System.Data.SQLite.SQLiteParameter[] parameters = 
             [
                 new("@name", name),
                 new("@url", url.TrimEnd('/')),
-                new("@token", Encrypt(accessToken) ?? (object)DBNull.Value),
+                new("@access", Encrypt(accessToken) ?? (object)DBNull.Value),
                 new("@refresh", Encrypt(refreshToken) ?? (object)DBNull.Value),
-                new("@pass", Encrypt(password) ?? (object)DBNull.Value)
+                new("@pass", Encrypt(password) ?? (object)DBNull.Value),
+                new("@user", UserSession.CurrentUserId),
+                new("@remote", remoteId.HasValue ? (object)remoteId.Value : DBNull.Value)
             ];
 
             return ExecuteNonQuery(query, parameters) > 0;
+        }
+
+        public static bool DeleteServer(int id)
+        {
+            string query = "DELETE FROM managed_servers WHERE id = @id AND user_id = @user";
+            return ExecuteNonQuery(query, [new("@id", id), new("@user", UserSession.CurrentUserId)]) > 0;
+        }
+
+        public static bool UpdateServerTokens(int id, string accessToken, string refreshToken)
+        {
+            string query = "UPDATE managed_servers SET access_token = @access, refresh_token = @refresh, updated_at = datetime('now', 'localtime') WHERE id = @id";
+            return ExecuteNonQuery(query, [
+                new("@id", id),
+                new("@access", Encrypt(accessToken)),
+                new("@refresh", Encrypt(refreshToken))
+            ]) > 0;
         }
 
         #region Security Configuration
@@ -1317,15 +1359,16 @@ namespace document_sharing_manager.Core.Data
             {
                 if (File.Exists(KeyFilePath))
                 {
-                    byte[] obfuscatedKey = File.ReadAllBytes(KeyFilePath);
-                    return ObfuscateKey(obfuscatedKey); // De-obfuscate
+                    byte[] protectedKey = File.ReadAllBytes(KeyFilePath);
+                    // Use DPAPI to unprotect the key
+                    return ProtectedData.Unprotect(protectedKey, null, DataProtectionScope.CurrentUser);
                 }
             }
             catch { }
 
             // Generate new random 32-byte key
             byte[] newKey = new byte[32];
-            using (var rng = new RNGCryptoServiceProvider())
+            using (var rng = RandomNumberGenerator.Create())
             {
                 rng.GetBytes(newKey);
             }
@@ -1335,8 +1378,9 @@ namespace document_sharing_manager.Core.Data
                 string? dir = Path.GetDirectoryName(KeyFilePath);
                 if (dir != null && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
 
-                byte[] obfuscatedKey = ObfuscateKey(newKey); // Obfuscate
-                File.WriteAllBytes(KeyFilePath, obfuscatedKey);
+                // Use DPAPI to protect the key (machine + user specific)
+                byte[] protectedKey = ProtectedData.Protect(newKey, null, DataProtectionScope.CurrentUser);
+                File.WriteAllBytes(KeyFilePath, protectedKey);
             }
             catch { }
 
@@ -1461,38 +1505,6 @@ namespace document_sharing_manager.Core.Data
             ];
 
             return ExecuteNonQuery(query, parameters) > 0;
-        }
-
-        /// <summary>
-        /// Xóa server khỏi danh sách (ngắt kết nối)
-        /// </summary>
-        public static bool DeleteServer(int serverId)
-        {
-            using var conn = new SQLiteConnection(ConnectionString);
-            conn.Open();
-            using var transaction = conn.BeginTransaction();
-            try
-            {
-                // Soft-delete documents belonging to this server
-                string deleteDocs = "UPDATE tai_lieu SET is_deleted = 1, deleted_at = datetime('now', 'localtime') WHERE server_id = @id";
-                using var cmdDocs = new SQLiteCommand(deleteDocs, conn, transaction);
-                cmdDocs.Parameters.AddWithValue("@id", serverId);
-                cmdDocs.ExecuteNonQuery();
-
-                // Delete the server record
-                string query = "DELETE FROM managed_servers WHERE id = @id";
-                using var cmdServer = new SQLiteCommand(query, conn, transaction);
-                cmdServer.Parameters.AddWithValue("@id", serverId);
-                var result = cmdServer.ExecuteNonQuery() > 0;
-                
-                transaction.Commit();
-                return result;
-            }
-            catch (Exception ex)
-            {
-                transaction.Rollback();
-                throw new InvalidOperationException("Lỗi khi xóa server: " + ex.Message, ex);
-            }
         }
 
         #endregion

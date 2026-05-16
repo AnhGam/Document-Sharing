@@ -12,6 +12,7 @@ using document_sharing_manager.Reports;
 using document_sharing_manager.UI.Controls;
 using System.Linq;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -43,10 +44,10 @@ namespace document_sharing_manager.Documents
         // Events
         public event EventHandler SearchRequested;
         public event EventHandler FilterApplied;
-        public event EventHandler RefreshRequested;
         public event EventHandler<int> DeleteRequested;
 
         public event EventHandler<string> OpenFileRequested;
+        private readonly Core.Services.AuthServiceClient _authServiceClient;
         public event EventHandler ExportRequested;
         public event EventHandler StatisticsRequested;
 
@@ -58,8 +59,13 @@ namespace document_sharing_manager.Documents
         private static readonly HttpClient _httpClient = new();
         private readonly Dictionary<string, Bitmap> _treeIconCache = [];
 
-        public Dashboard()
+        private ContextMenuStrip cmsServer;
+        private ToolStripMenuItem tsmiDeleteServer;
+        private bool _isJoinFormOpen = false;
+
+        public Dashboard(Core.Services.AuthServiceClient authClient)
         {
+            _authServiceClient = authClient;
             InitializeComponent();
 
             // Initialize Repository and Presenter
@@ -87,10 +93,8 @@ namespace document_sharing_manager.Documents
             // Setup additional UI logic
             SetupDataGridView();
             EnableDragDrop();
-            SetupContextMenu();
-
-            // Context menu logic
-            AddPersonalNoteContextMenu();
+            // Initialize Preview
+            SetupPreviewPanel();
 
             // Preview panel (hidden by default)
             SetupPreviewPanel();
@@ -129,26 +133,6 @@ namespace document_sharing_manager.Documents
             }
         }
 
-        private void AddPersonalNoteContextMenu()
-        {
-            contextMenuDocument.Items.Add(new ToolStripSeparator());
-
-            ToolStripMenuItem ctxMenuPersonalNote = new("Ghi chú cá nhân...");
-            ctxMenuPersonalNote.Click += CtxMenuPersonalNoteClick;
-            contextMenuDocument.Items.Add(ctxMenuPersonalNote);
-
-            ToolStripMenuItem ctxMenuAddToCollection = new("Thêm vào bộ sưu tập...");
-            ctxMenuAddToCollection.Click += CtxMenuAddToCollectionClick;
-            contextMenuDocument.Items.Add(ctxMenuAddToCollection);
-
-            contextMenuDocument.Items.Add(new ToolStripSeparator());
-            ToolStripMenuItem ctxMenuDownloadAs = new("Tải về máy...")
-            {
-                Image = IconHelper.CreateBackupIcon(16, AppTheme.StatusInfo)
-            };
-            ctxMenuDownloadAs.Click += CtxMenuDownloadAsClick;
-            contextMenuDocument.Items.Add(ctxMenuDownloadAs);
-        }
 
         private void RegisterEvents()
         {
@@ -159,7 +143,10 @@ namespace document_sharing_manager.Documents
             cboType.SelectedIndexChanged += (s, e) => FilterApplied?.Invoke(this, EventArgs.Empty);
             btnApplyAdvancedFilter.Click += (s, e) => FilterApplied?.Invoke(this, EventArgs.Empty);
 
-            toolBtnRefresh.Click += (s, e) => TriggerRefresh();
+            toolBtnRefresh.Click += async (s, e) => {
+                await HandleRefreshAsync();
+                await _syncEngine.SyncAsync();
+            };
 
             btnClearAdvancedFilter.Click += (s, e) =>
             {
@@ -185,6 +172,25 @@ namespace document_sharing_manager.Documents
             };
             toolBtnExport.Click += (s, e) => ExportRequested?.Invoke(this, EventArgs.Empty);
             toolBtnStats.Click += (s, e) => StatisticsRequested?.Invoke(this, EventArgs.Empty);
+
+            // Manual Download Context Menu
+            var ctxMenuDownload = new ToolStripMenuItem("Tải xuống từ server")
+            {
+                Image = IconHelper.CreateImportIcon(16, AppTheme.StatusInfo)
+            };
+            ctxMenuDownload.Click += (s, e) => DownloadSelectedFile();
+            contextMenuDocument.Items.Insert(0, ctxMenuDownload);
+            contextMenuDocument.Items.Insert(1, new ToolStripSeparator());
+
+            // Add Logout Button to ToolStrip
+            var toolBtnLogout = new ToolStripButton("Đăng xuất")
+            {
+                Image = IconHelper.CreateDeleteIcon(16, Color.IndianRed),
+                DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
+                Alignment = ToolStripItemAlignment.Right
+            };
+            toolBtnLogout.Click += async (s, e) => await HandleLogoutAsync();
+            toolStrip.Items.Add(toolBtnLogout);
         }
 
         private void BtnToggleFilterClick(object sender, EventArgs e)
@@ -193,9 +199,60 @@ namespace document_sharing_manager.Documents
             btnToggleFilter.BackColor = grpAdvancedFilter.Visible ? AppTheme.BackgroundSoft : Color.FromArgb(249, 250, 251);
         }
 
+        private async Task HandleRefreshAsync()
+        {
+            lblStatus.Text = "Đang đồng bộ dữ liệu...";
+            lblStatus.ForeColor = AppTheme.StatusInfo;
+            
+            var result = await _syncEngine.SyncAsync();
+            
+            if (result.IsSuccess)
+            {
+                lblStatus.Text = "Đã cập nhật dữ liệu mới nhất.";
+                lblStatus.ForeColor = AppTheme.StatusSuccess;
+            }
+            else
+            {
+                lblStatus.Text = "Lỗi đồng bộ: " + result.ErrorMessage;
+                lblStatus.ForeColor = AppTheme.StatusError;
+            }
+            
+            TriggerRefresh();
+        }
+
+        private async Task HandleLogoutAsync()
+        {
+            if (MessageBox.Show("Bạn có chắc chắn muốn đăng xuất?", "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+            {
+                string refreshToken = UserSession.RefreshToken ?? "";
+                await _authServiceClient.LogoutAsync(refreshToken);
+                
+                // Clean shutdown of background services
+                _syncWatcher?.Dispose();
+                _syncEngine?.Dispose();
+                
+                // Xóa file token
+                SecureStorage.SaveTokens(null, null);
+                
+                ToastNotification.Info("Đã đăng xuất thành công.");
+                
+                // Khởi động lại ứng dụng để về màn hình đăng nhập
+                Application.Restart();
+            }
+        }
+
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            // Ensure background threads are stopped when window is closed
+            _syncWatcher?.Dispose();
+            _syncEngine?.Dispose();
+            base.OnFormClosing(e);
+        }
+
         private void TriggerRefresh()
         {
-            RefreshRequested?.Invoke(this, EventArgs.Empty);
+            // Thay vì gọi RefreshRequested (reset về All), ta gọi FilterApplied để giữ nguyên context hiện tại
+            FilterApplied?.Invoke(this, EventArgs.Empty);
             PopulateCategoryTree();
         }
 
@@ -208,13 +265,6 @@ namespace document_sharing_manager.Documents
             chkImportantOnly.Checked = false;
         }
 
-        protected override void OnFormClosing(FormClosingEventArgs e)
-        {
-            _syncEngine.Stop();
-            _syncEngine.Dispose();
-            _syncWatcher.Dispose();
-            base.OnFormClosing(e);
-        }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
@@ -318,9 +368,7 @@ namespace document_sharing_manager.Documents
             toolBtnStats.Image = IconHelper.CreateChartIcon(16, AppTheme.Primary);
             toolBtnStats.ToolTipText = "Thống kê";
 
-            toolBtnSettings.Image = IconHelper.CreateSettingsIcon(16, AppTheme.TextSecondary);
-            toolBtnSettings.ToolTipText = "Cài đặt kết nối";
-            toolBtnSettings.Click += (s, ev) => { using var form = new SettingsForm(); form.ShowDialog(); };
+            toolBtnSettings.Visible = false;
 
 
 
@@ -571,12 +619,12 @@ namespace document_sharing_manager.Documents
 
         private void BtnThemClick(object sender, EventArgs e)
         {
-            using var form = new document_sharing_manager.Documents.BatchImportForm();
-            form.ImportCompleted += (s, ev) => TriggerRefresh();
+            using var form = new document_sharing_manager.Documents.BatchImportForm(_syncEngine);
+            form.TargetServerId = this.SelectedServerId;
             if (form.ShowDialog(this) == DialogResult.OK)
             {
-                // Refresh if dialog returned OK (though ImportCompleted handles immediate updates)
                 TriggerRefresh();
+                _ = _syncEngine.SyncAsync(); // Trigger sync immediately
             }
         }
 
@@ -612,8 +660,14 @@ namespace document_sharing_manager.Documents
         private void OpenSelectedFile()
         {
             if (dgvDocuments.SelectedRows.Count == 0) return;
-            if (dgvDocuments.SelectedRows[0].DataBoundItem is Document doc && !string.IsNullOrEmpty(doc.DuongDan))
+            if (dgvDocuments.SelectedRows[0].DataBoundItem is Document doc)
             {
+                if (doc.SyncStatus == 2) // PendingDownload
+                {
+                    DownloadSelectedFile();
+                    return;
+                }
+
                 string resolvedPath = FileStorageService.ResolvePath(doc.DuongDan);
                 if (File.Exists(resolvedPath))
                 {
@@ -627,8 +681,33 @@ namespace document_sharing_manager.Documents
                 }
                 else
                 {
-                    ShowError("File không tồn tại! (Path: " + doc.DuongDan + ")");
+                    // If file missing but not marked as pending, maybe trigger download anyway if it has a server id
+                    if (doc.ServerId.HasValue)
+                    {
+                        if (MessageBox.Show("File không tồn tại local. Bạn có muốn tải xuống từ server?", "Thông báo", MessageBoxButtons.YesNo) == DialogResult.Yes)
+                        {
+                            DownloadSelectedFile();
+                        }
+                    }
+                    else
+                    {
+                        ShowError("File không tồn tại! (Path: " + doc.DuongDan + ")");
+                    }
                 }
+            }
+        }
+
+        private void DownloadSelectedFile()
+        {
+            if (dgvDocuments.SelectedRows.Count == 0) return;
+            if (dgvDocuments.SelectedRows[0].DataBoundItem is Document doc && doc.ServerId.HasValue)
+            {
+                _syncEngine.Enqueue(doc, SyncType.Download, doc.ServerId.Value);
+                ToastNotification.Info($"Đang bắt đầu tải xuống: {doc.Ten}");
+            }
+            else
+            {
+                ToastNotification.Warning("Tài liệu này không thuộc server nào để tải xuống.");
             }
         }
 
@@ -824,158 +903,10 @@ namespace document_sharing_manager.Documents
             }
         }
 
-        private void CtxMenuPersonalNoteClick(object sender, EventArgs e)
-        {
-            if (dgvDocuments.SelectedRows.Count > 0 && dgvDocuments.SelectedRows[0].DataBoundItem is Document doc)
-            {
-                using var form = new PersonalNoteForm(doc.Id, doc.Ten);
-                form.ShowDialog();
-            }
-        }
 
-        private void CtxMenuAddToCollectionClick(object sender, EventArgs e)
-        {
-            if (!(dgvDocuments.SelectedRows.Count > 0 && dgvDocuments.SelectedRows[0].DataBoundItem is Document doc))
-            {
-                MessageBox.Show("Vui lòng chọn tài liệu trước.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return;
-            }
 
-            var collections = DatabaseHelper.GetCollections();
-            using var dialog = new Form();
-            dialog.Text = "Thêm vào bộ sưu tập";
-            dialog.Size = new Size(380, 300);
-            dialog.FormBorderStyle = FormBorderStyle.FixedDialog;
-            dialog.StartPosition = FormStartPosition.CenterParent;
-            dialog.MaximizeBox = false;
-            dialog.MinimizeBox = false;
-            dialog.BackColor = AppTheme.BackgroundMain;
-            dialog.ShowInTaskbar = false;
-            if (this.Icon != null) dialog.Icon = this.Icon;
-
-            var lblInfo = new Label
-            {
-                Text = $"Tài liệu: {doc.Ten}",
-                Font = AppTheme.FontSmallBold,
-                ForeColor = AppTheme.TextPrimary,
-                Location = new Point(20, 15),
-                AutoSize = true,
-                MaximumSize = new Size(330, 0)
-            };
-
-            var lblSelect = new Label
-            {
-                Text = "Chọn bộ sưu tập:",
-                Font = AppTheme.FontSmall,
-                ForeColor = AppTheme.TextSecondary,
-                Location = new Point(20, 50),
-                AutoSize = true
-            };
-
-            var lstCollections = new ListBox
-            {
-                Location = new Point(20, 72),
-                Size = new Size(325, 100),
-                Font = AppTheme.FontBody,
-                BackColor = AppTheme.InputBackground
-            };
-
-            // Populate list
-            foreach (DataRow row in collections.Rows)
-            {
-                lstCollections.Items.Add(new CollectionItem
-                {
-                    Id = Convert.ToInt32(row["id"]),
-                    Name = row["name"].ToString(),
-                    Count = Convert.ToInt32(row["item_count"])
-                });
-            }
-
-            var lblNew = new Label
-            {
-                Text = "Hoặc tạo mới:",
-                Font = AppTheme.FontSmall,
-                ForeColor = AppTheme.TextSecondary,
-                Location = new Point(20, 180),
-                AutoSize = true
-            };
-
-            var txtNew = new TextBox
-            {
-                Location = new Point(20, 200),
-                Size = new Size(220, 25),
-                Font = AppTheme.FontBody,
-                BackColor = AppTheme.InputBackground,
-                Text = "Tên bộ sưu tập mới...",
-                ForeColor = Color.Gray
-            };
-            txtNew.GotFocus += (s2, e2) => { if (txtNew.ForeColor == Color.Gray) { txtNew.Text = ""; txtNew.ForeColor = AppTheme.TextPrimary; } };
-            txtNew.LostFocus += (s2, e2) => { if (string.IsNullOrWhiteSpace(txtNew.Text)) { txtNew.Text = "Tên bộ sưu tập mới..."; txtNew.ForeColor = Color.Gray; } };
-
-            var btnAdd = new Button
-            {
-                Text = "Thêm",
-                Size = new Size(90, 32),
-                Location = new Point(250, 198),
-                FlatStyle = FlatStyle.Flat,
-                BackColor = AppTheme.StatusSuccess,
-                ForeColor = Color.White,
-                Font = AppTheme.FontButton,
-                Cursor = Cursors.Hand
-            };
-            btnAdd.FlatAppearance.BorderSize = 0;
-
-            btnAdd.Click += (s, ev) =>
-            {
-                int collectionId = -1;
-
-                // Create new collection if text entered
-                if (!string.IsNullOrWhiteSpace(txtNew.Text) && txtNew.ForeColor != Color.Gray)
-                {
-                    DatabaseHelper.CreateCollection(txtNew.Text.Trim(), "");
-                    // Get new collection id
-                    var updated = DatabaseHelper.GetCollections();
-                    foreach (DataRow row in updated.Rows)
-                    {
-                        if (row["name"].ToString() == txtNew.Text.Trim())
-                        {
-                            collectionId = Convert.ToInt32(row["id"]);
-                            break;
-                        }
-                    }
-                }
-                else if (lstCollections.SelectedItem is CollectionItem selected)
-                {
-                    collectionId = selected.Id;
-                }
-                else
-                {
-                    MessageBox.Show("Vui lòng chọn hoặc tạo bộ sưu tập.", "Thông báo");
-                    return;
-                }
-
-                if (collectionId > 0)
-                {
-                    bool added = DatabaseHelper.AddDocumentToCollection(collectionId, doc.Id);
-                    if (added)
-                    {
-                        ToastNotification.Success($"Đã thêm vào bộ sưu tập!");
-                        dialog.Close();
-                    }
-                    else
-                    {
-                        MessageBox.Show("Tài liệu đã có trong bộ sưu tập này.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    }
-                }
-            };
-
-            dialog.Controls.AddRange([lblInfo, lblSelect, lstCollections, lblNew, txtNew, btnAdd]);
-            dialog.ShowDialog(this);
-        }
-
-        private void MenuCollectionsClick(object sender, EventArgs e) { new Management.CollectionManagementForm().ShowDialog(); }
         private void MenuRecycleBinClick(object sender, EventArgs e) { new Management.RecycleBinForm().ShowDialog(); TriggerRefresh(); }
-        private void MenuBatchImportClick(object sender, EventArgs e) { new Documents.BatchImportForm().ShowDialog(); TriggerRefresh(); }
+        private void MenuBatchImportClick(object sender, EventArgs e) => BtnThemClick(sender, e);
         private void MenuFileExitClick(object sender, EventArgs e) => Application.Exit();
         private void MenuHelpAboutClick(object sender, EventArgs e)
         {
@@ -1248,6 +1179,14 @@ namespace document_sharing_manager.Documents
                 ForeColor = AppTheme.TextPrimary
             };
 
+            // Context menu for Servers
+            cmsServer = new ContextMenuStrip();
+            tsmiDeleteServer = new ToolStripMenuItem("Xóa máy chủ này");
+            tsmiDeleteServer.Click += TsmiDeleteServer_Click;
+            cmsServer.Items.Add(tsmiDeleteServer);
+            cmsServer.Opening += CmsServer_Opening;
+            treeCategory.ContextMenuStrip = cmsServer;
+
             // Custom drawing
             treeCategory.DrawNode += TreeCategory_DrawNode;
 
@@ -1281,18 +1220,14 @@ namespace document_sharing_manager.Documents
             treeCategory.NodeMouseClick += (s, ev) =>
             {
                 var filter = ev.Node.Tag as TreeFilterInfo;
-                if (ev.Button == MouseButtons.Right && filter?.FilterType == "server")
-                {
-                    treeCategory.SelectedNode = ev.Node;
-                    ShowServerContextMenu(ev.Location, int.Parse(filter.FilterValue));
-                }
-                else if (filter?.FilterType == "header")
+                if (filter?.FilterType == "header")
                 {
                     ev.Node.Toggle();
                     treeCategory.Invalidate();
                 }
             };
 
+            // treeCategory will be added to pnlTree later
             // Wrap existing content in SplitContainer
             splitCategory = new SplitContainer
             {
@@ -1374,6 +1309,49 @@ namespace document_sharing_manager.Documents
             PopulateCategoryTree();
         }
 
+        private void CmsServer_Opening(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            var node = treeCategory.GetNodeAt(treeCategory.PointToClient(Cursor.Position));
+            if (node == null) node = treeCategory.SelectedNode;
+
+            if (node?.Tag is TreeFilterInfo info && info.FilterType == "server")
+            {
+                treeCategory.SelectedNode = node;
+                e.Cancel = false;
+            }
+            else
+            {
+                e.Cancel = true;
+            }
+        }
+
+        private async void TsmiDeleteServer_Click(object sender, EventArgs e)
+        {
+            var node = treeCategory.SelectedNode;
+            if (node?.Tag is TreeFilterInfo info && info.FilterType == "server")
+            {
+                if (MessageBox.Show($"Bạn có chắc chắn muốn xóa kết nối đến server '{node.Text}' không?", 
+                    "Xác nhận xóa", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                {
+                    int localId = int.Parse(info.FilterValue);
+                    
+                    // Try to delete from cloud if possible
+                    var servers = DatabaseHelper.GetManagedServers();
+                    var s = servers.FirstOrDefault(x => x.Id == localId);
+                    if (s != null && s.CloudId > 0)
+                    {
+                        await _authServiceClient.DeleteServerFromCloudAsync(s.CloudId.Value);
+                    }
+
+                    // Delete from local
+                    DatabaseHelper.DeleteServer(localId);
+                    
+                    // Refresh UI
+                    PopulateCategoryTree();
+                }
+            }
+        }
+
         private void ShowServerContextMenu(Point location, int serverId)
         {
             ContextMenuStrip menu = new();
@@ -1406,6 +1384,10 @@ namespace document_sharing_manager.Documents
         private void PopulateCategoryTree()
         {
             if (treeCategory == null) return;
+
+            // Save selection
+            string selectedType = (treeCategory.SelectedNode?.Tag as TreeFilterInfo)?.FilterType;
+            string selectedValue = (treeCategory.SelectedNode?.Tag as TreeFilterInfo)?.FilterValue;
 
             treeCategory.AfterSelect -= TreeCategory_AfterSelect;
             treeCategory.BeginUpdate();
@@ -1463,7 +1445,6 @@ namespace document_sharing_manager.Documents
                     var child = nodeServers.Nodes.Add("srv_" + server.Id, server.Name);
                     child.Tag = new TreeFilterInfo("server", server.Id.ToString());
                     
-                    // Add status indicator if offline etc. (simplified for now)
                     if (!server.IsActive) child.ForeColor = Color.Gray;
                 }
             }
@@ -1476,10 +1457,42 @@ namespace document_sharing_manager.Documents
 
             treeCategory.ExpandAll();
             treeCategory.EndUpdate();
-
-            // Select "All" by default
-            treeCategory.SelectedNode = nodeAll;
             treeCategory.AfterSelect += TreeCategory_AfterSelect;
+
+            // Restore selection
+            bool restored = false;
+            if (selectedType != null)
+            {
+                foreach (TreeNode node in treeCategory.Nodes)
+                {
+                    if (TrySelectNode(node, selectedType, selectedValue))
+                    {
+                        restored = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!restored)
+            {
+                // Select "All" by default
+                treeCategory.SelectedNode = nodeAll;
+            }
+        }
+
+        private bool TrySelectNode(TreeNode parent, string type, string value)
+        {
+            if (parent.Tag is TreeFilterInfo info && info.FilterType == type && info.FilterValue == value)
+            {
+                treeCategory.SelectedNode = parent;
+                parent.EnsureVisible();
+                return true;
+            }
+            foreach (TreeNode child in parent.Nodes)
+            {
+                if (TrySelectNode(child, type, value)) return true;
+            }
+            return false;
         }
 
         private void TreeCategory_DrawNode(object sender, DrawTreeNodeEventArgs e)
@@ -1682,7 +1695,8 @@ namespace document_sharing_manager.Documents
                 switch (filter.FilterType)
                 {
                     case "all":
-                        RefreshRequested?.Invoke(this, EventArgs.Empty);
+                        SelectedServerId = null;
+                        FilterApplied?.Invoke(this, EventArgs.Empty);
                         break;
 
                     // subject filtering removed
@@ -1713,14 +1727,23 @@ namespace document_sharing_manager.Documents
                         break;
 
                     case "join":
-                        using (var form = new Management.JoinServerForm(_syncEngine))
+                        if (_isJoinFormOpen) return;
+                        _isJoinFormOpen = true;
+                        try
                         {
-                            if (form.ShowDialog() == DialogResult.OK)
+                            treeCategory.SelectedNode = null; // Unselect to prevent re-triggering
+                            using (var form = new Management.JoinServerForm(_syncEngine, _authServiceClient))
                             {
-                                PopulateCategoryTree(); // Refresh list to show new server
-                                // New server added - SyncEngine will pick it up or we can notify it
-                                TriggerRefresh();
+                                if (form.ShowDialog() == DialogResult.OK)
+                                {
+                                    PopulateCategoryTree(); // Refresh list to show new server
+                                    TriggerRefresh();
+                                }
                             }
+                        }
+                        finally
+                        {
+                            _isJoinFormOpen = false;
                         }
                         break;
                 }
@@ -1858,21 +1881,6 @@ namespace document_sharing_manager.Documents
             }
         }
 
-        private void SetupContextMenu()
-        {
-            contextMenuDocument.Items.Add(new ToolStripSeparator());
-            var menuRelated = new ToolStripMenuItem("Tài liệu liên quan...");
-            menuRelated.Click += (s, ev) =>
-            {
-                if (dgvDocuments.SelectedRows.Count == 0) return;
-                if (dgvDocuments.SelectedRows[0].DataBoundItem is document_sharing_manager.Core.Domain.Document doc)
-                {
-                    new document_sharing_manager.Documents.RelatedDocumentsForm(doc.Id, doc.Ten).ShowDialog();
-                }
-            };
-            contextMenuDocument.Items.Add(menuRelated);
-
-        }
 
         private void EnableDragDrop()
         {

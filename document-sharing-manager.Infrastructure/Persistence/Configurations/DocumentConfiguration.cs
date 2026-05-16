@@ -46,6 +46,13 @@ namespace document_sharing_manager.Infrastructure.Persistence.Configurations
             builder.HasIndex(d => d.Ten);
             builder.HasIndex(d => d.IsDeleted);
             builder.HasIndex(d => d.UserId);
+            builder.HasIndex(d => d.ServerId);
+
+            // Relationships
+            builder.HasOne(d => d.Server)
+                .WithMany()
+                .HasForeignKey(d => d.ServerId)
+                .OnDelete(DeleteBehavior.SetNull);
         }
     }
 }

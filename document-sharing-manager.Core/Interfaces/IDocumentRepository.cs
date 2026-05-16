@@ -15,8 +15,9 @@ namespace document_sharing_manager.Core.Interfaces
         Task<Document?> GetByRemoteIdAsync(Guid remoteId, CancellationToken ct = default);
         Task DeleteByRemoteIdAsync(Guid remoteId, CancellationToken ct = default);
 
-        Task<List<Document>> SearchAsync(string keyword, int userId, CancellationToken ct = default);
-        Task<List<Document>> SearchAdvancedAsync(string keyword, string format, DateTime? fromDate, DateTime? toDate, decimal? minSize, decimal? maxSize, bool? isImportant, int userId, int? serverId = null, CancellationToken ct = default);
+        Task<IEnumerable<Document>> GetSharedWithUserAsync(int userId, IEnumerable<int> serverIds, CancellationToken ct = default);
+        Task<Document?> GetByIdSharedWithUserAsync(int id, int userId, IEnumerable<int> serverIds, CancellationToken ct = default);
+        Task<List<Document>> SearchAdvancedAsync(string keyword, string format, DateTime? fromDate, DateTime? toDate, decimal? minSize, decimal? maxSize, bool? isImportant, int userId, IEnumerable<int> serverIds, int? targetServerId = null, CancellationToken ct = default);
         Task<List<Document>> GetPendingSyncDocumentsAsync(int userId, CancellationToken ct = default);
         Task UpdateSyncStatusAsync(int id, int syncStatus, int? newVersion = null, int? expectedVersion = null, int? newLocalVersion = null, CancellationToken ct = default);
 
