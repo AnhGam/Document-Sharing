@@ -1,5 +1,19 @@
 [
   {
+    "commitSha": "3497a4514d29e89ea4d91eed67b2308c81afd498",
+    "shortSha": "3497a45",
+    "runId": "26179951122",
+    "date": "2026-05-20",
+    "time": "17:52",
+    "buildStatus": "success",
+    "installerSize": 7.87,
+    "repoSize": 198.73,
+    "buildDuration": 3.98,
+    "branch": "17/merge",
+    "actor": "AnhGam",
+    "commitMessage": ""
+  },
+  {
     "commitSha": "f3f84ccedba00e16b1aa87bb1a1ad2f064d2e428",
     "shortSha": "f3f84cc",
     "runId": "26179503543",
