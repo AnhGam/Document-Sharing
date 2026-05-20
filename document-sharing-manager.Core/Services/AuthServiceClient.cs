@@ -162,7 +162,7 @@ namespace document_sharing_manager.Core.Services
         {
             try
             {
-                var server = new ManagedServer { Name = name, BaseUrl = url, AccessToken = accessToken, ServerPassword = password };
+                var server = new ManagedServer { Name = name, BaseUrl = url, AccessToken = accessToken, ServerPassword = password ?? string.Empty };
                 var settings = new JsonSerializerSettings 
                 { 
                     ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver() 

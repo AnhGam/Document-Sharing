@@ -6,9 +6,9 @@ param(
     [string]$CommitSha,
     [string]$RunId,
     [string]$BuildStatus,
-    [double]$InstallerSize = 0.0,
-    [double]$RepoSize = 0.0,
-    [double]$BuildDuration = 0.0,
+    [string]$InstallerSize = "0.0",
+    [string]$RepoSize = "0.0",
+    [string]$BuildDuration = "0.0",
     [string]$Branch = "main",
     [string]$Actor = "Workflow Bot",
     [string]$CommitMessage = ""
@@ -103,11 +103,11 @@ if (Test-Path $historyFile) {
 
 # Ensure numeric values are numbers
 $cDuration = 0.0
-if ($BuildDuration -as [double]) { $cDuration = [double]$BuildDuration }
+if (![string]::IsNullOrWhiteSpace($BuildDuration) -and ($BuildDuration -as [double])) { $cDuration = [double]$BuildDuration }
 $cInstaller = 0.0
-if ($InstallerSize -as [double]) { $cInstaller = [double]$InstallerSize }
+if (![string]::IsNullOrWhiteSpace($InstallerSize) -and ($InstallerSize -as [double])) { $cInstaller = [double]$InstallerSize }
 $cRepo = 0.0
-if ($RepoSize -as [double]) { $cRepo = [double]$RepoSize }
+if (![string]::IsNullOrWhiteSpace($RepoSize) -and ($RepoSize -as [double])) { $cRepo = [double]$RepoSize }
 
 $shortSha = $CommitSha.Substring(0, [Math]::Min(7, $CommitSha.Length))
 

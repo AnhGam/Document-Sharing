@@ -40,6 +40,12 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Prepare Dynamic Semantic Versioning
+        id: version
+        run: |
+          powershell ./scripts/prepare-release.ps1 -BuildNumber "${{ github.run_number }}"
+        shell: pwsh
+
       - name: Setup Environment
         uses: microsoft/setup-msbuild@v2
       
@@ -71,7 +77,12 @@ jobs:
       - name: Build Installer (Inno Setup)
         run: |
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" setup.iss
-          powershell -Command "if (Test-Path 'installer/*.exe') { Write-Host 'Installer Success' } else { exit 1 }"
+          powershell -Command "if (Test-Path 'installer/DocumentSharingManager_v${{ steps.version.outputs.version }}_Setup.exe') { Write-Host 'Installer Success' } else { exit 1 }"
+
+      - name: Run Silent Installer Smoke Testing
+        run: |
+          powershell ./scripts/smoke-test-installer.ps1 -Version "${{ steps.version.outputs.version }}"
+        shell: pwsh
 
       - name: Run Capacity Check & DORA Analytics
         id: capacity
@@ -103,11 +114,21 @@ jobs:
           }
         shell: pwsh
 
-      - name: AI Build Failure Analysis (Gemini)
-        if: failure()
+      - name: Generate CHANGELOG.md
+        run: |
+          powershell ./scripts/generate-changelog.ps1 -Version "${{ steps.version.outputs.version }}"
+        shell: pwsh
+
+      - name: Create GitHub Release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: Release v${{ steps.version.outputs.version }}
+          body_path: CHANGELOG.md
+          files: installer/DocumentSharingManager_v${{ steps.version.outputs.version }}_Setup.exe
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: powershell ./scripts/ai-log-analyzer.ps1 -ApiKey "${{ env.GEMINI_API_KEY }}"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Archive Build Reports (GitOps)
         if: always()
@@ -116,9 +137,9 @@ jobs:
           COMMIT_SHA: ${{ github.sha }}
           RUN_ID: ${{ github.run_id }}
           BUILD_STATUS: ${{ job.status }}
-          INSTALLER_SIZE: ${{ steps.capacity.outputs.installer_size }}
-          REPO_SIZE: ${{ steps.capacity.outputs.repo_size }}
-          BUILD_DURATION: ${{ steps.capacity.outputs.build_duration }}
+          INSTALLER_SIZE: ${{ steps.capacity.outputs.installer_size || '0.0' }}
+          REPO_SIZE: ${{ steps.capacity.outputs.repo_size || '0.0' }}
+          BUILD_DURATION: ${{ steps.capacity.outputs.build_duration || '0.0' }}
           BRANCH_NAME: ${{ github.ref_name }}
           ACTOR: ${{ github.actor }}
           COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
