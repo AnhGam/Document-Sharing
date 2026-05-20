@@ -1,14 +1,30 @@
-{
-  "commitSha": "59e51324563bc272b00a81976661d2a4aa540de4",
-  "shortSha": "59e5132",
-  "runId": "26176834906",
-  "date": "2026-05-20",
-  "time": "16:50",
-  "buildStatus": "success",
-  "installerSize": 7.88,
-  "repoSize": 198.73,
-  "buildDuration": 3.23,
-  "branch": "16/merge",
-  "actor": "AnhGam",
-  "commitMessage": ""
-}
+[
+  {
+    "commitSha": "c2a61d87605dd21ced9941d3596a4ec8a40bdfaf",
+    "shortSha": "c2a61d8",
+    "runId": "26179218960",
+    "date": "2026-05-20",
+    "time": "17:38",
+    "buildStatus": "success",
+    "installerSize": 7.88,
+    "repoSize": 198.73,
+    "buildDuration": 4.07,
+    "branch": "16/merge",
+    "actor": "AnhGam",
+    "commitMessage": ""
+  },
+  {
+    "commitSha": "59e51324563bc272b00a81976661d2a4aa540de4",
+    "shortSha": "59e5132",
+    "runId": "26176834906",
+    "date": "2026-05-20",
+    "time": "16:50",
+    "buildStatus": "success",
+    "installerSize": 7.88,
+    "repoSize": 198.73,
+    "buildDuration": 3.23,
+    "branch": "16/merge",
+    "actor": "AnhGam",
+    "commitMessage": ""
+  }
+]

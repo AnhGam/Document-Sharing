@@ -89,6 +89,13 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    // Helper to format PR branch references beautifully
+    function formatBranchName(branch) {
+        if (!branch) return "main";
+        const prMatch = branch.match(/^(\d+)\/merge$/);
+        return prMatch ? `PR #${prMatch[1]}` : branch;
+    }
+
     // 2. Populate Filters
     function populateFilters(data) {
         const branches = new Set();
@@ -99,7 +106,7 @@ document.addEventListener("DOMContentLoaded", () => {
         branches.forEach(branch => {
             const option = document.createElement("option");
             option.value = branch;
-            option.textContent = branch;
+            option.textContent = formatBranchName(branch);
             branchFilter.appendChild(option);
         });
     }
@@ -316,11 +323,15 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
 
             // Branch
+            const isPR = (item.branch || "").match(/^(\d+)\/merge$/);
+            const branchIcon = isPR ? "git-pull-request" : "git-branch";
+            const displayName = formatBranchName(item.branch);
+            
             const branchTd = `
                 <td>
                     <span class="branch-tag">
-                        <i data-lucide="git-branch"></i>
-                        ${item.branch || "main"}
+                        <i data-lucide="${branchIcon}"></i>
+                        ${displayName}
                     </span>
                 </td>
             `;
