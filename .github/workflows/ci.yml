@@ -74,6 +74,16 @@ jobs:
           dotnet test document-sharing-manager.Tests/document-sharing-manager.Tests.csproj --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --logger "trx;LogFileName=test_results.trx"
         continue-on-error: true
 
+      - name: Download .NET 4.8 Redistributable for Installer
+        run: |
+          if (-not (Test-Path "redist")) { New-Item -ItemType Directory -Path "redist" -Force }
+          if (-not (Test-Path "redist/ndp48-web.exe")) {
+              Write-Host "Downloading .NET 4.8 Web Installer..."
+              Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/?LinkId=2085155" -OutFile "redist/ndp48-web.exe"
+              Write-Host "Download complete."
+          }
+        shell: pwsh
+
       - name: Build Installer (Inno Setup)
         run: |
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" setup.iss
@@ -132,6 +142,7 @@ jobs:
 
       - name: Archive Build Reports (GitOps)
         if: always()
+        shell: pwsh
         env:
           REPO_URL: "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
           COMMIT_SHA: ${{ github.sha }}
@@ -144,7 +155,17 @@ jobs:
           ACTOR: ${{ github.actor }}
           COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
         run: |
-          powershell ./scripts/publish-reports.ps1 -RepoUrl "$env:REPO_URL" -CommitSha "$env:COMMIT_SHA" -RunId "$env:RUN_ID" -BuildStatus "$env:BUILD_STATUS" -InstallerSize "$env:INSTALLER_SIZE" -RepoSize "$env:REPO_SIZE" -BuildDuration "$env:BUILD_DURATION" -Branch "$env:BRANCH_NAME" -Actor "$env:ACTOR" -CommitMessage "$env:COMMIT_MESSAGE"
+          ./scripts/publish-reports.ps1 `
+            -RepoUrl "$env:REPO_URL" `
+            -CommitSha "$env:COMMIT_SHA" `
+            -RunId "$env:RUN_ID" `
+            -BuildStatus "$env:BUILD_STATUS" `
+            -InstallerSize "$env:INSTALLER_SIZE" `
+            -RepoSize "$env:REPO_SIZE" `
+            -BuildDuration "$env:BUILD_DURATION" `
+            -Branch "$env:BRANCH_NAME" `
+            -Actor "$env:ACTOR" `
+            -CommitMessage "$env:COMMIT_MESSAGE"
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
