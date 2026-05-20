@@ -1,4 +1,4 @@
-﻿ # Build History Dashboard
+ # Build History Dashboard
 
 Archived build reports and AI analyses.
 
@@ -463,3 +463,9 @@ Archived build reports and AI analyses.
 | Date | Time | Commit | Status | Reports |
 | :--- | :--- | :--- | :--- | :--- |
 | 2026-05-16 | 18:37 | c854376 | failure |  [View Reports](./reports/2026/05/16/c8543762994f23dc437940e814d40b641086098f-25969679287/) |
+
+## Build History Table
+
+| Date | Time | Commit | Status | Reports |
+| :--- | :--- | :--- | :--- | :--- |
+| 2026-05-20 | 16:50 | 59e5132 | success |  [View Reports](./reports/2026/05/20/59e51324563bc272b00a81976661d2a4aa540de4-26176834906/) |
