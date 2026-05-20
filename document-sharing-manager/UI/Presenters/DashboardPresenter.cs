@@ -19,7 +19,6 @@ namespace document_sharing_manager.UI.Presenters
             // Subscribe to events
             _view.SearchRequested += OnSearchRequested;
             _view.FilterApplied += OnFilterApplied;
-            _view.RefreshRequested += OnRefreshRequested;
             _view.DeleteRequested += OnDeleteRequested;
             // Add/Edit/Open would typically launch other forms, handled here or in view
         }
@@ -46,10 +45,6 @@ namespace document_sharing_manager.UI.Presenters
             _view.UpdateStatusCount(docs.Count);
         }
 
-        private void OnRefreshRequested(object sender, EventArgs e)
-        {
-            Initialize();
-        }
 
         private void OnSearchRequested(object sender, EventArgs e)
         {

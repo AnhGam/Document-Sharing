@@ -11,6 +11,9 @@ namespace document_sharing_manager.Core.DTOs
         [Required]
         public int LocalVersion { get; set; }
 
+        [Required]
+        public int ServerId { get; set; }
+
         public string? Ten { get; set; }
         public string? GhiChu { get; set; }
         public string? Content { get; set; } 

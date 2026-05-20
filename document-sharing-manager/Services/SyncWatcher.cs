@@ -22,6 +22,7 @@ namespace document_sharing_manager.Services
         private readonly SynchronizationContext _syncContext;
         private readonly ConcurrentDictionary<string, System.Timers.Timer> _debouncers = new();
         private readonly CancellationTokenSource _cts = new();
+        private bool _disposed = false;
         private const double DebounceInterval = 3000; // 3 seconds wait after last change
 
         public SyncWatcher(SyncEngine engine, IDocumentRepository repository)
@@ -37,7 +38,7 @@ namespace document_sharing_manager.Services
             {
                 NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.Size,
                 Filter = "*.*",
-                IncludeSubdirectories = false
+                IncludeSubdirectories = true
             };
 
             _watcher.Changed += OnChanged;
@@ -52,8 +53,13 @@ namespace document_sharing_manager.Services
 
         public void Stop()
         {
+            if (_disposed) return;
             _watcher.EnableRaisingEvents = false;
-            _cts.Cancel();
+            try
+            {
+                if (!_cts.IsCancellationRequested) _cts.Cancel();
+            }
+            catch (ObjectDisposedException) { }
         }
 
         private void OnChanged(object sender, FileSystemEventArgs e)
@@ -92,9 +98,13 @@ namespace document_sharing_manager.Services
         {
             try 
             {
-                // Normalize path to match DB entries (which use relative paths like 'documents\file.ext')
+                // Normalize path to match DB entries (.NET 4.8 compatible)
+                string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                string relativePath = fullPath.StartsWith(baseDir, StringComparison.OrdinalIgnoreCase) 
+                    ? fullPath.Substring(baseDir.Length).TrimStart(Path.DirectorySeparatorChar)
+                    : fullPath;
+                
                 string fileName = Path.GetFileName(fullPath);
-                string relativePath = Path.Combine(FileStorageService.DefaultFolder, fileName);
                 
                     // Find document in SQLite using single targeted query
                     var doc = await _repository.GetByPathAsync(relativePath, _cts.Token);
@@ -140,15 +150,19 @@ namespace document_sharing_manager.Services
 
         public void Dispose()
         {
+            if (_disposed) return;
+            _disposed = true;
+
             Stop();
             _watcher.Dispose();
-            _cts.Dispose();
+            try { _cts.Dispose(); } catch (ObjectDisposedException) { }
+            
             foreach (var timer in _debouncers.Values)
             {
-                timer.Stop();
-                timer.Dispose();
+                try { timer.Stop(); timer.Dispose(); } catch { }
             }
             _debouncers.Clear();
+            GC.SuppressFinalize(this);
         }
     }
 }

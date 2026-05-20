@@ -34,9 +34,12 @@ namespace document_sharing_manager.Documents
         private CheckBox chkRecursive;
 
         private readonly List<FileEntry> fileEntries = [];
+        public int? TargetServerId { get; set; }
+        private readonly SyncEngine _syncEngine;
 
-        public BatchImportForm()
+        public BatchImportForm(SyncEngine syncEngine = null)
         {
+            _syncEngine = syncEngine;
             InitializeUI();
             ApplyTheme();
         }
@@ -349,50 +352,62 @@ namespace document_sharing_manager.Documents
             btnImport.Enabled = false;
             btnSelect.Enabled = false;
 
-            int success = 0;
-            int failed = 0;
+            var docsToInsert = new List<Document>();
             int skipped = 0;
+            int failed = 0;
 
             foreach (int idx in selectedIndices)
             {
                 var entry = fileEntries[idx];
                 
-                // Kiểm tra trùng lặp dựa trên đường dẫn
-                if (DatabaseHelper.CheckDocumentExists(entry.FilePath))
-                {
-                    skipped++;
-                    progressBar.Value++;
-                    continue;
-                }
-
                 try
                 {
                     string note = dgvFiles.Rows[idx].Cells["Note"].Value?.ToString() ?? "";
                     bool isImportant = Convert.ToBoolean(dgvFiles.Rows[idx].Cells["Important"].Value ?? false);
+                    
+                    // Copy file to managed storage first
                     string managedPath = FileStorageService.ImportFile(entry.FilePath);
-                    bool result = DatabaseHelper.InsertDocument(
-                        entry.FileName,
-                        entry.FileType,
-                        managedPath,
-                        note,
-                        (decimal)entry.FileSize / (1024.0m * 1024.0m),
-                        isImportant,
-                        UserSession.CurrentUserId,
-                        Guid.NewGuid(),
-                        1, // Version
-                        ""
-                    );
+                    
+                    // Now check if THIS managed path already exists (safety check)
+                    if (DatabaseHelper.CheckDocumentExists(managedPath))
+                    {
+                        skipped++;
+                        progressBar.Value++;
+                        continue;
+                    }
 
-                    if (result) success++;
-                    else failed++;
+                    var doc = new Document
+                    {
+                        Ten = entry.FileName,
+                        DinhDang = entry.FileType,
+                        DuongDan = managedPath,
+                        GhiChu = note,
+                        KichThuoc = (decimal)entry.FileSize / (1024.0m * 1024.0m),
+                        QuanTrong = isImportant,
+                        UserId = UserSession.CurrentUserId,
+                        RemoteId = Guid.NewGuid(),
+                        Version = 1,
+                        Tags = "",
+                        SyncStatus = 1, // Pending
+                        LocalVersion = 1,
+                        ServerId = TargetServerId
+                    };
+                    docsToInsert.Add(doc);
                 }
-                catch
+                catch (Exception ex)
                 {
+                    System.Diagnostics.Debug.WriteLine($"Import error for {entry.FileName}: {ex.Message}");
                     failed++;
                 }
 
                 progressBar.Value++;
-                Application.DoEvents();
+            }
+
+            int success = 0;
+            if (docsToInsert.Count > 0)
+            {
+                success = DatabaseHelper.InsertDocumentsBatch(docsToInsert);
+                failed += (docsToInsert.Count - success);
             }
 
             progressBar.Visible = false;
@@ -413,7 +428,6 @@ namespace document_sharing_manager.Documents
 
             if (success > 0)
             {
-                // Clear list after successful import as requested
                 fileEntries.Clear();
                 dgvFiles.Rows.Clear();
                 lblFolder.Text = "Sẵn sàng import";

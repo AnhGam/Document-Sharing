@@ -19,5 +19,10 @@ namespace document_sharing_manager.Core.Data
         /// The JWT access token for the current session.
         /// </summary>
         public static string? AccessToken { get; set; }
+
+        /// <summary>
+        /// The refresh token for the current session.
+        /// </summary>
+        public static string? RefreshToken { get; set; }
     }
 }

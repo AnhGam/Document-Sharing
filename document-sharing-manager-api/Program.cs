@@ -105,6 +105,7 @@ builder.Services.AddSwaggerGen(c =>
         Scheme = "Bearer"
     });
     c.OperationFilter<AuthorizeCheckOperationFilter>();
+    c.SchemaFilter<HideSchemaConstraintsFilter>();
 
     // Include XML Comments for Examples
     var apiXmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
@@ -137,7 +138,6 @@ app.MapScalarApiReference(options =>
            .WithDocumentDownloadType(DocumentDownloadType.None);
 });
 
-app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();

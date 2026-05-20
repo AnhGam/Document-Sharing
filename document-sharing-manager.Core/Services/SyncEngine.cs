@@ -21,7 +21,7 @@ namespace document_sharing_manager.Core.Services
 
     public class SyncTask
     {
-        public Document Document { get; set; } = null!;
+        public int DocumentId { get; set; }
         public SyncType Type { get; set; }
         public int ServerId { get; set; }
     }
@@ -48,8 +48,10 @@ namespace document_sharing_manager.Core.Services
         private readonly SemaphoreSlim _signal = new(0);
         private readonly System.Collections.Concurrent.ConcurrentDictionary<int, ManagedServer> _servers;
         private readonly CancellationTokenSource _cts = new();
+        private bool _disposed = false;
         private readonly SynchronizationContext _syncContext = SynchronizationContext.Current;
         private readonly System.Threading.Timer _debounceTimer;
+        private readonly ConcurrentDictionary<int, SemaphoreSlim> _serverLocks = new();
         private bool _isRunning = false;
 
         public SyncEngine(IDocumentRepository repository)
@@ -88,7 +90,10 @@ namespace document_sharing_manager.Core.Services
 
         public void RemoveServer(int serverId)
         {
-            _servers.TryRemove(serverId, out _);
+            if (_servers.TryRemove(serverId, out _) && _serverLocks.TryRemove(serverId, out var sem))
+            {
+                sem.Dispose();
+            }
         }
 
         public void Start()
@@ -97,24 +102,38 @@ namespace document_sharing_manager.Core.Services
             _isRunning = true;
             Task.Run(ProcessQueueAsync, _cts.Token);
             
-            // Trigger initial sync for all servers
-            foreach (var server in _servers.Values)
-            {
-                _ = Task.Run(() => SyncServerAsync(server, _cts.Token));
-            }
+            // Background loop for periodic server polling (Auto-refresh from servers)
+            Task.Run(async () => {
+                while (!_cts.Token.IsCancellationRequested)
+                {
+                    try { await SyncAsync(_cts.Token); }
+                    catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Periodic Sync Error: {ex.Message}"); }
+                    await Task.Delay(TimeSpan.FromMinutes(5), _cts.Token);
+                }
+            }, _cts.Token);
         }
 
         public void Stop()
         {
-            _cts.Cancel();
+            if (_disposed) return;
+            try
+            {
+                if (!_cts.IsCancellationRequested) _cts.Cancel();
+            }
+            catch (ObjectDisposedException) { }
             _isRunning = false;
         }
 
         public void Dispose()
         {
+            if (_disposed) return;
+            _disposed = true;
+
             Stop();
+            foreach (var sem in _serverLocks.Values) sem.Dispose();
+            _serverLocks.Clear();
             _debounceTimer?.Dispose();
-            _cts.Dispose();
+            try { _cts.Dispose(); } catch (ObjectDisposedException) { }
             _signal.Dispose();
             GC.SuppressFinalize(this);
         }
@@ -128,6 +147,14 @@ namespace document_sharing_manager.Core.Services
 
         public async Task<Result> SyncServerAsync(ManagedServer server, CancellationToken ct = default)
         {
+            var serverLock = _serverLocks.GetOrAdd(server.Id, _ => new SemaphoreSlim(1, 1));
+            
+            // Try to acquire the lock, if already syncing, just skip to avoid queueing up multiple syncs
+            if (!await serverLock.WaitAsync(0, ct))
+            {
+                return Result.Success(); // Already syncing this server
+            }
+
             try
             {
                 // 1. Pull from this specific server
@@ -163,19 +190,65 @@ namespace document_sharing_manager.Core.Services
             {
                 return Result.Failure(ex.Message);
             }
+            finally
+            {
+                serverLock.Release();
+            }
+        }
+
+        private async Task<HttpResponseMessage> SendAuthenticatedRequestAsync(ManagedServer server, HttpMethod method, string relativeUrl, HttpContent? content = null, HttpCompletionOption completionOption = HttpCompletionOption.ResponseContentRead, CancellationToken ct = default)
+        {
+            var authClient = server.GetAuthClient();
+            
+            // Helper to create the request
+            HttpRequestMessage CreateRequest()
+            {
+                var req = new HttpRequestMessage(method, $"{server.BaseUrl.TrimEnd('/')}/{relativeUrl.TrimStart('/')}");
+                if (!string.IsNullOrEmpty(server.AccessToken))
+                {
+                    req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", server.AccessToken);
+                }
+                if (content != null && method != HttpMethod.Get)
+                {
+                    // Note: content cannot be reused across requests if it's a stream. 
+                    // This is handled in the calling methods.
+                    req.Content = content; 
+                }
+                return req;
+            }
+
+            var response = await _httpClient.SendAsync(CreateRequest(), completionOption, ct);
+
+            // If 401, try to refresh once
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized && !string.IsNullOrEmpty(server.RefreshToken))
+            {
+                System.Diagnostics.Debug.WriteLine($"Token expired for {server.Name}, attempting refresh...");
+                bool refreshed = await authClient.RefreshTokensAsync(server.RefreshToken);
+                if (refreshed)
+                {
+                    // Update the server object and DB
+                    server.AccessToken = UserSession.AccessToken!;
+                    server.RefreshToken = UserSession.RefreshToken!;
+                    DatabaseHelper.UpdateServerTokens(server.Id, server.AccessToken, server.RefreshToken);
+                    
+                    // Retry request - Note: caller must ensure content is recreatable if it was a stream
+                    // For GET requests, it's always safe. For POST with stream, caller will handle it.
+                    if (method == HttpMethod.Get)
+                    {
+                        return await _httpClient.SendAsync(CreateRequest(), completionOption, ct);
+                    }
+                }
+            }
+
+            return response;
         }
 
         public async Task<Result> PullFromServerAsync(ManagedServer server, CancellationToken ct = default)
         {
             try
             {
-                using var request = new HttpRequestMessage(HttpMethod.Get, $"{server.BaseUrl.TrimEnd('/')}/api/documents");
-                if (!string.IsNullOrEmpty(server.AccessToken))
-                {
-                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", server.AccessToken);
-                }
-
-                var response = await _httpClient.SendAsync(request, ct);
+                var response = await SendAuthenticatedRequestAsync(server, HttpMethod.Get, "api/documents", null, HttpCompletionOption.ResponseContentRead, ct);
+                
                 if (response.IsSuccessStatusCode)
                 {
                     var json = await response.Content.ReadAsStringAsync();
@@ -204,7 +277,7 @@ namespace document_sharing_manager.Core.Services
                             serverDoc.DuongDan = Path.Combine(FileStorageService.DefaultFolder, server.Id.ToString(), $"{serverDoc.RemoteId.ToString().Substring(0, 8)}_{safeFileName}");
                             
                             await _repository.AddAsync(serverDoc, ct);
-                            Enqueue(serverDoc, SyncType.Download, server.Id);
+                            // Enqueue(serverDoc, SyncType.Download, server.Id); // Removed: Only download on demand
                         }
                         else if (serverDoc.Version > localDoc.Version)
                         {
@@ -218,15 +291,20 @@ namespace document_sharing_manager.Core.Services
                             localDoc.ServerId = server.Id;
                             
                             await _repository.UpdateAsync(localDoc, ct);
-                            Enqueue(localDoc, SyncType.Download, server.Id);
+                            // Enqueue(localDoc, SyncType.Download, server.Id); // Removed: Only download on demand
                         }
                     }
 
                     // Detect remote deletions: if a local doc for this server is not in serverDocs, it was deleted on server
+                    // Safety: Only delete if it's already been synced (Version > 0) or is not pending upload
                     foreach (var localDoc in localDocsForServer)
                     {
-                        if (!serverRemoteIds.Contains(localDoc.RemoteId))
+                        if (!serverRemoteIds.Contains(localDoc.RemoteId) && (localDoc.Version > 0 || localDoc.SyncStatus == 0))
                         {
+                            // Delete local file too
+                            string fullPath = FileStorageService.ResolvePath(localDoc.DuongDan);
+                            if (File.Exists(fullPath)) File.Delete(fullPath);
+                            
                             await _repository.DeleteAsync(localDoc.Id, ct);
                         }
                     }
@@ -265,7 +343,7 @@ namespace document_sharing_manager.Core.Services
             string key = $"{doc.Id}_{type}_{serverId}";
             if (_enqueuedTasks.TryAdd(key, 0))
             {
-                _taskQueue.Enqueue(new SyncTask { Document = doc, Type = type, ServerId = serverId });
+                _taskQueue.Enqueue(new SyncTask { DocumentId = doc.Id, Type = type, ServerId = serverId });
                 _signal.Release();
             }
         }
@@ -280,11 +358,18 @@ namespace document_sharing_manager.Core.Services
                     
                     if (_taskQueue.TryDequeue(out var task))
                     {
-                        string taskKey = $"{task.Document.Id}_{task.Type}_{task.ServerId}";
+                        string taskKey = $"{task.DocumentId}_{task.Type}_{task.ServerId}";
                         
                         if (!_servers.TryGetValue(task.ServerId, out var server))
                         {
-                            // Fix: Clear stale task entry even if server is missing
+                            _enqueuedTasks.TryRemove(taskKey, out _);
+                            continue;
+                        }
+
+                        // Load fresh document state from repository
+                        var doc = await _repository.GetByIdAsync(task.DocumentId, _cts.Token);
+                        if (doc == null)
+                        {
                             _enqueuedTasks.TryRemove(taskKey, out _);
                             continue;
                         }
@@ -292,11 +377,15 @@ namespace document_sharing_manager.Core.Services
                         try
                         {
                             if (task.Type == SyncType.Upload)
-                                await HandleUploadAsync(task.Document, server, _cts.Token);
+                                await HandleUploadAsync(doc, server, _cts.Token);
                             else if (task.Type == SyncType.Download)
-                                await HandleDownloadAsync(task.Document, server, _cts.Token);
+                                await HandleDownloadAsync(doc, server, _cts.Token);
                             else if (task.Type == SyncType.Delete)
-                                await HandleRemoteDeleteAsync(task.Document, server, _cts.Token);
+                                await HandleRemoteDeleteAsync(doc, server, _cts.Token);
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Task processing error: {ex.Message}");
                         }
                         finally
                         {
@@ -323,32 +412,27 @@ namespace document_sharing_manager.Core.Services
                 string fullPath = FileStorageService.ResolvePath(doc.DuongDan);
                 if (!File.Exists(fullPath)) return;
 
-                // Use MultipartFormDataContent and StreamContent for large file safety (OOM prevention)
-                using MultipartFormDataContent content = new()
+                async Task<HttpResponseMessage> SendUploadRequest()
                 {
-                    { new StringContent(doc.RemoteId.ToString()), "remoteId" },
-                    { new StringContent(doc.Version.ToString()), "localVersion" }
-                };
-                if (!string.IsNullOrEmpty(doc.Ten)) content.Add(new StringContent(doc.Ten), "ten");
-                if (doc.GhiChu != null) content.Add(new StringContent(doc.GhiChu), "ghiChu");
+                    // Re-create content for each attempt because stream will be consumed
+                    var multipartContent = new MultipartFormDataContent
+                    {
+                        { new StringContent(doc.RemoteId.ToString()), "remoteId" },
+                        { new StringContent(doc.Version.ToString()), "localVersion" },
+                        { new StringContent(server.Id.ToString()), "serverId" }
+                    };
+                    if (!string.IsNullOrEmpty(doc.Ten)) multipartContent.Add(new StringContent(doc.Ten), "ten");
+                    if (doc.GhiChu != null) multipartContent.Add(new StringContent(doc.GhiChu), "ghiChu");
 
-                string uploadUrl = $"{server.BaseUrl.TrimEnd('/')}/api/documents/sync-stream";
-                using var request = new HttpRequestMessage(HttpMethod.Post, uploadUrl)
-                {
-                    Content = content
-                };
+                    var fileStream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, useAsync: true);
+                    var fileContent = new StreamContent(fileStream);
+                    fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+                    multipartContent.Add(fileContent, "file", Path.GetFileName(fullPath));
 
-                if (!string.IsNullOrEmpty(server.AccessToken))
-                {
-                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", server.AccessToken);
+                    return await SendAuthenticatedRequestAsync(server, HttpMethod.Post, "api/documents/sync-stream", multipartContent, HttpCompletionOption.ResponseContentRead, ct);
                 }
 
-                using var fileStream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, useAsync: true);
-                var fileContent = new StreamContent(fileStream);
-                fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-                content.Add(fileContent, "file", Path.GetFileName(fullPath));
-
-                var response = await _httpClient.SendAsync(request, ct);
+                var response = await SendUploadRequest();
                 
                 if (response.IsSuccessStatusCode)
                 {
@@ -436,18 +520,11 @@ namespace document_sharing_manager.Core.Services
             try
             {
                 // Download by RemoteId to be safe
-                string downloadUrl = $"{server.BaseUrl.TrimEnd('/')}/api/documents/remote/{doc.RemoteId}/download";
-                using var request = new HttpRequestMessage(HttpMethod.Get, downloadUrl);
-                
-                if (!string.IsNullOrEmpty(server.AccessToken))
-                {
-                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", server.AccessToken);
-                }
-
-                var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
+                var response = await SendAuthenticatedRequestAsync(server, HttpMethod.Get, $"api/documents/remote/{doc.RemoteId}/download", null, HttpCompletionOption.ResponseHeadersRead, ct);
                 if (response.IsSuccessStatusCode)
                 {
                     string targetPath = FileStorageService.ResolvePath(doc.DuongDan);
+                    string tempPath = targetPath + ".tmp";
                     string? directory = Path.GetDirectoryName(targetPath);
                     if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
                     {
@@ -455,10 +532,14 @@ namespace document_sharing_manager.Core.Services
                     }
 
                     using (var stream = await response.Content.ReadAsStreamAsync())
-                    using (var fileStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, useAsync: true))
+                    using (var fileStream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, useAsync: true))
                     {
                         await stream.CopyToAsync(fileStream, 8192, ct);
                     }
+
+                    // Atomic rename
+                    if (File.Exists(targetPath)) File.Delete(targetPath);
+                    File.Move(tempPath, targetPath);
 
                     // Update DB status
                     await _repository.UpdateSyncStatusAsync(doc.Id, 0, doc.Version, null, doc.Version, ct);

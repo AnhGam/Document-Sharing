@@ -17,7 +17,6 @@ namespace document_sharing_manager.Core.Interfaces
 
         event EventHandler SearchRequested;
         event EventHandler FilterApplied;
-        event EventHandler RefreshRequested;
         event EventHandler<int> DeleteRequested;
 
         void SetFormats(List<string> formats);

@@ -20,7 +20,42 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
 
         public async Task<IEnumerable<Document>> GetAllAsync(CancellationToken ct = default)
         {
-            return await _context.Documents.AsNoTracking().ToListAsync(ct);
+            // Safety: Return nothing by default to force scoped queries
+            return await Task.FromResult(Enumerable.Empty<Document>());
+        }
+
+        public async Task<IEnumerable<Document>> GetSharedWithUserAsync(int userId, IEnumerable<int> serverIds, CancellationToken ct = default)
+        {
+            var serverIdList = serverIds.ToList();
+            
+            // Get URLs of servers user has joined
+            var userJoinedUrls = await _context.Servers
+                .Where(s => serverIdList.Contains(s.Id))
+                .Select(s => s.BaseUrl)
+                .Distinct()
+                .ToListAsync(ct);
+
+            return await _context.Documents
+                .AsNoTracking()
+                .Include(d => d.Server)
+                .Where(d => !d.IsDeleted && (d.UserId == userId || (d.Server != null && userJoinedUrls.Contains(d.Server.BaseUrl))))
+                .ToListAsync(ct);
+        }
+
+        public async Task<Document?> GetByIdSharedWithUserAsync(int id, int userId, IEnumerable<int> serverIds, CancellationToken ct = default)
+        {
+            var serverIdList = serverIds.ToList();
+            
+            var userJoinedUrls = await _context.Servers
+                .Where(s => serverIdList.Contains(s.Id))
+                .Select(s => s.BaseUrl)
+                .Distinct()
+                .ToListAsync(ct);
+
+            return await _context.Documents
+                .AsNoTracking()
+                .Include(d => d.Server)
+                .FirstOrDefaultAsync(d => d.Id == id && !d.IsDeleted && (d.UserId == userId || (d.Server != null && userJoinedUrls.Contains(d.Server.BaseUrl))), ct);
         }
 
         public async Task AddAsync(Document entity, CancellationToken ct = default)
@@ -105,24 +140,23 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
             }
         }
 
-        public async Task<List<Document>> SearchAsync(string keyword, int userId, CancellationToken ct = default)
+        public async Task<List<Document>> SearchAdvancedAsync(string keyword, string format, DateTime? fromDate, DateTime? toDate, decimal? minSize, decimal? maxSize, bool? isImportant, int userId, IEnumerable<int> serverIds, int? targetServerId = null, CancellationToken ct = default)
         {
-            var query = _context.Documents.AsNoTracking().Where(d => d.UserId == userId);
+            var serverIdList = serverIds.ToList();
+            var userJoinedUrls = await _context.Servers
+                .Where(s => serverIdList.Contains(s.Id))
+                .Select(s => s.BaseUrl)
+                .Distinct()
+                .ToListAsync(ct);
+
+            var query = _context.Documents
+                .AsNoTracking()
+                .Include(d => d.Server)
+                .Where(d => !d.IsDeleted && (d.UserId == userId || (d.Server != null && userJoinedUrls.Contains(d.Server.BaseUrl))))
+                .AsQueryable();
 
             if (!string.IsNullOrEmpty(keyword))
-            {
                 query = query.Where(d => d.Ten.Contains(keyword) || (d.GhiChu != null && d.GhiChu.Contains(keyword)));
-            }
-
-            return await query.ToListAsync(ct);
-        }
-
-        public async Task<List<Document>> SearchAdvancedAsync(string keyword, string format, DateTime? fromDate, DateTime? toDate, decimal? minSize, decimal? maxSize, bool? isImportant, int userId, int? serverId = null, CancellationToken ct = default)
-        {
-            var query = _context.Documents.AsNoTracking().Where(d => d.UserId == userId).AsQueryable();
-
-            if (!string.IsNullOrEmpty(keyword))
-                query = query.Where(d => d.Ten.Contains(keyword));
 
             if (!string.IsNullOrEmpty(format) && format != "Tất cả")
                 query = query.Where(d => d.DinhDang == format);
@@ -142,8 +176,8 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
             if (isImportant.HasValue)
                 query = query.Where(d => d.QuanTrong == isImportant.Value);
 
-            if (serverId.HasValue)
-                query = query.Where(d => d.ServerId == serverId.Value);
+            if (targetServerId.HasValue)
+                query = query.Where(d => d.ServerId == targetServerId.Value);
 
             return await query.ToListAsync(ct);
         }

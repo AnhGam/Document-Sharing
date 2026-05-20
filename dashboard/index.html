@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Sharing Manager | CI/CD Observability Dashboard</title>
+    <!-- Google Fonts: Plus Jakarta Sans & Space Grotesk -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Marked.js for markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-icon">
+                    <i data-lucide="shield-check" class="neon-glow-icon"></i>
+                </div>
+                <div class="brand-text">
+                    <h2>DSM Ops</h2>
+                    <span>CI/CD Insights</span>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" id="nav-dashboard">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="https://github.com/AnhGam/Study-Document-Management" target="_blank" class="nav-item">
+                    <i data-lucide="github"></i>
+                    <span>Repository</span>
+                </a>
+                <a href="https://github.com/AnhGam/Study-Document-Management/actions" target="_blank" class="nav-item">
+                    <i data-lucide="activity"></i>
+                    <span>GitHub Actions</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="avatar">DSM</div>
+                    <div class="user-info">
+                        <h4>Enterprise</h4>
+                        <span>FinOps Edition</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Dashboard Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-title">
+                    <h1>CI/CD DORA & Capacity Metrics</h1>
+                    <p>Real-time telemetry and resource governance for Document Sharing Manager</p>
+                </div>
+                
+                <div class="header-actions">
+                    <div class="live-status">
+                        <span class="beacon"></span>
+                        <span class="live-text">Live Telemetry</span>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <select id="branch-filter" class="custom-select">
+                            <option value="all">All Branches</option>
+                        </select>
+                        <select id="status-filter" class="custom-select">
+                            <option value="all">All Statuses</option>
+                            <option value="success">Success Only</option>
+                            <option value="failure">Failure Only</option>
+                        </select>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Metrics Grid -->
+            <section class="metrics-grid">
+                <!-- Card 1: DORA Lead Time -->
+                <div class="metric-card shadow-neon" id="card-dora">
+                    <div class="card-header">
+                        <span class="card-title">DORA Rating</span>
+                        <div class="card-icon cyan-bg"><i data-lucide="gauge"></i></div>
+                    </div>
+                    <div class="card-body">
+                        <h2 class="metric-value text-glowing-cyan" id="metric-dora-rating">-</h2>
+                        <p class="metric-desc">Lead Time Rating (Latest Successful Build)</p>
+                    </div>
+                    <div class="card-footer">
+                        <span class="trendUp" id="metric-dora-sub">- min build lead time</span>
+                    </div>
+                </div>
+
+                <!-- Card 2: Build Duration -->
+                <div class="metric-card shadow-neon" id="card-duration">
+                    <div class="card-header">
+                        <span class="card-title">Build Duration</span>
+                        <div class="card-icon purple-bg"><i data-lucide="clock"></i></div>
+                    </div>
+                    <div class="card-body">
+                        <h2 class="metric-value text-glowing-purple" id="metric-build-duration">- <span class="unit">min</span></h2>
+                        <p class="metric-desc">Average elapsed build duration</p>
+                    </div>
+                    <div class="card-footer">
+                        <span id="metric-duration-sub">Latest: - min</span>
+                    </div>
+                </div>
+
+                <!-- Card 3: Installer Size -->
+                <div class="metric-card shadow-neon" id="card-installer">
+                    <div class="card-header">
+                        <span class="card-title">Installer Size</span>
+                        <div class="card-icon green-bg"><i data-lucide="package"></i></div>
+                    </div>
+                    <div class="card-body">
+                        <h2 class="metric-value text-glowing-green" id="metric-installer-size">- <span class="unit">MB</span></h2>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar green-bar" id="installer-progress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <span id="metric-installer-sub">Limit: 50.0 MB</span>
+                    </div>
+                </div>
+
+                <!-- Card 4: Repo Source Size -->
+                <div class="metric-card shadow-neon" id="card-repo">
+                    <div class="card-header">
+                        <span class="card-title">Repo Source Size</span>
+                        <div class="card-icon orange-bg"><i data-lucide="database"></i></div>
+                    </div>
+                    <div class="card-body">
+                        <h2 class="metric-value text-glowing-orange" id="metric-repo-size">- <span class="unit">MB</span></h2>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar orange-bar" id="repo-progress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <span id="metric-repo-sub">Limit: 500.0 MB</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Chart Row -->
+            <section class="charts-row">
+                <div class="chart-container shadow-neon">
+                    <div class="chart-header">
+                        <h3><i data-lucide="line-chart" class="panel-icon"></i> Lead Time & Build Duration Trend</h3>
+                        <span class="chart-subtitle">Workflow execution speed in minutes</span>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="durationChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-container shadow-neon">
+                    <div class="chart-header">
+                        <h3><i data-lucide="bar-chart-2" class="panel-icon"></i> Capacity & Size Growth</h3>
+                        <span class="chart-subtitle">Comparison of installer and codebase footprint</span>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="capacityChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Search & Table Area -->
+            <section class="history-section shadow-neon">
+                <div class="section-header">
+                    <div class="section-title-group">
+                        <h2><i data-lucide="history" class="panel-icon"></i> Build & Telemetry History</h2>
+                        <span class="badge" id="build-count">0 Builds</span>
+                    </div>
+                    
+                    <div class="search-box">
+                        <i data-lucide="search"></i>
+                        <input type="text" id="search-input" placeholder="Search by commit, author or message...">
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>Status</th>
+                                <th>Build / Commit</th>
+                                <th>Branch</th>
+                                <th>Message & Author</th>
+                                <th>Duration</th>
+                                <th>Installer / Repo</th>
+                                <th>Reports & Telemetry</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body">
+                            <!-- Injected by Javascript -->
+                            <tr>
+                                <td colspan="7" class="loading-state">
+                                    <div class="spinner"></div>
+                                    <p>Loading telemetry logs and metrics...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Beautiful Markdown Reader Modal -->
+    <div class="modal" id="report-modal">
+        <div class="modal-backdrop" id="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <div class="modal-badge success" id="modal-report-type">Report</div>
+                    <h3 id="modal-title">Report Title</h3>
+                </div>
+                <button class="modal-close" id="modal-close-btn">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modal-body-content">
+                <!-- Markdown output goes here -->
+            </div>
+            <div class="modal-footer">
+                <span id="modal-footer-meta">Commit SHA: -</span>
+                <button class="btn btn-secondary" id="modal-close-btn-footer">Close Report</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+    </script>
+</body>
+</html>
