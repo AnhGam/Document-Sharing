@@ -296,13 +296,11 @@ document.addEventListener("DOMContentLoaded", () => {
             // Status Badge
             const isSuccess = item.buildStatus === "success" || item.buildStatus === "SUCCESS";
             const statusClass = isSuccess ? "status-success" : "status-failure";
-            const statusIcon = isSuccess ? "check-circle" : "alert-triangle";
             const statusText = isSuccess ? "SUCCESS" : "FAILED";
             
             const statusTd = `
                 <td>
                     <span class="status-indicator ${statusClass}">
-                        <i data-lucide="${statusIcon}"></i>
                         ${statusText}
                     </span>
                 </td>
@@ -344,7 +342,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     <div class="commit-msg-container">
                         <div class="commit-msg" title="${commitMsg}">${commitMsg}</div>
                         <div class="commit-author">
-                            <i data-lucide="user" style="width:12px;height:12px;"></i>
                             ${author}
                         </div>
                     </div>
@@ -381,19 +378,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 // AI Log Analysis
                 reportButtons += `
                     <button class="btn-report btn-ai" onclick="viewReport('${reportPathBase}/ai_analysis.md', 'AI Log Analysis', 'primary', '${shortSha}')">
-                        <i data-lucide="sparkles"></i> AI Analysis
+                        AI Analysis
                     </button>
                 `;
                 // Security Audit
                 reportButtons += `
                     <button class="btn-report btn-security" onclick="viewReport('${reportPathBase}/security_audit_summary.md', 'Security Audit', 'success', '${shortSha}')">
-                        <i data-lucide="shield"></i> Security
+                        Security
                     </button>
                 `;
                 // Capacity Governance
                 reportButtons += `
                     <button class="btn-report btn-capacity" onclick="viewReport('${reportPathBase}/capacity_report.md', 'Capacity & Governance', 'success', '${shortSha}')">
-                        <i data-lucide="line-chart"></i> Capacity
+                        Capacity
                     </button>
                 `;
             } else {
