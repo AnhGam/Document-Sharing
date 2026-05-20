@@ -1,5 +1,19 @@
 [
   {
+    "commitSha": "f3f84ccedba00e16b1aa87bb1a1ad2f064d2e428",
+    "shortSha": "f3f84cc",
+    "runId": "26179503543",
+    "date": "2026-05-20",
+    "time": "17:44",
+    "buildStatus": "success",
+    "installerSize": 7.88,
+    "repoSize": 198.73,
+    "buildDuration": 3.7,
+    "branch": "main",
+    "actor": "AnhGam",
+    "commitMessage": "Merge pull request #16 from AnhGam/nma\n\nable to sync + login + logout + join server"
+  },
+  {
     "commitSha": "c2a61d87605dd21ced9941d3596a4ec8a40bdfaf",
     "shortSha": "c2a61d8",
     "runId": "26179218960",
