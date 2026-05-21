@@ -141,7 +141,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Archive Build Reports (GitOps)
-        if: always()
+        if: always() && github.event_name == 'push'
         shell: pwsh
         env:
           REPO_URL: "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
@@ -151,7 +151,7 @@ jobs:
           INSTALLER_SIZE: ${{ steps.capacity.outputs.installer_size || '0.0' }}
           REPO_SIZE: ${{ steps.capacity.outputs.repo_size || '0.0' }}
           BUILD_DURATION: ${{ steps.capacity.outputs.build_duration || '0.0' }}
-          BRANCH_NAME: ${{ github.ref_name }}
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
           ACTOR: ${{ github.actor }}
           COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
         run: |
