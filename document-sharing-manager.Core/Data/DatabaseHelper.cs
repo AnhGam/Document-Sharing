@@ -103,6 +103,17 @@ namespace document_sharing_manager.Core.Data
         private static void CreateTables()
         {
             string createTablesQuery = @"
+                -- Bảng tài khoản nội bộ (Local Login)
+                CREATE TABLE IF NOT EXISTS tai_khoan (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ten_dang_nhap TEXT NOT NULL UNIQUE,
+                    mat_khau TEXT NOT NULL,
+                    ho_ten TEXT,
+                    email TEXT,
+                    vai_tro TEXT,
+                    thoi_gian_tao DATETIME DEFAULT (datetime('now', 'localtime'))
+                );
+
                 -- Bảng tài liệu chính
                 CREATE TABLE IF NOT EXISTS tai_lieu (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,

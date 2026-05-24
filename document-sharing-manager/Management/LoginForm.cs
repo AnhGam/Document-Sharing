@@ -87,8 +87,39 @@ namespace document_sharing_manager.Management
             };
             btnLogin.FlatAppearance.BorderSize = 0;
             btnLogin.Click += BtnLogin_Click;
+            var lnkRegister = new LinkLabel
+            {
+                Text = "Chưa có tài khoản? Đăng ký ngay",
+                Location = new Point(left, 350),
+                AutoSize = true,
+                Font = new Font(AppTheme.FontFamily, 9F)
+            };
+            lnkRegister.LinkClicked += (s, e) => 
+            {
+                var localAuth = new document_sharing_manager.Core.Services.LocalAuthService();
+                string user = txtUsername.Text.Trim();
+                string pass = txtPassword.Text;
 
-            this.Controls.AddRange(new Control[] { lblTitle, lblUser, txtUsername, lblPass, txtPassword, lblStatus, btnLogin });
+                if (string.IsNullOrEmpty(user) || string.IsNullOrEmpty(pass))
+                {
+                    lblStatus.Text = "Nhập Username và Pass để Đăng ký!";
+                    lblStatus.ForeColor = AppTheme.StatusError;
+                    return;
+                }
+
+                if (localAuth.RegisterLocal(user, pass, user, ""))
+                {
+                    lblStatus.Text = "Đăng ký thành công! Bấm Đăng nhập.";
+                    lblStatus.ForeColor = AppTheme.StatusInfo;
+                }
+                else
+                {
+                    lblStatus.Text = "Đăng ký thất bại (Tên đã tồn tại).";
+                    lblStatus.ForeColor = AppTheme.StatusError;
+                }
+            };
+
+            this.Controls.AddRange(new Control[] { lblTitle, lblUser, txtUsername, lblPass, txtPassword, lblStatus, btnLogin, lnkRegister });
             
             // Allow Enter key to login
             this.AcceptButton = btnLogin;
@@ -109,13 +140,13 @@ namespace document_sharing_manager.Management
             lblStatus.Text = "Đang xác thực...";
             lblStatus.ForeColor = AppTheme.StatusInfo;
 
-            bool success = await _authClient.LoginAsync(user, pass);
-            if (success)
+            var localAuth = new document_sharing_manager.Core.Services.LocalAuthService();
+            var result = localAuth.LoginLocal(user, pass);
+            
+            if (result.Success)
             {
-                // Save tokens
-                document_sharing_manager.Services.SecureStorage.SaveTokens(
-                    document_sharing_manager.Core.Data.UserSession.AccessToken, 
-                    document_sharing_manager.Core.Data.UserSession.RefreshToken);
+                document_sharing_manager.Core.Data.UserSession.CurrentUserId = result.UserId;
+                document_sharing_manager.Core.Data.UserSession.Username = user;
                 
                 // Reset and Initialize DB for the specific user
                 DatabaseHelper.ResetConnection();
@@ -123,23 +154,15 @@ namespace document_sharing_manager.Management
 
                 LoggedIn = true;
                 
-                // Sync servers from cloud
-                try
-                {
-                    var servers = await _authClient.FetchJoinedServersAsync();
-                    foreach (var s in servers)
-                    {
-                        DatabaseHelper.InsertServer(s.Name, s.BaseUrl, "", s.AccessToken);
-                    }
-                }
-                catch { }
+                // Note: We don't fetch joined servers from the API anymore because this is purely local!
+                // The joined servers are ALREADY inside this user's specific document_sharing_{UserId}.db.
 
                 this.DialogResult = DialogResult.OK;
                 this.Close();
             }
             else
             {
-                lblStatus.Text = "Đăng nhập thất bại.\n" + (_authClient.LastError ?? "Lỗi không xác định.");
+                lblStatus.Text = "Đăng nhập thất bại.\nSai tài khoản hoặc mật khẩu.";
                 lblStatus.ForeColor = AppTheme.StatusError;
                 btnLogin.Enabled = true;
             }
