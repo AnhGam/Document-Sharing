@@ -32,6 +32,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const buildCount = document.getElementById("build-count");
     const historyTableBody = document.getElementById("history-table-body");
 
+    // Active Context Banner Elements
+    const contextCommitInfo = document.getElementById("context-commit-info");
+    const contextBranchBadge = document.getElementById("context-branch-badge");
+    const contextStatusBadge = document.getElementById("context-status-badge");
+
     // Modal Elements
     const reportModal = document.getElementById("report-modal");
     const modalCloseBtn = document.getElementById("modal-close-btn");
@@ -114,6 +119,48 @@ document.addEventListener("DOMContentLoaded", () => {
     // 3. Update all widgets, charts, and table
     function updateDashboard(data) {
         if (!data || data.length === 0) {
+            // Reset metric cards to empty state
+            metricDoraRating.textContent = "-";
+            metricDoraRating.className = "metric-value text-glowing-cyan";
+            metricDoraSub.textContent = "No successful builds found";
+            
+            metricBuildDuration.textContent = "-";
+            metricDurationSub.textContent = "Latest: - min";
+            
+            metricInstallerSize.textContent = "-";
+            installerProgress.style.width = "0%";
+            metricInstallerSub.textContent = "Limit: 50.0 MB";
+            
+            metricRepoSize.textContent = "-";
+            repoProgress.style.width = "0%";
+            metricRepoSub.textContent = "Limit: 500.0 MB";
+
+            // Reset active context banner
+            if (contextCommitInfo) {
+                contextCommitInfo.textContent = "No build history matches the active filters.";
+            }
+            if (contextBranchBadge) {
+                contextBranchBadge.innerHTML = `<i data-lucide="git-branch" style="width:12px;height:12px;vertical-align:middle;margin-right:2px;"></i> ${formatBranchName(activeBranch)}`;
+                contextBranchBadge.className = "context-badge";
+            }
+            if (contextStatusBadge) {
+                contextStatusBadge.textContent = activeStatus.toUpperCase();
+                contextStatusBadge.className = "context-badge";
+            }
+
+            // Reset charts
+            if (durationChartInstance) {
+                durationChartInstance.data.labels = [];
+                durationChartInstance.data.datasets[0].data = [];
+                durationChartInstance.update();
+            }
+            if (capacityChartInstance) {
+                capacityChartInstance.data.labels = [];
+                capacityChartInstance.data.datasets[0].data = [];
+                capacityChartInstance.data.datasets[1].data = [];
+                capacityChartInstance.update();
+            }
+            
             showEmptyState();
             return;
         }
@@ -121,6 +168,27 @@ document.addEventListener("DOMContentLoaded", () => {
         // Metrics from latest build
         const latestBuild = data[0];
         const latestSuccess = data.find(item => item.buildStatus === "success" || item.buildStatus === "SUCCESS");
+
+        // --- Update Active Context Banner ---
+        if (contextCommitInfo) {
+            const shortSha = latestBuild.shortSha || (latestBuild.commitSha ? latestBuild.commitSha.substring(0, 7) : 'N/A');
+            const commitMsg = latestBuild.commitMessage || "No commit message provided";
+            const author = latestBuild.actor || "Workflow Bot";
+            const time = latestBuild.time || "";
+            const date = latestBuild.date || "";
+            const dateText = (date || time) ? ` (${date} ${time})` : "";
+            contextCommitInfo.innerHTML = `<strong>#${latestBuild.runId || 'N/A'}</strong> - <span style="font-family: var(--font-code); color: var(--color-cyan);">${shortSha}</span> - <em>"${commitMsg}"</em> by <strong>${author}</strong>${dateText}`;
+        }
+        if (contextBranchBadge) {
+            const bName = formatBranchName(latestBuild.branch);
+            contextBranchBadge.innerHTML = `<i data-lucide="${(latestBuild.branch || "").includes('/merge') ? 'git-pull-request' : 'git-branch'}" style="width:12px;height:12px;vertical-align:middle;margin-right:2px;"></i> ${bName}`;
+            contextBranchBadge.className = "context-badge branch-badge";
+        }
+        if (contextStatusBadge) {
+            const isSuccess = latestBuild.buildStatus === "success" || latestBuild.buildStatus === "SUCCESS";
+            contextStatusBadge.textContent = isSuccess ? "SUCCESS" : "FAILED";
+            contextStatusBadge.className = `context-badge ${isSuccess ? 'status-success' : 'status-failure'}`;
+        }
         
         // --- Calculate DORA Lead Time Rating ---
         if (latestSuccess) {
@@ -133,7 +201,7 @@ document.addEventListener("DOMContentLoaded", () => {
             
             metricDoraRating.textContent = rating;
             metricDoraRating.className = `metric-value ${ratingClass}`;
-            metricDoraSub.textContent = `${duration.toFixed(2)} min build lead time`;
+            metricDoraSub.innerHTML = `${duration.toFixed(2)} min build lead time<br><span style="font-size:10px; opacity:0.8; font-family:var(--font-code);">[PR/Branch: ${formatBranchName(latestSuccess.branch)} | SHA: ${latestSuccess.shortSha || latestSuccess.commitSha.substring(0, 7)}]</span>`;
         } else {
             metricDoraRating.textContent = "N/A";
             metricDoraRating.className = "metric-value text-glowing-danger";
@@ -144,7 +212,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const successfulBuilds = data.filter(item => (item.buildStatus === "success" || item.buildStatus === "SUCCESS") && item.buildDuration);
         const avgDuration = successfulBuilds.reduce((sum, item) => sum + parseFloat(item.buildDuration), 0) / (successfulBuilds.length || 1);
         metricBuildDuration.textContent = avgDuration.toFixed(2);
-        metricDurationSub.textContent = `Latest: ${parseFloat(latestBuild.buildDuration || 0).toFixed(2)} min`;
+        metricDurationSub.innerHTML = `Latest: ${parseFloat(latestBuild.buildDuration || 0).toFixed(2)} min<br><span style="font-size:10px; opacity:0.8; font-family:var(--font-code);">[Average of ${successfulBuilds.length} runs]</span>`;
 
         // --- Installer Size ---
         const installerSize = parseFloat(latestBuild.installerSize || 0);
@@ -155,10 +223,10 @@ document.addEventListener("DOMContentLoaded", () => {
         installerProgress.style.width = `${instPct}%`;
         if (installerSize > MAX_INSTALLER_MB) {
             metricInstallerSize.className = "metric-value text-glowing-danger";
-            metricInstallerSub.textContent = `ALERT: Over 50MB Budget! (${installerSize.toFixed(2)}MB)`;
+            metricInstallerSub.innerHTML = `ALERT: Over 50MB Budget! (${installerSize.toFixed(2)}MB)<br><span style="font-size:10px; opacity:0.8; font-family:var(--font-code);">[Build #${latestBuild.runId || 'N/A'} | ${latestBuild.shortSha || 'N/A'}]</span>`;
         } else {
             metricInstallerSize.className = "metric-value text-glowing-green";
-            metricInstallerSub.textContent = `Limit: ${MAX_INSTALLER_MB} MB (${instPct.toFixed(0)}% used)`;
+            metricInstallerSub.innerHTML = `Limit: ${MAX_INSTALLER_MB} MB (${instPct.toFixed(0)}% used)<br><span style="font-size:10px; opacity:0.8; font-family:var(--font-code);">[Build #${latestBuild.runId || 'N/A'} | ${latestBuild.shortSha || 'N/A'}]</span>`;
         }
 
         // --- Repo Size ---
@@ -170,10 +238,10 @@ document.addEventListener("DOMContentLoaded", () => {
         repoProgress.style.width = `${repoPct}%`;
         if (repoSize > MAX_REPO_MB) {
             metricRepoSize.className = "metric-value text-glowing-danger";
-            metricRepoSub.textContent = `ALERT: Over 500MB Budget! (${repoSize.toFixed(2)}MB)`;
+            metricRepoSub.innerHTML = `ALERT: Over 500MB Budget! (${repoSize.toFixed(2)}MB)<br><span style="font-size:10px; opacity:0.8; font-family:var(--font-code);">[Build #${latestBuild.runId || 'N/A'} | ${latestBuild.shortSha || 'N/A'}]</span>`;
         } else {
             metricRepoSize.className = "metric-value text-glowing-orange";
-            metricRepoSub.textContent = `Limit: ${MAX_REPO_MB} MB (${repoPct.toFixed(0)}% used)`;
+            metricRepoSub.innerHTML = `Limit: ${MAX_REPO_MB} MB (${repoPct.toFixed(0)}% used)<br><span style="font-size:10px; opacity:0.8; font-family:var(--font-code);">[Build #${latestBuild.runId || 'N/A'} | ${latestBuild.shortSha || 'N/A'}]</span>`;
         }
 
         // --- Render Charts & Table ---
@@ -181,12 +249,12 @@ document.addEventListener("DOMContentLoaded", () => {
         renderTable(data);
     }
 
-    // 4. Render Chart.js visual trends
     function renderCharts(data) {
-        // We only want to plot successful runs in cronological order (reversed array)
         const chronData = [...data].reverse();
-        const labels = chronData.map(item => item.shortSha || item.commitSha.substring(0, 7));
-        const durations = chronData.map(item => (item.buildStatus === "success" || item.buildStatus === "SUCCESS") ? parseFloat(item.buildDuration || 0) : null);
+        const labels = chronData.map(item => item.shortSha || (item.commitSha ? item.commitSha.substring(0, 7) : 'N/A'));
+        const durations = chronData.map(item => parseFloat(item.buildDuration || 0));
+        const pointColors = chronData.map(item => (item.buildStatus === "success" || item.buildStatus === "SUCCESS") ? "#00f2fe" : "#ff1744");
+        const pointRadii = chronData.map(item => (item.buildStatus === "success" || item.buildStatus === "SUCCESS") ? 5 : 7);
         const installerSizes = chronData.map(item => parseFloat(item.installerSize || 0));
         const repoSizes = chronData.map(item => parseFloat(item.repoSize || 0));
 
@@ -204,17 +272,18 @@ document.addEventListener("DOMContentLoaded", () => {
             data: {
                 labels: labels,
                 datasets: [{
-                    label: "Build Lead Time (min)",
+                    label: "Build Duration (min)",
                     data: durations,
                     borderColor: "#b927fc",
                     borderWidth: 2,
-                    pointBackgroundColor: "#00f2fe",
+                    pointBackgroundColor: pointColors,
                     pointBorderColor: "#fff",
-                    pointHoverRadius: 6,
+                    pointRadius: pointRadii,
+                    pointHoverRadius: 8,
                     tension: 0.4,
                     fill: true,
                     backgroundColor: purpleGrad,
-                    spanGaps: true // don't break line on failure nulls
+                    spanGaps: true
                 }]
             },
             options: {
@@ -441,7 +510,8 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         }
 
-        renderTable(filtered);
+        // Dynamically update both metrics cards, charts, and table based on filtered subset
+        updateDashboard(filtered);
     }
 
     // 7. Render Empty / Error states
@@ -485,8 +555,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 
                 if (hasNewBuild) {
                     telemetryData = formattedData;
-                    // Fully rebuild widgets, charts, and table seamlessly without page reload
-                    updateDashboard(telemetryData);
+                    
+                    // Rebuild branch filter options to include any newly compiled branch
+                    const currentBranchSelection = activeBranch;
+                    branchFilter.innerHTML = '<option value="all">All Branches</option>';
+                    populateFilters(telemetryData);
+                    branchFilter.value = currentBranchSelection;
+                    
+                    // Apply current active filters and re-render dashboard dynamically
+                    filterAndRender();
                     console.log("Live Telemetry: Telemetry data updated in real-time.");
                 }
             }

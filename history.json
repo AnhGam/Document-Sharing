@@ -1,5 +1,19 @@
 [
   {
+    "commitSha": "09fabff20e9160c60e3118ef284358c04f65e4b4",
+    "shortSha": "09fabff",
+    "runId": "26351066525",
+    "date": "2026-05-24",
+    "time": "03:46",
+    "buildStatus": "success",
+    "installerSize": 7.87,
+    "repoSize": 198.74,
+    "buildDuration": 2.53,
+    "branch": "main",
+    "actor": "AnhGam",
+    "commitMessage": "Merge pull request #18 from AnhGam/nma\n\nfix analytic not change to filter"
+  },
+  {
     "commitSha": "2c0ac1c8db2b89cd93e46589dc9120541f15e40f",
     "shortSha": "2c0ac1c",
     "runId": "26180216831",
