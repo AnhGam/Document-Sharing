@@ -1429,6 +1429,13 @@ namespace document_sharing_manager.Documents
                 }
             });
 
+            var tunnelItem = new ToolStripMenuItem("Mở kết nối Internet (Tunnel)", null, (s, e) =>
+            {
+                using var frm = new Management.TunnelManagerForm();
+                frm.ShowDialog();
+            });
+
+            menu.Items.Add(tunnelItem);
             menu.Items.Add(inviteItem);
             menu.Items.Add(requestsItem);
             menu.Items.Add(auditItem);

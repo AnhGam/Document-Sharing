@@ -153,6 +153,9 @@
     <Compile Include="Management\InviteManagementForm.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="Management\TunnelManagerForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Management\JoinRequestsForm.cs">
       <SubType>Form</SubType>
     </Compile>
