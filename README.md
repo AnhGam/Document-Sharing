@@ -1,66 +1,42 @@
+# Document Sharing Manager
+
+Document Sharing Manager là hệ thống chia sẻ tài liệu ngang hàng, được thiết kế theo mô hình Client-Server với giao diện Desktop WinForms dành cho người quản trị (Admin) và người dùng cuối, kết hợp cùng Server API (ASP.NET Core) ẩn bên trong để quản lý kết nối.
+
 <div align="center">
 
 ![Document Sharing Manager](docs/assets/hero-banner.png)
 
 [![CI/CD Status](https://img.shields.io/badge/CI%2FCD-Enterprise_Pipeline_2026-success?style=for-the-badge&logo=github-actions)](https://github.com/AnhGam/Document-Sharing/actions)
-[![DevOps Excellence](https://img.shields.io/badge/Strategy-Platform_Engineering-blueviolet?style=for-the-badge)](.ai_docs/CI_CD_PIPELINE.md)
 
 </div>
 
-## Project Evolution
-Formerly known as *Study Document Management*, this project has evolved into the **Document Sharing Manager**.
+## Tính năng chính
 
-**Goal:** Transitioning from a local desktop manager to a modern, cloud-ready Document Sharing ecosystem. We are implementing robust synchronization, virtual storage, and enterprise-grade DevOps infrastructure based on the latest 2026 industry standards.
+- **Mô hình Client-Server Tích hợp**:
+  - Giao diện WinForms (Client) giúp người dùng quản lý tài liệu, đồng bộ thư mục nội bộ.
+  - Tích hợp tính năng Server Administration ngay trên Client UI, cho phép người dùng đóng vai trò máy chủ Host quản lý mọi request mà không cần thao tác qua dòng lệnh (CLI).
+  - Tự động lưu vết bảo mật thông qua Audit Log (Nhật ký hệ thống).
 
-**Key Features:**
-*   **Managed Virtual Storage:** Documents are securely copied to an internal app-managed directory for seamless sharing.
-*   **Cloud-Ready Architecture:** Designed with Backend-Frontend decoupling for future server integration.
-*   **Enterprise CI/CD:** A multi-stage pipeline featuring AI-driven analysis, security gates, and Capacity Management.
+- **Hệ thống Invite Link (Link Mời)**:
+  - Chia sẻ kết nối với người ngoài LAN thông qua Invite Code (ví dụ: `docshare://join/1234abcd`).
+  - Hỗ trợ *Custom URI Scheme*: Nhấp vào link trên trình duyệt sẽ tự động gọi ứng dụng lên.
+  - Quản lý lời mời linh hoạt: Giới hạn số lần dùng, thời hạn sử dụng, và tùy chọn "Bắt buộc duyệt" để tăng cường bảo mật.
 
-**Collaborators:** 
-- AnhGam
-- Redamancy2107
+- **Dashboard CI/CD Web**:
+  - Các bản build được tự động phân tích và tạo trang Web Dashboard trên GitHub Pages.
+  - Theo dõi DORA Metrics: Tỉ lệ thành công, thời gian build trung bình, dung lượng Repo.
+  - **AI Diagnostic**: Tự động chẩn đoán và đưa ra lý do, đề xuất sửa lỗi cho các bản Build thất bại (Failed Builds) hiển thị trực quan.
 
----
+## Công nghệ sử dụng
+- **WinForms (.NET Framework 4.8)**: Xây dựng giao diện ứng dụng Desktop (Client).
+- **ASP.NET Core (.NET 8.0)**: Cung cấp API nội bộ và quản lý kết nối ngang hàng.
+- **SQLite / Entity Framework Core**: Lưu trữ dữ liệu cấu hình, Document, Audit Logs.
+- **GitHub Actions**: Đường ống CI/CD tự động (Build, Test, Report, Web Deploy).
+- **HTML/CSS/JS thuần**: Cho Dashboard Report giao diện đẹp mắt (Neon theme).
 
-## The Enterprise DevOps Stack
-This repository serves as a showcase for advanced DevOps and Platform Engineering:
+## Giới hạn hệ thống
+- Hỗ trợ upload/sync tệp tin lớn lên đến **10GB**.
 
-### FinOps & Capacity Management
-*   **Size Guards:** Automated monitoring of installer and repository growth.
-*   **Artifact Optimization:** Multi-stage builds and asset compression to minimize TCO.
-
-### Multi-AI Intelligence
-*   **Gemini 1.5 Pro:** Real-time build failure diagnostics.
-*   **Groq (Llama 3):** Ultra-fast security auditing and dependency scanning.
-*   **GPT-4o:** Automated architectural reviews and PR intelligence.
-
-### Quality & Security Gates
-*   **Observability:** Implementing the three pillars (Metrics, Logs, Traces).
-*   **DevSecOps:** Integrated Gitleaks, CodeQL, and NuGet vulnerability scanning.
-*   **Reliability:** Mutation testing with Stryker and memory leak detection.
-
----
-
-## Technical Stack
-- **Frontend:** .NET Framework 4.8 (WinForms) - Transitioning to Managed Storage.
-- **Backend (Planned):** ASP.NET Core 8.0 (Dockerized).
-- **Database:** SQLite (Local Cache) & PostgreSQL (Planned Server).
-- **IaC:** Terraform for infrastructure standardization.
-
-## Getting Started
-1. git clone https://github.com/AnhGam/Document-Sharing.git
-2. Open `document-sharing-manager.sln` in Visual Studio.
-3. Ensure `GEMINI_API_KEY`, `GROQ_API_KEY`, and `DISCORD_WEBHOOK` are set in your environment/secrets.
-
----
-
-## Credits
-- **Lead Developers:** AnhGam & Redamancy2107.
-- **Original Foundation:** Forked from [study-document-manager](https://github.com/hayato-shino05/study-document-manager).
-
----
-
-<div align="center">
-Enterprise DevOps Practice Project | 2026
-</div>
+## Xem thêm
+- [SETUP_GUIDE.md](SETUP_GUIDE.md): Hướng dẫn cài đặt và thiết lập.
+- [CONTRIBUTING.md](CONTRIBUTING.md): Hướng dẫn tham gia phát triển và luồng CI/CD.

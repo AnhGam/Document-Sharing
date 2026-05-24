@@ -82,7 +82,25 @@ namespace document_sharing_manager.Documents
                 if (this.InvokeRequired) this.Invoke(new Action(TriggerRefresh));
                 else TriggerRefresh();
             };
+        }
 
+        public void HandleDeepLink(string uri)
+        {
+            this.Shown += (s, e) =>
+            {
+                using (var form = new Management.JoinServerForm(_syncEngine, _authServiceClient, uri))
+                {
+                    if (form.ShowDialog() == DialogResult.OK)
+                    {
+                        PopulateCategoryTree();
+                        TriggerRefresh();
+                    }
+                }
+            };
+        }
+
+        private void InitializeDashboard()
+        {
             // Start background processes
             _syncEngine.Start();
             _syncWatcher.Start();
@@ -1377,6 +1395,44 @@ namespace document_sharing_manager.Documents
             {
                 ForeColor = Color.Red
             };
+
+            var inviteItem = new ToolStripMenuItem("Quản lý Link Mời", null, (s, e) =>
+            {
+                var server = DatabaseHelper.GetManagedServers().FirstOrDefault(x => x.Id == serverId);
+                if (server != null)
+                {
+                    var client = new Core.Services.AuthServiceClient(server.BaseUrl);
+                    using var frm = new Management.InviteManagementForm(client, server.BaseUrl);
+                    frm.ShowDialog();
+                }
+            });
+
+            var requestsItem = new ToolStripMenuItem("Yêu cầu tham gia", null, (s, e) =>
+            {
+                var server = DatabaseHelper.GetManagedServers().FirstOrDefault(x => x.Id == serverId);
+                if (server != null)
+                {
+                    var client = new Core.Services.AuthServiceClient(server.BaseUrl);
+                    using var frm = new Management.JoinRequestsForm(client);
+                    frm.ShowDialog();
+                }
+            });
+
+            var auditItem = new ToolStripMenuItem("Nhật ký Hệ thống", null, (s, e) =>
+            {
+                var server = DatabaseHelper.GetManagedServers().FirstOrDefault(x => x.Id == serverId);
+                if (server != null)
+                {
+                    var client = new Core.Services.AuthServiceClient(server.BaseUrl);
+                    using var frm = new Management.AuditLogForm(client);
+                    frm.ShowDialog();
+                }
+            });
+
+            menu.Items.Add(inviteItem);
+            menu.Items.Add(requestsItem);
+            menu.Items.Add(auditItem);
+            menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add(deleteItem);
             menu.Show(treeCategory, location);
         }

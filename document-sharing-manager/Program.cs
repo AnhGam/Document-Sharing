@@ -12,10 +12,12 @@ namespace document_sharing_manager
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        static void Main()
+        static void Main(string[] args)
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+
+            RegisterUriScheme();
 
             // Khởi tạo database SQLite (tạo file và bảng nếu chưa có)
             DatabaseHelper.InitializeDatabase();
@@ -59,12 +61,33 @@ namespace document_sharing_manager
 
             if (isAuthenticated)
             {
-                Application.Run(new Dashboard(authClient));
+                var dashboard = new Dashboard(authClient);
+                if (args.Length > 0 && args[0].StartsWith("docshare://"))
+                {
+                    dashboard.HandleDeepLink(args[0]);
+                }
+                Application.Run(dashboard);
             }
             else
             {
                 Application.Exit();
             }
+        }
+
+        private static void RegisterUriScheme()
+        {
+            try
+            {
+                const string SchemeName = "docshare";
+                using var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey($@"Software\Classes\{SchemeName}");
+                key.SetValue("", $"URL:{SchemeName} Protocol");
+                key.SetValue("URL Protocol", "");
+
+                using var commandKey = key.CreateSubKey(@"shell\open\command");
+                string appPath = Application.ExecutablePath;
+                commandKey.SetValue("", $"\"{appPath}\" \"%1\"");
+            }
+            catch { }
         }
     }
 }

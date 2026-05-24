@@ -142,6 +142,35 @@ namespace document_sharing_manager.Core.Data
                     UNIQUE(base_url, user_id)
                 );
 
+                -- Bảng invite_links
+                CREATE TABLE IF NOT EXISTS invite_links (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    code TEXT NOT NULL UNIQUE,
+                    requires_approval INTEGER DEFAULT 0,
+                    server_id INTEGER,
+                    created_at DATETIME DEFAULT (datetime('now', 'localtime'))
+                );
+
+                -- Bảng join_requests
+                CREATE TABLE IF NOT EXISTS join_requests (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    display_name TEXT NOT NULL,
+                    invite_code TEXT NOT NULL,
+                    status INTEGER DEFAULT 0,
+                    server_id INTEGER,
+                    created_at DATETIME DEFAULT (datetime('now', 'localtime'))
+                );
+
+                -- Bảng audit_logs
+                CREATE TABLE IF NOT EXISTS audit_logs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    action TEXT NOT NULL,
+                    details TEXT,
+                    user_name TEXT,
+                    server_id INTEGER,
+                    created_at DATETIME DEFAULT (datetime('now', 'localtime'))
+                );
+
                 -- Bảng collections (bộ sưu tập)
                 CREATE TABLE IF NOT EXISTS collections (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -150,6 +150,15 @@
     <Compile Include="Management\JoinServerForm.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="Management\InviteManagementForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Management\JoinRequestsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Management\AuditLogForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Management\LoginForm.cs">
       <SubType>Form</SubType>
     </Compile>

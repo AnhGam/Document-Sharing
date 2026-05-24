@@ -171,6 +171,7 @@ namespace document_sharing_manager_api.Controllers
         }
 
         [HttpPost("sync-stream")]
+        [DisableRequestSizeLimit]
         public async Task<ActionResult<SyncResponse>> SyncStream([FromForm] Guid remoteId, [FromForm] int localVersion, [FromForm] int serverId, [FromForm] string? ten, [FromForm] string? ghiChu, IFormFile? file, CancellationToken ct)
         {
             if (!await IsMemberOfServerAsync(serverId, ct)) return Forbid();
@@ -248,6 +249,7 @@ namespace document_sharing_manager_api.Controllers
         }
 
         [HttpPost("sync")]
+        [DisableRequestSizeLimit]
         public async Task<ActionResult<SyncResponse>> Sync([FromBody] SyncRequest request, CancellationToken ct)
         {
             if (!await IsMemberOfServerAsync(request.ServerId, ct)) return Forbid();

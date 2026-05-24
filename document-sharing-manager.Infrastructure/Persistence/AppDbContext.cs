@@ -14,6 +14,9 @@ namespace document_sharing_manager.Infrastructure.Persistence
         public DbSet<User> Users { get; set; } = null!;
         public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
         public DbSet<ManagedServer> Servers { get; set; } = null!;
+        public DbSet<InviteLink> InviteLinks { get; set; } = null!;
+        public DbSet<JoinRequest> JoinRequests { get; set; } = null!;
+        public DbSet<AuditLog> AuditLogs { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
