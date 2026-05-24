@@ -98,6 +98,7 @@ body {
     letter-spacing: 0.5px;
     background: linear-gradient(to right, #ffffff, #c7d2fe);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
@@ -923,6 +924,79 @@ body {
     padding: 0;
     border-radius: 0;
     color: #e2e8f0;
+}
+
+/* Active Context Banner */
+.active-context-banner {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 14px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    gap: 16px;
+    flex-wrap: wrap;
+    font-size: 13px;
+}
+
+.active-context-banner .context-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-primary);
+    flex-grow: 1;
+}
+
+.active-context-banner .context-label {
+    color: var(--text-secondary);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.active-context-banner .context-value {
+    font-family: var(--font-main);
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.active-context-banner .context-meta {
+    display: flex;
+    gap: 8px;
+}
+
+.active-context-banner .context-badge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background-color: var(--bg-surface-elevated);
+    border: 1px solid var(--border-color);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--text-secondary);
+}
+
+.active-context-banner .context-badge.branch-badge {
+    color: var(--color-primary);
+    background-color: var(--color-primary-glow);
+    border-color: rgba(143, 112, 255, 0.25);
+}
+
+.active-context-banner .context-badge.status-success {
+    color: var(--color-green);
+    background-color: rgba(0, 230, 118, 0.08);
+    border-color: rgba(0, 230, 118, 0.25);
+}
+
+.active-context-banner .context-badge.status-failure {
+    color: var(--color-danger);
+    background-color: rgba(255, 23, 68, 0.08);
+    border-color: rgba(255, 23, 68, 0.25);
 }
 
 /* Animations */

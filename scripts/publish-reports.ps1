@@ -16,6 +16,17 @@ param(
 
 $ErrorActionPreference = "Continue" # Change to continue to manage errors manually
 
+if ([string]::IsNullOrWhiteSpace($CommitMessage)) {
+    try {
+        $CommitMessage = (git log -1 --format=%B).Trim()
+        if ([string]::IsNullOrWhiteSpace($CommitMessage)) {
+            $CommitMessage = "No commit message provided"
+        }
+    } catch {
+        $CommitMessage = "No commit message provided"
+    }
+}
+
 Write-Host "--- Initializing GitOps Reporting System ---"
 Write-Host "Parameters Received:"
 Write-Host " - Commit SHA: $CommitSha"
