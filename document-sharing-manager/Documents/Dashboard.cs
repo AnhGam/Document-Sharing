@@ -82,6 +82,29 @@ namespace document_sharing_manager.Documents
                 if (this.InvokeRequired) this.Invoke(new Action(TriggerRefresh));
                 else TriggerRefresh();
             };
+
+            _syncEngine.ProgressChanged += (s, e) => {
+                if (this.InvokeRequired)
+                {
+                    this.Invoke(new Action(() => UpdateProgress(e.DocumentId, e.ProgressPercentage)));
+                }
+                else
+                {
+                    UpdateProgress(e.DocumentId, e.ProgressPercentage);
+                }
+            };
+        }
+
+        private void UpdateProgress(int documentId, int percent)
+        {
+            foreach (DataGridViewRow row in dgvDocuments.Rows)
+            {
+                if (row.DataBoundItem is Document doc && doc.Id == documentId)
+                {
+                    row.Cells["SyncStatus"].Value = $"Đang tải... {percent}%";
+                    break;
+                }
+            }
         }
 
         public void HandleDeepLink(string uri)
@@ -261,6 +284,22 @@ namespace document_sharing_manager.Documents
 
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
+            if (_syncEngine != null && _syncEngine.ActiveSyncCount > 0)
+            {
+                var result = MessageBox.Show(
+                    "Hệ thống đang đồng bộ tài liệu (tải lên/tải xuống).\nTắt ứng dụng lúc này có thể làm gián đoạn quá trình truyền tải và hỏng tệp.\nBạn có chắc chắn muốn thoát?",
+                    "Cảnh báo đồng bộ",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning,
+                    MessageBoxDefaultButton.Button2);
+
+                if (result == DialogResult.No)
+                {
+                    e.Cancel = true;
+                    return;
+                }
+            }
+
             // Ensure background threads are stopped when window is closed
             _syncWatcher?.Dispose();
             _syncEngine?.Dispose();

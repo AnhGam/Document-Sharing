@@ -26,9 +26,26 @@ namespace document_sharing_manager.Core.Services
         public int ServerId { get; set; }
     }
 
+    public class SyncProgressEventArgs : EventArgs
+    {
+        public int DocumentId { get; }
+        public int ProgressPercentage { get; }
+
+        public SyncProgressEventArgs(int documentId, int progressPercentage)
+        {
+            DocumentId = documentId;
+            ProgressPercentage = progressPercentage;
+        }
+    }
+
     public class SyncEngine : ISyncService, IDisposable
     {
         public event EventHandler? SyncCompleted;
+        public event EventHandler<SyncProgressEventArgs>? ProgressChanged;
+        
+        private int _activeSyncCount = 0;
+        public int ActiveSyncCount => _activeSyncCount;
+
         private readonly IDocumentRepository _repository;
         
         // Static HttpClient to prevent socket exhaustion
@@ -376,6 +393,7 @@ namespace document_sharing_manager.Core.Services
 
                         try
                         {
+                            System.Threading.Interlocked.Increment(ref _activeSyncCount);
                             if (task.Type == SyncType.Upload)
                                 await HandleUploadAsync(doc, server, _cts.Token);
                             else if (task.Type == SyncType.Download)
@@ -389,6 +407,7 @@ namespace document_sharing_manager.Core.Services
                         }
                         finally
                         {
+                            System.Threading.Interlocked.Decrement(ref _activeSyncCount);
                             _enqueuedTasks.TryRemove(taskKey, out _);
                             // Trigger UI refresh debounced
                             RequestSyncRefresh();
@@ -425,7 +444,13 @@ namespace document_sharing_manager.Core.Services
                     if (doc.GhiChu != null) multipartContent.Add(new StringContent(doc.GhiChu), "ghiChu");
 
                     var fileStream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, useAsync: true);
-                    var fileContent = new StreamContent(fileStream);
+                    var fileContent = new document_sharing_manager.Core.Http.ProgressableStreamContent(fileStream, (uploaded, total) => {
+                        int percent = total > 0 ? (int)((uploaded * 100) / total) : 0;
+                        if (_syncContext != null)
+                            _syncContext.Post(_ => ProgressChanged?.Invoke(this, new SyncProgressEventArgs(doc.Id, percent)), null);
+                        else
+                            ProgressChanged?.Invoke(this, new SyncProgressEventArgs(doc.Id, percent));
+                    });
                     fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
                     multipartContent.Add(fileContent, "file", Path.GetFileName(fullPath));
 
@@ -534,7 +559,28 @@ namespace document_sharing_manager.Core.Services
                     using (var stream = await response.Content.ReadAsStreamAsync())
                     using (var fileStream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, useAsync: true))
                     {
-                        await stream.CopyToAsync(fileStream, 8192, ct);
+                        var totalLength = response.Content.Headers.ContentLength ?? 0L;
+                        if (totalLength > 0)
+                        {
+                            var buffer = new byte[81920];
+                            long totalRead = 0;
+                            int bytesRead;
+                            while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length, ct)) > 0)
+                            {
+                                await fileStream.WriteAsync(buffer, 0, bytesRead, ct);
+                                totalRead += bytesRead;
+                                int percent = (int)((totalRead * 100) / totalLength);
+                                
+                                if (_syncContext != null)
+                                    _syncContext.Post(_ => ProgressChanged?.Invoke(this, new SyncProgressEventArgs(doc.Id, percent)), null);
+                                else
+                                    ProgressChanged?.Invoke(this, new SyncProgressEventArgs(doc.Id, percent));
+                            }
+                        }
+                        else
+                        {
+                            await stream.CopyToAsync(fileStream, 81920, ct);
+                        }
                     }
 
                     // Atomic rename
