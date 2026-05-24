@@ -109,6 +109,9 @@ namespace document_sharing_manager.Management
 
                 if (localAuth.RegisterLocal(user, pass, user, ""))
                 {
+                    // Đăng ký luôn trên API server cho đồng bộ
+                    _ = _authClient.RegisterAsync(user, pass, $"{user}@local.test").ContinueWith(t => { });
+
                     lblStatus.Text = "Đăng ký thành công! Bấm Đăng nhập.";
                     lblStatus.ForeColor = AppTheme.StatusInfo;
                 }
@@ -145,6 +148,26 @@ namespace document_sharing_manager.Management
             
             if (result.Success)
             {
+                // Lấy JWT Token từ API Server để thực hiện gọi API (như Tạo Link)
+                bool apiSuccess = await _authClient.LoginAsync(user, pass);
+                if (!apiSuccess)
+                {
+                    // Tự động đăng ký trên API server nếu chưa có (ví dụ: host cũ đã có SQLite nhưng chưa có trên Postgres)
+                    bool regSuccess = await _authClient.RegisterAsync(user, pass, $"{user}@local.test");
+                    if (regSuccess)
+                    {
+                        apiSuccess = await _authClient.LoginAsync(user, pass);
+                    }
+                    
+                    if (!apiSuccess)
+                    {
+                        lblStatus.Text = "Lỗi cấp Token. Server API chưa sẵn sàng.";
+                        lblStatus.ForeColor = AppTheme.StatusError;
+                        btnLogin.Enabled = true;
+                        return;
+                    }
+                }
+
                 document_sharing_manager.Core.Data.UserSession.CurrentUserId = result.UserId;
                 document_sharing_manager.Core.Data.UserSession.Username = user;
                 

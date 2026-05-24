@@ -20,7 +20,7 @@ namespace document_sharing_manager.Core.Services
         {
             _baseUrl = baseUrl.TrimEnd('/');
             var handler = new HttpClientHandler { UseProxy = false };
-            _httpClient = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(15) };
+            _httpClient = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(60) };
         }
 
         public void UpdateBaseUrl(string baseUrl)
@@ -28,7 +28,34 @@ namespace document_sharing_manager.Core.Services
             _baseUrl = baseUrl.TrimEnd('/');
         }
 
+        public string BaseUrl => _baseUrl;
+
         public string? LastError { get; private set; }
+
+        public async Task<bool> RegisterAsync(string username, string password, string email)
+        {
+            LastError = null;
+            try
+            {
+                var request = new RegisterRequest { Username = username, Password = password, Email = email };
+                var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+                
+                var response = await _httpClient.PostAsync($"{_baseUrl}/api/Auth/register", content);
+                if (!response.IsSuccessStatusCode)
+                {
+                    LastError = $"Server returned {(int)response.StatusCode} ({response.ReasonPhrase})";
+                    var errorBody = await response.Content.ReadAsStringAsync();
+                    if (!string.IsNullOrEmpty(errorBody)) LastError += ": " + errorBody;
+                    return false;
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                LastError = ex.Message;
+                return false;
+            }
+        }
 
         public async Task<bool> LoginAsync(string username, string password)
         {
@@ -253,9 +280,10 @@ namespace document_sharing_manager.Core.Services
                     var info = Newtonsoft.Json.Linq.JObject.Parse(resJson);
                     return (true, (bool?)info["requiresApproval"] ?? false, "OK");
                 }
-                return (false, false, "Mã mời không hợp lệ hoặc đã bị thu hồi.");
+                return (false, false, $"Mã mời không hợp lệ (HTTP {(int)response.StatusCode}).");
             }
-            catch { return (false, false, "Lỗi kết nối."); }
+            catch (TaskCanceledException) { return (false, false, $"Hết thời gian chờ phản hồi từ server ({_baseUrl}). Hãy kiểm tra Tunnel đã chạy chưa."); }
+            catch (Exception ex) { return (false, false, $"Lỗi kết nối ({_baseUrl}): {ex.Message}"); }
         }
 
         public async Task<(bool success, string message)> JoinWithInviteAsync(string code, string displayName)
@@ -273,11 +301,16 @@ namespace document_sharing_manager.Core.Services
 
                 var response = await _httpClient.SendAsync(request);
                 var resJson = await response.Content.ReadAsStringAsync();
-                var result = Newtonsoft.Json.Linq.JObject.Parse(resJson);
                 
-                return (response.IsSuccessStatusCode, result["message"]?.ToString() ?? "");
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = Newtonsoft.Json.Linq.JObject.Parse(resJson);
+                    return (true, result["message"]?.ToString() ?? "");
+                }
+                return (false, $"Lỗi từ server: {(int)response.StatusCode}");
             }
-            catch { return (false, "Lỗi kết nối."); }
+            catch (TaskCanceledException) { return (false, $"Hết thời gian chờ phản hồi từ server ({_baseUrl}). Hãy kiểm tra Tunnel đã chạy chưa."); }
+            catch (Exception ex) { return (false, $"Lỗi kết nối ({_baseUrl}): {ex.Message}"); }
         }
 
         public async Task<List<JoinRequest>> GetPendingJoinRequestsAsync()

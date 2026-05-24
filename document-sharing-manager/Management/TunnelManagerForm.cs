@@ -10,8 +10,18 @@ namespace document_sharing_manager.Management
 {
     public class TunnelManagerForm : Form
     {
+        private static TunnelManagerForm _instance;
+        public static void ShowInstance()
+        {
+            if (_instance == null || _instance.IsDisposed)
+                _instance = new TunnelManagerForm();
+            _instance.Show();
+            _instance.BringToFront();
+        }
+
         private Button btnStart;
         private TextBox txtUrl;
+        private TextBox txtTunnelName;
         private Button btnCopy;
         private RichTextBox rtbLog;
         private Process _sshProcess;
@@ -45,6 +55,10 @@ namespace document_sharing_manager.Management
             };
             btnStart.Click += BtnStart_Click;
 
+            var lblTunnelName = new Label { Text = "Tên Tunnel (để trống nếu muốn cấp random):", Location = new Point(190, 45), AutoSize = true };
+            txtTunnelName = new TextBox { Location = new Point(190, 65), Width = 270 };
+
+
             var lblUrl = new Label { Text = "Public URL:", Location = new Point(20, 110), AutoSize = true };
             txtUrl = new TextBox { Location = new Point(20, 135), Width = 350, ReadOnly = true };
             
@@ -73,7 +87,7 @@ namespace document_sharing_manager.Management
                 Font = new Font("Consolas", 9)
             };
 
-            this.Controls.AddRange(new Control[] { lblDesc, btnStart, lblUrl, txtUrl, btnCopy, rtbLog });
+            this.Controls.AddRange(new Control[] { lblDesc, btnStart, lblTunnelName, txtTunnelName, lblUrl, txtUrl, btnCopy, rtbLog });
             this.FormClosing += TunnelManagerForm_FormClosing;
         }
 
@@ -84,6 +98,8 @@ namespace document_sharing_manager.Management
             AppTheme.ApplyButtonPrimary(btnCopy);
             txtUrl.BackColor = AppTheme.InputBackground;
             txtUrl.ForeColor = AppTheme.TextPrimary;
+            txtTunnelName.BackColor = AppTheme.InputBackground;
+            txtTunnelName.ForeColor = AppTheme.TextPrimary;
             foreach (Control c in this.Controls)
             {
                 if (c is Label lbl) lbl.ForeColor = AppTheme.TextPrimary;
@@ -92,15 +108,21 @@ namespace document_sharing_manager.Management
 
         private void BtnStart_Click(object sender, EventArgs e)
         {
-            if (_sshProcess != null && !_sshProcess.HasExited)
+            try
             {
-                _sshProcess.Kill();
-                _sshProcess.Dispose();
-                _sshProcess = null;
-                btnStart.Text = "Khởi chạy Tunnel";
-                Log("Đã tắt Tunnel.");
-                return;
+                if (_sshProcess != null)
+                {
+                    try { if (!_sshProcess.HasExited) _sshProcess.Kill(); } catch { }
+                    try { _sshProcess.Dispose(); } catch { }
+                    _sshProcess = null;
+                    document_sharing_manager.Core.Data.UserSession.PublicUrl = null;
+                    btnStart.Text = "Khởi chạy Tunnel";
+                    btnStart.Enabled = true;
+                    Log("Đã dừng Tunnel.");
+                    return;
+                }
             }
+            catch { }
 
             btnStart.Text = "Đang kết nối...";
             txtUrl.Text = "";
@@ -108,9 +130,25 @@ namespace document_sharing_manager.Management
 
             try
             {
+                string cloudflaredPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "cloudflared.exe");
+                if (!System.IO.File.Exists(cloudflaredPath))
+                {
+                    cloudflaredPath = "cloudflared"; // Fallback to PATH if not bundled
+                }
+
                 _sshProcess = new Process();
-                _sshProcess.StartInfo.FileName = "ssh";
-                _sshProcess.StartInfo.Arguments = "-R 80:localhost:5000 nokey@localhost.run -o StrictHostKeyChecking=no";
+                _sshProcess.StartInfo.FileName = cloudflaredPath;
+                
+                string tunnelName = txtTunnelName.Text.Trim();
+                if (!string.IsNullOrEmpty(tunnelName))
+                {
+                    _sshProcess.StartInfo.Arguments = $"tunnel run {tunnelName}";
+                }
+                else
+                {
+                    _sshProcess.StartInfo.Arguments = "tunnel --url http://localhost:5000";
+                }
+                
                 _sshProcess.StartInfo.UseShellExecute = false;
                 _sshProcess.StartInfo.RedirectStandardOutput = true;
                 _sshProcess.StartInfo.RedirectStandardError = true;
@@ -123,15 +161,34 @@ namespace document_sharing_manager.Management
                 _sshProcess.BeginOutputReadLine();
                 _sshProcess.BeginErrorReadLine();
 
-                Log("Bắt đầu khởi tạo SSH Tunnel...");
+                Log("Bắt đầu khởi chạy Cloudflare Tunnel...");
                 btnStart.Text = "Dừng Tunnel";
                 btnStart.Enabled = true;
+                
+                if (!string.IsNullOrEmpty(tunnelName))
+                {
+                    string url = $"https://{tunnelName}.me";
+                    txtUrl.Text = $"{url} (Tham khảo)";
+                    document_sharing_manager.Core.Data.UserSession.PublicUrl = url;
+                    Log($"Đang kết nối Cloudflare Tunnel cá nhân: {tunnelName}...");
+                }
+                else
+                {
+                    txtUrl.Text = "Đang lấy URL ngẫu nhiên...";
+                    Log("Đang kết nối Cloudflare Quick Tunnel...");
+                }
             }
             catch (Exception ex)
             {
                 Log($"Lỗi: {ex.Message}");
+                Log("Có thể máy bạn chưa cài đặt cloudflared hoặc chưa đưa vào biến môi trường PATH.");
                 btnStart.Text = "Khởi chạy Tunnel";
                 btnStart.Enabled = true;
+                if (_sshProcess != null)
+                {
+                    try { _sshProcess.Dispose(); } catch { }
+                    _sshProcess = null;
+                }
             }
         }
 
@@ -142,12 +199,25 @@ namespace document_sharing_manager.Management
             this.Invoke(new Action(() =>
             {
                 Log(e.Data);
-                // Check for localhost.run url
-                var match = Regex.Match(e.Data, @"https://[a-zA-Z0-9-]+\.lhr\.life");
-                if (match.Success)
+                
+                // Parse URL ngẫu nhiên (.trycloudflare.com) từ Cloudflare
+                if (e.Data.Contains("trycloudflare.com") && e.Data.Contains("https://"))
                 {
-                    txtUrl.Text = match.Value;
-                    Log("==> Lấy URL thành công: " + match.Value);
+                    int startIndex = e.Data.IndexOf("https://");
+                    if (startIndex != -1)
+                    {
+                        string url = e.Data.Substring(startIndex).Trim().TrimEnd('|', ' ', '\t');
+                        // Nếu có dấu cách phía sau URL thì cắt đi
+                        int spaceIndex = url.IndexOf(' ');
+                        if (spaceIndex > 0)
+                        {
+                            url = url.Substring(0, spaceIndex);
+                        }
+                        
+                        txtUrl.Text = url;
+                        document_sharing_manager.Core.Data.UserSession.PublicUrl = url;
+                        Log("==> Cấp phát URL thành công: " + url);
+                    }
                 }
             }));
         }
@@ -162,13 +232,21 @@ namespace document_sharing_manager.Management
 
         private void TunnelManagerForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            _isClosing = true;
-            if (_sshProcess != null && !_sshProcess.HasExited)
+            if (e.CloseReason == CloseReason.UserClosing)
             {
+                e.Cancel = true;
+                this.Hide();
+            }
+            else
+            {
+                _isClosing = true;
                 try
                 {
-                    _sshProcess.Kill();
-                    _sshProcess.Dispose();
+                    if (_sshProcess != null)
+                    {
+                        try { if (!_sshProcess.HasExited) _sshProcess.Kill(); } catch { }
+                        try { _sshProcess.Dispose(); } catch { }
+                    }
                 }
                 catch { }
             }

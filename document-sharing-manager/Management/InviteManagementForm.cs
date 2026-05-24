@@ -33,13 +33,19 @@ namespace document_sharing_manager.Management
             this.BackColor = AppTheme.BackgroundMain;
 
             var pnlTop = new Panel { Dock = DockStyle.Top, Height = 60, Padding = new Padding(10) };
-            btnCreatePublic = new Button { Text = "Tạo Link (Tự động duyệt)", Width = 160, Dock = DockStyle.Left, Cursor = Cursors.Hand };
-            btnCreateApproval = new Button { Text = "Tạo Link (Cần phê duyệt)", Width = 160, Dock = DockStyle.Left, Cursor = Cursors.Hand };
+            btnCreatePublic = new Button { Text = "Tạo Link (Tự động duyệt)", Width = 200, Dock = DockStyle.Left, Cursor = Cursors.Hand };
+            btnCreateApproval = new Button { Text = "Tạo Link (Cần phê duyệt)", Width = 200, Dock = DockStyle.Left, Cursor = Cursors.Hand };
             
             AppTheme.ApplyButtonPrimary(btnCreatePublic);
-            AppTheme.ApplyButtonSecondary(btnCreateApproval);
-            btnCreateApproval.BackColor = AppTheme.AccentOrange;
-            btnCreateApproval.ForeColor = Color.White;
+            AppTheme.ApplyButtonWarning(btnCreateApproval);
+            
+            // Fix text alignment issues
+            btnCreatePublic.TextAlign = ContentAlignment.MiddleCenter;
+            btnCreateApproval.TextAlign = ContentAlignment.MiddleCenter;
+
+            // Attach event handlers
+            btnCreatePublic.Click += async (s, e) => await CreateInvite(false);
+            btnCreateApproval.Click += async (s, e) => await CreateInvite(true);
             
             var padding = new Panel { Dock = DockStyle.Left, Width = 10 };
             pnlTop.Controls.Add(btnCreateApproval);
@@ -78,8 +84,6 @@ namespace document_sharing_manager.Management
             btnClose = new Button { Text = "Đóng", Dock = DockStyle.Bottom, Height = 40, Cursor = Cursors.Hand };
             AppTheme.ApplyButtonSecondary(btnClose);
 
-            btnCreatePublic.Click += async (s, e) => await CreateInvite(false);
-            btnCreateApproval.Click += async (s, e) => await CreateInvite(true);
             btnClose.Click += (s, e) => this.Close();
 
             this.Controls.Add(dgvInvites);
@@ -126,7 +130,8 @@ namespace document_sharing_manager.Management
                 string code = row.Cells[0].Value.ToString();
                 
                 // Construct universal deep link
-                string encodedUrl = Uri.EscapeDataString(_serverBaseUrl);
+                string serverUrl = document_sharing_manager.Core.Data.UserSession.PublicUrl ?? _serverBaseUrl;
+                string encodedUrl = Uri.EscapeDataString(serverUrl);
                 string deepLink = $"docshare://join?url={encodedUrl}&code={code}";
                 
                 Clipboard.SetText(deepLink);

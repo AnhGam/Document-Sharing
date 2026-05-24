@@ -130,25 +130,56 @@ namespace document_sharing_manager.Management
             }
         }
 
-        private string ExtractCode(string input)
+        private (string code, string url) ParseInviteInput(string input)
         {
             input = input.Trim();
+            
+            // Format: docshare://join?url=...&code=...
+            if (input.StartsWith("docshare://join?"))
+            {
+                try
+                {
+                    string query = input.Substring(input.IndexOf('?') + 1);
+                    var parts = query.Split('&');
+                    string url = "";
+                    string code = "";
+                    foreach (var part in parts)
+                    {
+                        var kv = part.Split('=');
+                        if (kv.Length == 2)
+                        {
+                            if (kv[0].ToLower() == "url") url = Uri.UnescapeDataString(kv[1]);
+                            if (kv[0].ToLower() == "code") code = Uri.UnescapeDataString(kv[1]);
+                        }
+                    }
+                    return (code, url);
+                }
+                catch { }
+            }
+            
+            // Legacy Format: docshare://join/{code}
             if (input.StartsWith("docshare://join/"))
             {
-                return input.Substring(16).Trim('/');
+                return (input.Substring(16).Trim('/'), null);
             }
-            return input;
+            return (input, null);
         }
 
         private async void BtnJoinInvite_Click(object sender, EventArgs e)
         {
-            string code = ExtractCode(txtInviteCode.Text);
+            var parsed = ParseInviteInput(txtInviteCode.Text);
+            string code = parsed.code;
             string displayName = txtDisplayName.Text.Trim();
 
             if (string.IsNullOrEmpty(code) || string.IsNullOrEmpty(displayName))
             {
                 ShowStatus("Vui lòng nhập Mã mời và Tên hiển thị!", true);
                 return;
+            }
+
+            if (!string.IsNullOrEmpty(parsed.url))
+            {
+                _authServiceClient.UpdateBaseUrl(parsed.url);
             }
 
             btnJoinInvite.Enabled = false;
@@ -167,23 +198,27 @@ namespace document_sharing_manager.Management
             
             if (joinRes.success)
             {
-                // In a real scenario, after joining via invite, we might need the server details
-                // to connect (like BaseUrl). If the API is single-instance (as is currently), 
-                // joining an invite just gives you access. The client still needs the BaseUrl to sync.
-                // Wait, if we use Invite Link, how do we know the BaseUrl?
-                // The current architecture assumes we know the BaseUrl when using the API.
-                // But the invite code is validated against the Current API instance connected in AuthServiceClient.
-                // Ah, the WinForms client connects to MULTIPLE API servers.
-                // If they paste an invite link, we don't know WHICH server it belongs to unless the link contains it.
-                // Wait, if the link is `docshare://join/abc123xyz`, there's no server IP in it.
-                // Discord links don't have IP because they hit Discord central API.
-                // Our system is decentralized. There is no central server.
-                // If there's no central server, how does an invite link know the IP?
-                // We must embed the IP/domain in the invite link!
-                // Example: `docshare://join/http://192.168.1.5:5000/abc123xyz` 
-                // OR the InviteLink must just be a normal URL `http://192.168.1.5:5000/api/invite/abc123xyz/join`
-                // Let's modify the ExtractCode logic to parse the BaseUrl and Code.
-                
+                // Lưu server vào database local (giống như luồng kết nối thủ công)
+                string serverUrl = parsed.url ?? _authServiceClient.BaseUrl;
+                string serverName = "";
+                try
+                {
+                    var uri = new Uri(serverUrl);
+                    serverName = uri.Host; // Dùng hostname làm tên server
+                }
+                catch { serverName = serverUrl; }
+
+                string token = document_sharing_manager.Core.Data.UserSession.AccessToken;
+                DatabaseHelper.InsertServer(serverName, serverUrl, accessToken: token);
+
+                // Thêm server vào SyncEngine để hiện ở sidebar
+                var allServers = DatabaseHelper.GetManagedServers();
+                var newServer = allServers.FirstOrDefault(s => s.BaseUrl.TrimEnd('/') == serverUrl.TrimEnd('/'));
+                if (newServer != null)
+                {
+                    _syncEngine?.AddServer(newServer);
+                }
+
                 Success = true;
                 MessageBox.Show(joinRes.message, "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 this.DialogResult = DialogResult.OK;

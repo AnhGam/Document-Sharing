@@ -1,42 +1,30 @@
 # Document Sharing Manager
 
-Document Sharing Manager là hệ thống chia sẻ tài liệu ngang hàng, được thiết kế theo mô hình Client-Server với giao diện Desktop WinForms dành cho người quản trị (Admin) và người dùng cuối, kết hợp cùng Server API (ASP.NET Core) ẩn bên trong để quản lý kết nối.
+Đây là ứng dụng Document Sharing Manager (Chia sẻ tài liệu mạng ngang hàng / tự Host).
+Phần mềm bao gồm 2 thành phần:
+1. **Client (UI)**: Chạy trên WinForms (Thư mục `document-sharing-manager`).
+2. **Server (API)**: Chạy trên ASP.NET Core (Thư mục `document-sharing-manager-api`).
 
-<div align="center">
+Khi bạn mở UI, nó sẽ tự động chạy Server ngầm bên trong.
 
-![Document Sharing Manager](docs/assets/hero-banner.png)
+## Yêu cầu hệ thống bắt buộc (Prerequisites)
 
-[![CI/CD Status](https://img.shields.io/badge/CI%2FCD-Enterprise_Pipeline_2026-success?style=for-the-badge&logo=github-actions)](https://github.com/AnhGam/Document-Sharing/actions)
+Do phần mềm dùng kiến trúc tự Host Server ngay trên máy tính của bạn, máy bạn **BẮT BUỘC PHẢI CÀI ĐẶT CƠ SỞ DỮ LIỆU POSTGRESQL** để API có thể lưu trữ dữ liệu (User, Link chia sẻ, File,...).
 
-</div>
+Nếu bạn không cài PostgreSQL, API sẽ bị Crash ngay lập tức khi mở lên, dẫn đến nút "Tạo link" báo lỗi.
 
-## Tính năng chính
+### Hướng dẫn cài đặt PostgreSQL trên Windows:
+1. Tải **PostgreSQL 15** tại đây: [Download PostgreSQL for Windows](https://www.enterprisedb.com/downloads/postgres-postgresql-downloads)
+2. Chạy file cài đặt.
+3. **QUAN TRỌNG:** Trong quá trình cài đặt, trình cài đặt sẽ hỏi bạn nhập Password cho tài khoản siêu quản trị `postgres`. Bạn **phải nhập Mật Khẩu là `123456`** (Trùng khớp với file `.env` ở thư mục gốc của code này).
+4. **VÔ CÙNG QUAN TRỌNG:** Ở bước cấu hình Port (cổng kết nối), bạn **BẮT BUỘC phải giữ nguyên số `5432`** (đây là port mặc định). Nếu bạn đổi số này, Code sẽ không tìm thấy Database và báo lỗi. Cứ nhấn Next đến khi hoàn tất cài đặt.
+5. Mở phần mềm Document Sharing Manager của bạn lên và Tận hưởng!
 
-- **Mô hình Client-Server Tích hợp**:
-  - Giao diện WinForms (Client) giúp người dùng quản lý tài liệu, đồng bộ thư mục nội bộ.
-  - Tích hợp tính năng Server Administration ngay trên Client UI, cho phép người dùng đóng vai trò máy chủ Host quản lý mọi request mà không cần thao tác qua dòng lệnh (CLI).
-  - Tự động lưu vết bảo mật thông qua Audit Log (Nhật ký hệ thống).
+> **Lưu ý:** Nếu bạn muốn dùng mật khẩu khác, hãy mở file `.env` ở thư mục gốc và sửa dòng `POSTGRES_PASSWORD=123456` thành mật khẩu của bạn.
 
-- **Hệ thống Invite Link (Link Mời)**:
-  - Chia sẻ kết nối với người ngoài LAN thông qua Invite Code (ví dụ: `docshare://join/1234abcd`).
-  - Hỗ trợ *Custom URI Scheme*: Nhấp vào link trên trình duyệt sẽ tự động gọi ứng dụng lên.
-  - Quản lý lời mời linh hoạt: Giới hạn số lần dùng, thời hạn sử dụng, và tùy chọn "Bắt buộc duyệt" để tăng cường bảo mật.
+## Về Cloudflare Tunnel
 
-- **Dashboard CI/CD Web**:
-  - Các bản build được tự động phân tích và tạo trang Web Dashboard trên GitHub Pages.
-  - Theo dõi DORA Metrics: Tỉ lệ thành công, thời gian build trung bình, dung lượng Repo.
-  - **AI Diagnostic**: Tự động chẩn đoán và đưa ra lý do, đề xuất sửa lỗi cho các bản Build thất bại (Failed Builds) hiển thị trực quan.
-
-## Công nghệ sử dụng
-- **WinForms (.NET Framework 4.8)**: Xây dựng giao diện ứng dụng Desktop (Client).
-- **ASP.NET Core (.NET 8.0)**: Cung cấp API nội bộ và quản lý kết nối ngang hàng.
-- **SQLite / Entity Framework Core**: Lưu trữ dữ liệu cấu hình, Document, Audit Logs.
-- **GitHub Actions**: Đường ống CI/CD tự động (Build, Test, Report, Web Deploy).
-- **HTML/CSS/JS thuần**: Cho Dashboard Report giao diện đẹp mắt (Neon theme).
-
-## Giới hạn hệ thống
-- Hỗ trợ upload/sync tệp tin lớn lên đến **10GB**.
-
-## Xem thêm
-- [SETUP_GUIDE.md](SETUP_GUIDE.md): Hướng dẫn cài đặt và thiết lập.
-- [CONTRIBUTING.md](CONTRIBUTING.md): Hướng dẫn tham gia phát triển và luồng CI/CD.
+Phần mềm dùng Cloudflare Tunnel để đưa server nội bộ của bạn ra Internet (cho phép người khác truy cập qua tên miền do Cloudflare cấp phát ngẫu nhiên, ví dụ như `xyz.trycloudflare.com`).
+- File `cloudflared.exe` đã được tải sẵn và nhúng vào thư mục `document-sharing-manager/Resources/`.
+- Khi bạn Build dự án, file sẽ tự động đi kèm phần mềm.
+- Bạn không cần phải cài đặt thêm Cloudflare Tunnel bằng tay nữa!

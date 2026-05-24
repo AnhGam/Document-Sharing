@@ -93,15 +93,18 @@ namespace document_sharing_manager.Documents
                     UpdateProgress(e.DocumentId, e.ProgressPercentage);
                 }
             };
+
+            InitializeDashboard();
         }
 
         private void UpdateProgress(int documentId, int percent)
         {
+            if (!dgvDocuments.Columns.Contains("SyncStatusText")) return;
             foreach (DataGridViewRow row in dgvDocuments.Rows)
             {
                 if (row.DataBoundItem is Document doc && doc.Id == documentId)
                 {
-                    row.Cells["SyncStatus"].Value = $"Đang tải... {percent}%";
+                    row.Cells["SyncStatusText"].Value = $"Đang tải... {percent}%";
                     break;
                 }
             }
@@ -232,6 +235,47 @@ namespace document_sharing_manager.Documents
             };
             toolBtnLogout.Click += async (s, e) => await HandleLogoutAsync();
             toolStrip.Items.Add(toolBtnLogout);
+
+            // Add Local Server Management Dropdown to ToolStrip
+            var toolBtnServer = new ToolStripDropDownButton("Máy chủ Local")
+            {
+                Image = IconHelper.CreateRoleIcon(16, AppTheme.Primary),
+                DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
+                Alignment = ToolStripItemAlignment.Right
+            };
+
+            var mnuTunnel = new ToolStripMenuItem("Mở kết nối Internet (Tunnel)");
+            mnuTunnel.Click += (s, e) => { Management.TunnelManagerForm.ShowInstance(); };
+            toolBtnServer.DropDownItems.Add(mnuTunnel);
+
+            var mnuInvite = new ToolStripMenuItem("Quản lý Link Mời");
+            mnuInvite.Click += (s, e) => 
+            {
+                var client = new Core.Services.AuthServiceClient("http://localhost:5000");
+                using var frm = new Management.InviteManagementForm(client, "http://localhost:5000");
+                frm.ShowDialog();
+            };
+            toolBtnServer.DropDownItems.Add(mnuInvite);
+
+            var mnuRequest = new ToolStripMenuItem("Yêu cầu tham gia");
+            mnuRequest.Click += (s, e) => 
+            {
+                var client = new Core.Services.AuthServiceClient("http://localhost:5000");
+                using var frm = new Management.JoinRequestsForm(client);
+                frm.ShowDialog();
+            };
+            toolBtnServer.DropDownItems.Add(mnuRequest);
+
+            var mnuAudit = new ToolStripMenuItem("Nhật ký Hệ thống");
+            mnuAudit.Click += (s, e) => 
+            {
+                var client = new Core.Services.AuthServiceClient("http://localhost:5000");
+                using var frm = new Management.AuditLogForm(client);
+                frm.ShowDialog();
+            };
+            toolBtnServer.DropDownItems.Add(mnuAudit);
+
+            toolStrip.Items.Add(toolBtnServer);
         }
 
         private void BtnToggleFilterClick(object sender, EventArgs e)
@@ -528,6 +572,7 @@ namespace document_sharing_manager.Documents
             dgvDocuments.Columns["QuanTrong"].HeaderCell.Style.Alignment = DataGridViewContentAlignment.MiddleCenter;
 
             AddOrUpdateColumn("KichThuocFormatted", "Kích thước", 100, 12, "KichThuocFormatted");
+            AddOrUpdateColumn("SyncStatusText", "Đồng bộ", 110, 0, "SyncStatusText", true);
 
             // Hide technical columns
             HideColumn("Id");
@@ -1236,13 +1281,7 @@ namespace document_sharing_manager.Documents
                 ForeColor = AppTheme.TextPrimary
             };
 
-            // Context menu for Servers
-            cmsServer = new ContextMenuStrip();
-            tsmiDeleteServer = new ToolStripMenuItem("Xóa máy chủ này");
-            tsmiDeleteServer.Click += TsmiDeleteServer_Click;
-            cmsServer.Items.Add(tsmiDeleteServer);
-            cmsServer.Opening += CmsServer_Opening;
-            treeCategory.ContextMenuStrip = cmsServer;
+            // Context menu is generated dynamically on right-click
 
             // Custom drawing
             treeCategory.DrawNode += TreeCategory_DrawNode;
@@ -1273,11 +1312,19 @@ namespace document_sharing_manager.Documents
                     ev.Node.Toggle();
             };
 
-            // Click on header nodes to toggle expand/collapse
+            // Click on nodes
             treeCategory.NodeMouseClick += (s, ev) =>
             {
                 var filter = ev.Node.Tag as TreeFilterInfo;
-                if (filter?.FilterType == "header")
+                if (ev.Button == MouseButtons.Right && filter?.FilterType == "server")
+                {
+                    treeCategory.SelectedNode = ev.Node;
+                    if (int.TryParse(filter.FilterValue, out int serverId))
+                    {
+                        ShowServerContextMenu(treeCategory.PointToScreen(ev.Location), serverId);
+                    }
+                }
+                else if (ev.Button == MouseButtons.Left && filter?.FilterType == "header")
                 {
                     ev.Node.Toggle();
                     treeCategory.Invalidate();
@@ -1366,53 +1413,11 @@ namespace document_sharing_manager.Documents
             PopulateCategoryTree();
         }
 
-        private void CmsServer_Opening(object sender, System.ComponentModel.CancelEventArgs e)
-        {
-            var node = treeCategory.GetNodeAt(treeCategory.PointToClient(Cursor.Position));
-            if (node == null) node = treeCategory.SelectedNode;
-
-            if (node?.Tag is TreeFilterInfo info && info.FilterType == "server")
-            {
-                treeCategory.SelectedNode = node;
-                e.Cancel = false;
-            }
-            else
-            {
-                e.Cancel = true;
-            }
-        }
-
-        private async void TsmiDeleteServer_Click(object sender, EventArgs e)
-        {
-            var node = treeCategory.SelectedNode;
-            if (node?.Tag is TreeFilterInfo info && info.FilterType == "server")
-            {
-                if (MessageBox.Show($"Bạn có chắc chắn muốn xóa kết nối đến server '{node.Text}' không?", 
-                    "Xác nhận xóa", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
-                {
-                    int localId = int.Parse(info.FilterValue);
-                    
-                    // Try to delete from cloud if possible
-                    var servers = DatabaseHelper.GetManagedServers();
-                    var s = servers.FirstOrDefault(x => x.Id == localId);
-                    if (s != null && s.CloudId > 0)
-                    {
-                        await _authServiceClient.DeleteServerFromCloudAsync(s.CloudId.Value);
-                    }
-
-                    // Delete from local
-                    DatabaseHelper.DeleteServer(localId);
-                    
-                    // Refresh UI
-                    PopulateCategoryTree();
-                }
-            }
-        }
 
         private void ShowServerContextMenu(Point location, int serverId)
         {
             ContextMenuStrip menu = new();
-            var deleteItem = new ToolStripMenuItem("Ngắt kết nối & Xóa Server", null, (s, e) =>
+            var deleteItem = new ToolStripMenuItem("Ngắt kết nối & Xóa Server", null, async (s, e) =>
             {
                 var confirm = MessageBox.Show(
                     "Bạn có chắc chắn muốn ngắt kết nối và xóa server này?\nCác tài liệu thuộc server này sẽ bị xóa tạm (soft-delete).",
@@ -1422,6 +1427,15 @@ namespace document_sharing_manager.Documents
 
                 if (confirm == DialogResult.Yes)
                 {
+                    // Try to delete from cloud if possible
+                    var servers = DatabaseHelper.GetManagedServers();
+                    var srv = servers.FirstOrDefault(x => x.Id == serverId);
+                    if (srv != null && srv.CloudId > 0)
+                    {
+                        try { await _authServiceClient.DeleteServerFromCloudAsync(srv.CloudId.Value); }
+                        catch { /* Ignore cloud delete errors */ }
+                    }
+
                     if (DatabaseHelper.DeleteServer(serverId))
                     {
                         _syncEngine.RemoveServer(serverId);
@@ -1469,10 +1483,7 @@ namespace document_sharing_manager.Documents
             });
 
             var tunnelItem = new ToolStripMenuItem("Mở kết nối Internet (Tunnel)", null, (s, e) =>
-            {
-                using var frm = new Management.TunnelManagerForm();
-                frm.ShowDialog();
-            });
+                Management.TunnelManagerForm.ShowInstance());
 
             menu.Items.Add(tunnelItem);
             menu.Items.Add(inviteItem);

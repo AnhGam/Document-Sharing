@@ -24,5 +24,10 @@ namespace document_sharing_manager.Core.Data
         /// The refresh token for the current session.
         /// </summary>
         public static string? RefreshToken { get; set; }
+
+        /// <summary>
+        /// The public URL (e.g. Cloudflare Tunnel URL) exposed to the internet.
+        /// </summary>
+        public static string? PublicUrl { get; set; }
     }
 }
