@@ -59,8 +59,6 @@ namespace document_sharing_manager.Documents
         private static readonly HttpClient _httpClient = new();
         private readonly Dictionary<string, Bitmap> _treeIconCache = [];
 
-        private ContextMenuStrip cmsServer;
-        private ToolStripMenuItem tsmiDeleteServer;
         private bool _isJoinFormOpen = false;
 
         private Panel pnlSyncProgress;
@@ -1044,7 +1042,7 @@ namespace document_sharing_manager.Documents
                         if (response.IsSuccessStatusCode)
                         {
                             // Ensure local managed directory exists
-                            string? localDir = Path.GetDirectoryName(localPath);
+                            string localDir = Path.GetDirectoryName(localPath);
                             if (!string.IsNullOrEmpty(localDir) && !Directory.Exists(localDir))
                             {
                                 Directory.CreateDirectory(localDir);
