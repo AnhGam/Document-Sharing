@@ -156,6 +156,11 @@ namespace document_sharing_manager_api.Controllers
         {
             try
             {
+                if (string.IsNullOrEmpty(document.DuongDan))
+                {
+                    return File(Array.Empty<byte>(), "application/octet-stream", document.Ten);
+                }
+
                 var stream = await _storageService.GetFileAsync(document.DuongDan, ct);
                 if (!_contentTypeProvider.TryGetContentType(document.DuongDan, out string? contentType))
                 {
@@ -171,6 +176,7 @@ namespace document_sharing_manager_api.Controllers
         }
 
         [HttpPost("sync-stream")]
+        [DisableRequestSizeLimit]
         public async Task<ActionResult<SyncResponse>> SyncStream([FromForm] Guid remoteId, [FromForm] int localVersion, [FromForm] int serverId, [FromForm] string? ten, [FromForm] string? ghiChu, IFormFile? file, CancellationToken ct)
         {
             if (!await IsMemberOfServerAsync(serverId, ct)) return Forbid();
@@ -216,7 +222,7 @@ namespace document_sharing_manager_api.Controllers
             if (ghiChu != null) document.GhiChu = ghiChu;
 
             // Handle file stream if provided
-            if (file != null && file.Length > 0)
+            if (file != null)
             {
                 using var stream = file.OpenReadStream();
                 string extension = System.IO.Path.GetExtension(file.FileName)?.TrimStart('.') ?? 
@@ -248,6 +254,7 @@ namespace document_sharing_manager_api.Controllers
         }
 
         [HttpPost("sync")]
+        [DisableRequestSizeLimit]
         public async Task<ActionResult<SyncResponse>> Sync([FromBody] SyncRequest request, CancellationToken ct)
         {
             if (!await IsMemberOfServerAsync(request.ServerId, ct)) return Forbid();

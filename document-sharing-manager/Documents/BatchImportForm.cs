@@ -37,11 +37,19 @@ namespace document_sharing_manager.Documents
         public int? TargetServerId { get; set; }
         private readonly SyncEngine _syncEngine;
 
+        private bool _anyImported = false;
+
         public BatchImportForm(SyncEngine syncEngine = null)
         {
             _syncEngine = syncEngine;
             InitializeUI();
             ApplyTheme();
+            this.FormClosing += (s, e) => {
+                if (_anyImported && this.DialogResult != DialogResult.OK)
+                {
+                    this.DialogResult = DialogResult.OK;
+                }
+            };
         }
 
         private void InitializeUI()
@@ -366,7 +374,8 @@ namespace document_sharing_manager.Documents
                     bool isImportant = Convert.ToBoolean(dgvFiles.Rows[idx].Cells["Important"].Value ?? false);
                     
                     // Copy file to managed storage first
-                    string managedPath = FileStorageService.ImportFile(entry.FilePath);
+                    string subFolder = TargetServerId.HasValue ? $"documents_{UserSession.CurrentUserId}_server_{TargetServerId.Value}" : null;
+                    string managedPath = FileStorageService.ImportFile(entry.FilePath, subFolder);
                     
                     // Now check if THIS managed path already exists (safety check)
                     if (DatabaseHelper.CheckDocumentExists(managedPath))
@@ -428,6 +437,7 @@ namespace document_sharing_manager.Documents
 
             if (success > 0)
             {
+                _anyImported = true;
                 fileEntries.Clear();
                 dgvFiles.Rows.Clear();
                 lblFolder.Text = "Sẵn sàng import";

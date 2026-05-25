@@ -36,6 +36,15 @@ namespace document_sharing_manager.Core.Domain
 
         public string KichThuocFormatted => FormatFileSize(KichThuoc ?? 0m);
 
+        public string SyncStatusText => SyncStatus switch
+        {
+            0 => "✔ Đã đồng bộ",
+            1 => "⬆ Chờ tải lên",
+            2 => "⬇ Chờ tải xuống",
+            3 => "⚠ Xung đột",
+            _ => ""
+        };
+
         public static string FormatFileSize(decimal bytes)
         {
             string[] Suffix = ["B", "KB", "MB", "GB", "TB"];

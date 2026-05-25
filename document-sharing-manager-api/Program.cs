@@ -19,6 +19,17 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
+// Configure 10GB limit for Kestrel and Form uploads
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = 10L * 1024 * 1024 * 1024; // 10 GB
+});
+
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 10L * 1024 * 1024 * 1024; // 10 GB
+});
+
 // Configure Entity Framework Core with PostgreSQL
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
@@ -46,6 +57,7 @@ builder.Services.AddScoped<IDocumentRepository, EfDocumentRepository>();
 // Register Auth Services
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IAuditService, AuditService>();
 
 // Register Storage Services
 builder.Services.AddScoped<IStorageService, LocalFileStorageService>();
@@ -178,6 +190,19 @@ using (var scope = app.Services.CreateScope())
     {
         logger.LogError(ex, "An error occurred while migrating the database.");
     }
+}
+// Warmup: Pre-compile EF Core model & warm PostgreSQL connection pool
+// This prevents the first real API request from being extremely slow (15+ seconds)
+using (var scope = app.Services.CreateScope())
+{
+    try
+    {
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        _ = await context.Database.CanConnectAsync();
+        // Force model compilation by executing a trivial query
+        _ = await context.Users.CountAsync();
+    }
+    catch { /* Non-critical: warmup failure won't block startup */ }
 }
 
 app.Run();

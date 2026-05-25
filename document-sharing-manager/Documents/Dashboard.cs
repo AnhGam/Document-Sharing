@@ -59,9 +59,16 @@ namespace document_sharing_manager.Documents
         private static readonly HttpClient _httpClient = new();
         private readonly Dictionary<string, Bitmap> _treeIconCache = [];
 
-        private ContextMenuStrip cmsServer;
-        private ToolStripMenuItem tsmiDeleteServer;
         private bool _isJoinFormOpen = false;
+
+        private Panel pnlSyncProgress;
+        private Panel pnlSyncHeader;
+        private Label lblSyncHeaderTitle;
+        private Button btnMinimizeSync;
+        private Button btnCloseSync;
+        private FlowLayoutPanel flpSyncItems;
+        private bool _isSyncPanelMinimized = false;
+        private readonly Dictionary<int, SyncItemControl> _activeSyncItems = [];
 
         public Dashboard(Core.Services.AuthServiceClient authClient)
         {
@@ -83,6 +90,76 @@ namespace document_sharing_manager.Documents
                 else TriggerRefresh();
             };
 
+            _syncEngine.ProgressChanged += (s, e) => {
+                if (this.InvokeRequired)
+                {
+                    this.Invoke(new Action(() => {
+                        UpdateProgress(e.DocumentId, e.ProgressPercentage);
+                        OnSyncProgressChanged(e.DocumentId, e.ProgressPercentage);
+                    }));
+                }
+                else
+                {
+                    UpdateProgress(e.DocumentId, e.ProgressPercentage);
+                    OnSyncProgressChanged(e.DocumentId, e.ProgressPercentage);
+                }
+            };
+
+            _syncEngine.SyncErrorOccurred += (s, errorMsg) => {
+                if (this.InvokeRequired)
+                {
+                    this.BeginInvoke(new Action(() => ToastNotification.Error(errorMsg)));
+                }
+                else
+                {
+                    ToastNotification.Error(errorMsg);
+                }
+            };
+
+            _syncEngine.TaskStarted += (s, e) => {
+                if (this.InvokeRequired) this.BeginInvoke(new Action(() => OnSyncTaskStarted(e)));
+                else OnSyncTaskStarted(e);
+            };
+
+            _syncEngine.TaskCompleted += (s, e) => {
+                if (this.InvokeRequired) this.BeginInvoke(new Action(() => OnSyncTaskCompleted(e)));
+                else OnSyncTaskCompleted(e);
+            };
+
+            InitializeDashboard();
+            InitializeSyncProgressPanel();
+        }
+
+        private void UpdateProgress(int documentId, int percent)
+        {
+            if (!dgvDocuments.Columns.Contains("SyncStatusText")) return;
+            foreach (DataGridViewRow row in dgvDocuments.Rows)
+            {
+                if (row.DataBoundItem is Document doc && doc.Id == documentId)
+                {
+                    row.Cells["SyncStatusText"].Value = $"Đang tải... {percent}%";
+                    break;
+                }
+            }
+        }
+
+        public void HandleDeepLink(string uri)
+        {
+            this.Shown += (s, e) =>
+            {
+                using (var form = new Management.JoinServerForm(_syncEngine, _authServiceClient, uri))
+                {
+                    if (form.ShowDialog() == DialogResult.OK)
+                    {
+                        PopulateCategoryTree();
+                        TriggerRefresh();
+                    }
+                }
+            };
+        }
+
+        private void InitializeDashboard()
+        {
             // Start background processes
             _syncEngine.Start();
             _syncWatcher.Start();
@@ -191,6 +268,44 @@ namespace document_sharing_manager.Documents
             };
             toolBtnLogout.Click += async (s, e) => await HandleLogoutAsync();
             toolStrip.Items.Add(toolBtnLogout);
+
+            // Add Local Server Management Dropdown to ToolStrip
+            var toolBtnServer = new ToolStripDropDownButton("Máy chủ Local")
+            {
+                Image = IconHelper.CreateRoleIcon(16, AppTheme.Primary),
+                DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
+                Alignment = ToolStripItemAlignment.Right
+            };
+
+            var mnuTunnel = new ToolStripMenuItem("Mở kết nối Internet (Tunnel)");
+            mnuTunnel.Click += (s, e) => { Management.TunnelManagerForm.ShowInstance(); };
+            toolBtnServer.DropDownItems.Add(mnuTunnel);
+
+            var mnuInvite = new ToolStripMenuItem("Quản lý Link Mời");
+            mnuInvite.Click += (s, e) => 
+            {
+                using var frm = new Management.InviteManagementForm(_authServiceClient, _authServiceClient.BaseUrl);
+                frm.ShowDialog();
+            };
+            toolBtnServer.DropDownItems.Add(mnuInvite);
+
+            var mnuRequest = new ToolStripMenuItem("Yêu cầu tham gia");
+            mnuRequest.Click += (s, e) => 
+            {
+                using var frm = new Management.JoinRequestsForm(_authServiceClient);
+                frm.ShowDialog();
+            };
+            toolBtnServer.DropDownItems.Add(mnuRequest);
+
+            var mnuAudit = new ToolStripMenuItem("Nhật ký Hệ thống");
+            mnuAudit.Click += (s, e) => 
+            {
+                using var frm = new Management.AuditLogForm(_authServiceClient);
+                frm.ShowDialog();
+            };
+            toolBtnServer.DropDownItems.Add(mnuAudit);
+
+            toolStrip.Items.Add(toolBtnServer);
         }
 
         private void BtnToggleFilterClick(object sender, EventArgs e)
@@ -243,6 +358,22 @@ namespace document_sharing_manager.Documents
 
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
+            if (_syncEngine != null && _syncEngine.ActiveSyncCount > 0)
+            {
+                var result = MessageBox.Show(
+                    "Hệ thống đang đồng bộ tài liệu (tải lên/tải xuống).\nTắt ứng dụng lúc này có thể làm gián đoạn quá trình truyền tải và hỏng tệp.\nBạn có chắc chắn muốn thoát?",
+                    "Cảnh báo đồng bộ",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning,
+                    MessageBoxDefaultButton.Button2);
+
+                if (result == DialogResult.No)
+                {
+                    e.Cancel = true;
+                    return;
+                }
+            }
+
             // Ensure background threads are stopped when window is closed
             _syncWatcher?.Dispose();
             _syncEngine?.Dispose();
@@ -471,6 +602,7 @@ namespace document_sharing_manager.Documents
             dgvDocuments.Columns["QuanTrong"].HeaderCell.Style.Alignment = DataGridViewContentAlignment.MiddleCenter;
 
             AddOrUpdateColumn("KichThuocFormatted", "Kích thước", 100, 12, "KichThuocFormatted");
+            AddOrUpdateColumn("SyncStatusText", "Đồng bộ", 110, 0, "SyncStatusText", true);
 
             // Hide technical columns
             HideColumn("Id");
@@ -856,8 +988,22 @@ namespace document_sharing_manager.Documents
             if (dgvDocuments.SelectedRows[0].DataBoundItem is Document doc)
             {
                 using var sfd = new SaveFileDialog();
-                sfd.FileName = doc.Ten;
-                sfd.Filter = "All Files|*.*";
+                string ext = doc.DinhDang.TrimStart('.');
+                string fileName = doc.Ten;
+                if (!string.IsNullOrEmpty(ext))
+                {
+                    if (!fileName.EndsWith($".{ext}", StringComparison.OrdinalIgnoreCase))
+                    {
+                        fileName += $".{ext}";
+                    }
+                    sfd.DefaultExt = ext;
+                    sfd.Filter = $"{ext.ToUpper()} Files (*.{ext})|*.{ext}|All Files (*.*)|*.*";
+                }
+                else
+                {
+                    sfd.Filter = "All Files (*.*)|*.*";
+                }
+                sfd.FileName = fileName;
                 sfd.Title = "Chọn nơi lưu tài liệu";
 
                 if (sfd.ShowDialog() == DialogResult.OK)
@@ -865,6 +1011,16 @@ namespace document_sharing_manager.Documents
                     lblStatus.Text = "Đang tải: " + doc.Ten;
                     try
                     {
+                        // Check if file already exists locally in managed storage
+                        string localPath = FileStorageService.ResolvePath(doc.DuongDan);
+                        if (File.Exists(localPath))
+                        {
+                            File.Copy(localPath, sfd.FileName, true);
+                            ToastNotification.Success("Đã tải xong!");
+                            lblStatus.Text = "Đã tải về: " + sfd.FileName;
+                            return;
+                        }
+
                         // Get server info
                         var servers = DatabaseHelper.GetManagedServers();
                         var server = servers.FirstOrDefault(s => s.Id == doc.ServerId);
@@ -885,10 +1041,30 @@ namespace document_sharing_manager.Documents
                         
                         if (response.IsSuccessStatusCode)
                         {
-                            using var fileStream = new FileStream(sfd.FileName, FileMode.Create, FileAccess.Write, FileShare.None);
-                            await response.Content.CopyToAsync(fileStream);
+                            // Ensure local managed directory exists
+                            string localDir = Path.GetDirectoryName(localPath);
+                            if (!string.IsNullOrEmpty(localDir) && !Directory.Exists(localDir))
+                            {
+                                Directory.CreateDirectory(localDir);
+                            }
+
+                            // Download and write to local managed storage first
+                            using (var fileStream = new FileStream(localPath, FileMode.Create, FileAccess.Write, FileShare.None))
+                            {
+                                await response.Content.CopyToAsync(fileStream);
+                            }
+
+                            // Copy to user chosen path
+                            File.Copy(localPath, sfd.FileName, true);
+
+                            // Update DB status to Synced (0)
+                            doc.SyncStatus = 0;
+                            doc.LocalVersion = doc.Version;
+                            await _repository.UpdateSyncStatusAsync(doc.Id, 0, doc.Version, null, doc.Version);
+
                             ToastNotification.Success("Đã tải xong!");
                             lblStatus.Text = "Đã tải về: " + sfd.FileName;
+                            TriggerRefresh();
                         }
                         else
                         {
@@ -1179,13 +1355,7 @@ namespace document_sharing_manager.Documents
                 ForeColor = AppTheme.TextPrimary
             };
 
-            // Context menu for Servers
-            cmsServer = new ContextMenuStrip();
-            tsmiDeleteServer = new ToolStripMenuItem("Xóa máy chủ này");
-            tsmiDeleteServer.Click += TsmiDeleteServer_Click;
-            cmsServer.Items.Add(tsmiDeleteServer);
-            cmsServer.Opening += CmsServer_Opening;
-            treeCategory.ContextMenuStrip = cmsServer;
+            // Context menu is generated dynamically on right-click
 
             // Custom drawing
             treeCategory.DrawNode += TreeCategory_DrawNode;
@@ -1216,11 +1386,19 @@ namespace document_sharing_manager.Documents
                     ev.Node.Toggle();
             };
 
-            // Click on header nodes to toggle expand/collapse
+            // Click on nodes
             treeCategory.NodeMouseClick += (s, ev) =>
             {
                 var filter = ev.Node.Tag as TreeFilterInfo;
-                if (filter?.FilterType == "header")
+                if (ev.Button == MouseButtons.Right && filter?.FilterType == "server")
+                {
+                    treeCategory.SelectedNode = ev.Node;
+                    if (int.TryParse(filter.FilterValue, out int serverId))
+                    {
+                        ShowServerContextMenu(treeCategory.PointToScreen(ev.Location), serverId);
+                    }
+                }
+                else if (ev.Button == MouseButtons.Left && filter?.FilterType == "header")
                 {
                     ev.Node.Toggle();
                     treeCategory.Invalidate();
@@ -1309,53 +1487,11 @@ namespace document_sharing_manager.Documents
             PopulateCategoryTree();
         }
 
-        private void CmsServer_Opening(object sender, System.ComponentModel.CancelEventArgs e)
-        {
-            var node = treeCategory.GetNodeAt(treeCategory.PointToClient(Cursor.Position));
-            if (node == null) node = treeCategory.SelectedNode;
-
-            if (node?.Tag is TreeFilterInfo info && info.FilterType == "server")
-            {
-                treeCategory.SelectedNode = node;
-                e.Cancel = false;
-            }
-            else
-            {
-                e.Cancel = true;
-            }
-        }
-
-        private async void TsmiDeleteServer_Click(object sender, EventArgs e)
-        {
-            var node = treeCategory.SelectedNode;
-            if (node?.Tag is TreeFilterInfo info && info.FilterType == "server")
-            {
-                if (MessageBox.Show($"Bạn có chắc chắn muốn xóa kết nối đến server '{node.Text}' không?", 
-                    "Xác nhận xóa", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
-                {
-                    int localId = int.Parse(info.FilterValue);
-                    
-                    // Try to delete from cloud if possible
-                    var servers = DatabaseHelper.GetManagedServers();
-                    var s = servers.FirstOrDefault(x => x.Id == localId);
-                    if (s != null && s.CloudId > 0)
-                    {
-                        await _authServiceClient.DeleteServerFromCloudAsync(s.CloudId.Value);
-                    }
-
-                    // Delete from local
-                    DatabaseHelper.DeleteServer(localId);
-                    
-                    // Refresh UI
-                    PopulateCategoryTree();
-                }
-            }
-        }
 
         private void ShowServerContextMenu(Point location, int serverId)
         {
             ContextMenuStrip menu = new();
-            var deleteItem = new ToolStripMenuItem("Ngắt kết nối & Xóa Server", null, (s, e) =>
+            var deleteItem = new ToolStripMenuItem("Ngắt kết nối & Xóa Server", null, async (s, e) =>
             {
                 var confirm = MessageBox.Show(
                     "Bạn có chắc chắn muốn ngắt kết nối và xóa server này?\nCác tài liệu thuộc server này sẽ bị xóa tạm (soft-delete).",
@@ -1365,6 +1501,15 @@ namespace document_sharing_manager.Documents
 
                 if (confirm == DialogResult.Yes)
                 {
+                    // Try to delete from cloud if possible
+                    var servers = DatabaseHelper.GetManagedServers();
+                    var srv = servers.FirstOrDefault(x => x.Id == serverId);
+                    if (srv != null && srv.CloudId > 0)
+                    {
+                        try { await _authServiceClient.DeleteServerFromCloudAsync(srv.CloudId.Value); }
+                        catch { /* Ignore cloud delete errors */ }
+                    }
+
                     if (DatabaseHelper.DeleteServer(serverId))
                     {
                         _syncEngine.RemoveServer(serverId);
@@ -1377,6 +1522,51 @@ namespace document_sharing_manager.Documents
             {
                 ForeColor = Color.Red
             };
+
+            var inviteItem = new ToolStripMenuItem("Quản lý Link Mời", null, (s, e) =>
+            {
+                var server = DatabaseHelper.GetManagedServers().FirstOrDefault(x => x.Id == serverId);
+                if (server != null)
+                {
+                    var client = new Core.Services.AuthServiceClient(server.BaseUrl);
+                    client.AccessToken = server.AccessToken;
+                    using var frm = new Management.InviteManagementForm(client, server.BaseUrl);
+                    frm.ShowDialog();
+                }
+            });
+
+            var requestsItem = new ToolStripMenuItem("Yêu cầu tham gia", null, (s, e) =>
+            {
+                var server = DatabaseHelper.GetManagedServers().FirstOrDefault(x => x.Id == serverId);
+                if (server != null)
+                {
+                    var client = new Core.Services.AuthServiceClient(server.BaseUrl);
+                    client.AccessToken = server.AccessToken;
+                    using var frm = new Management.JoinRequestsForm(client);
+                    frm.ShowDialog();
+                }
+            });
+
+            var auditItem = new ToolStripMenuItem("Nhật ký Hệ thống", null, (s, e) =>
+            {
+                var server = DatabaseHelper.GetManagedServers().FirstOrDefault(x => x.Id == serverId);
+                if (server != null)
+                {
+                    var client = new Core.Services.AuthServiceClient(server.BaseUrl);
+                    client.AccessToken = server.AccessToken;
+                    using var frm = new Management.AuditLogForm(client);
+                    frm.ShowDialog();
+                }
+            });
+
+            var tunnelItem = new ToolStripMenuItem("Mở kết nối Internet (Tunnel)", null, (s, e) =>
+                Management.TunnelManagerForm.ShowInstance());
+
+            menu.Items.Add(tunnelItem);
+            menu.Items.Add(inviteItem);
+            menu.Items.Add(requestsItem);
+            menu.Items.Add(auditItem);
+            menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add(deleteItem);
             menu.Show(treeCategory, location);
         }
@@ -1895,6 +2085,7 @@ namespace document_sharing_manager.Documents
                     // Here we should probably call a Service method directly
                     // For now, open AddEditForm
                     using var form = new AddEditForm();
+                    form.ServerId = this.SelectedServerId;
                     form.txtDuongDan.Text = file;
                     form.txtTen.Text = Path.GetFileNameWithoutExtension(file);
                     form.ShowDialog();
@@ -1969,6 +2160,275 @@ namespace document_sharing_manager.Documents
         {
 
         }
+
+        #region Sync Progress Tracker (Google Drive Style)
+
+        private void InitializeSyncProgressPanel()
+        {
+            pnlSyncProgress = new Panel
+            {
+                Width = 320,
+                Height = 240,
+                BackColor = Color.FromArgb(248, 250, 252),
+                BorderStyle = BorderStyle.FixedSingle,
+                Visible = false
+            };
+
+            pnlSyncProgress.Paint += (s, e) =>
+            {
+                using var pen = new Pen(Color.FromArgb(203, 213, 225), 1);
+                e.Graphics.DrawRectangle(pen, 0, 0, pnlSyncProgress.Width - 1, pnlSyncProgress.Height - 1);
+            };
+
+            pnlSyncHeader = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 36,
+                BackColor = Color.FromArgb(15, 23, 42)
+            };
+
+            lblSyncHeaderTitle = new Label
+            {
+                Text = "Trạng thái đồng bộ",
+                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                ForeColor = Color.White,
+                Location = new Point(10, 8),
+                AutoSize = true
+            };
+
+            btnMinimizeSync = new Button
+            {
+                Text = "–",
+                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                ForeColor = Color.White,
+                FlatAppearance = { BorderSize = 0 },
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(24, 24),
+                Location = new Point(255, 6),
+                Cursor = Cursors.Hand
+            };
+            btnMinimizeSync.Click += (s, e) => ToggleSyncPanelMinimize();
+
+            btnCloseSync = new Button
+            {
+                Text = "×",
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                ForeColor = Color.White,
+                FlatAppearance = { BorderSize = 0 },
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(24, 24),
+                Location = new Point(285, 6),
+                Cursor = Cursors.Hand
+            };
+            btnCloseSync.Click += (s, e) => pnlSyncProgress.Visible = false;
+
+            pnlSyncHeader.Controls.AddRange(new Control[] { lblSyncHeaderTitle, btnMinimizeSync, btnCloseSync });
+
+            flpSyncItems = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                AutoScroll = true,
+                Padding = new Padding(5),
+                FlowDirection = FlowDirection.TopDown,
+                WrapContents = false,
+                BackColor = Color.FromArgb(248, 250, 252)
+            };
+
+            pnlSyncProgress.Controls.AddRange(new Control[] { flpSyncItems, pnlSyncHeader });
+
+            this.Controls.Add(pnlSyncProgress);
+            pnlSyncProgress.BringToFront();
+
+            this.SizeChanged += (s, e) => PositionSyncPanel();
+            this.LocationChanged += (s, e) => PositionSyncPanel();
+
+            PositionSyncPanel();
+        }
+
+        private void ToggleSyncPanelMinimize()
+        {
+            _isSyncPanelMinimized = !_isSyncPanelMinimized;
+            if (_isSyncPanelMinimized)
+            {
+                pnlSyncProgress.Height = 36;
+                btnMinimizeSync.Text = "⬜";
+            }
+            else
+            {
+                pnlSyncProgress.Height = 240;
+                btnMinimizeSync.Text = "–";
+            }
+            PositionSyncPanel();
+        }
+
+        private void PositionSyncPanel()
+        {
+            if (pnlSyncProgress == null) return;
+            pnlSyncProgress.Left = this.ClientSize.Width - pnlSyncProgress.Width - 25;
+            pnlSyncProgress.Top = this.statusStrip.Top - pnlSyncProgress.Height - 5;
+        }
+
+        private void OnSyncTaskStarted(SyncTaskEventArgs e)
+        {
+            if (pnlSyncProgress == null) return;
+            
+            pnlSyncProgress.Visible = true;
+            if (_isSyncPanelMinimized)
+            {
+                ToggleSyncPanelMinimize();
+            }
+
+            lblSyncHeaderTitle.Text = $"Đang đồng bộ ({_activeSyncItems.Count + 1} file)...";
+
+            if (_activeSyncItems.TryGetValue(e.DocumentId, out var existingItem))
+            {
+                flpSyncItems.Controls.Remove(existingItem);
+                existingItem.Dispose();
+                _activeSyncItems.Remove(e.DocumentId);
+            }
+
+            var item = new SyncItemControl(e.DocumentId, e.FileName, e.Type);
+            flpSyncItems.Controls.Add(item);
+            flpSyncItems.ScrollControlIntoView(item);
+            _activeSyncItems[e.DocumentId] = item;
+        }
+
+        private void OnSyncProgressChanged(int documentId, int percent)
+        {
+            if (_activeSyncItems.TryGetValue(documentId, out var item))
+            {
+                item.UpdateProgress(percent);
+            }
+        }
+
+        private void OnSyncTaskCompleted(SyncTaskEventArgs e)
+        {
+            if (_activeSyncItems.TryGetValue(e.DocumentId, out var item))
+            {
+                if (e.Success)
+                {
+                    item.SetSuccess();
+                }
+                else
+                {
+                    item.SetError(e.ErrorMessage ?? "Lỗi không xác định");
+                }
+            }
+
+            int activeCount = flpSyncItems.Controls.OfType<SyncItemControl>().Count(x => x.IsActiveTransfer);
+            if (activeCount > 0)
+            {
+                lblSyncHeaderTitle.Text = $"Đang đồng bộ ({activeCount} file)...";
+            }
+            else
+            {
+                lblSyncHeaderTitle.Text = "Đã hoàn thành đồng bộ";
+            }
+        }
+
+        public class SyncItemControl : Panel
+        {
+            public int DocumentId { get; }
+            public SyncType Type { get; }
+            public string FileName { get; }
+            public bool IsActiveTransfer { get; private set; } = true;
+
+            private Label lblName;
+            private Label lblStatus;
+            private ProgressBar pbProgress;
+            private Label lblIcon;
+
+            public SyncItemControl(int documentId, string fileName, SyncType type)
+            {
+                DocumentId = documentId;
+                FileName = fileName;
+                Type = type;
+
+                this.Width = 285;
+                this.Height = 52;
+                this.Padding = new Padding(5);
+                this.Margin = new Padding(0, 0, 0, 5);
+                this.BackColor = Color.White;
+
+                this.Paint += (s, e) =>
+                {
+                    using var pen = new Pen(Color.FromArgb(226, 232, 240), 1);
+                    e.Graphics.DrawRectangle(pen, 0, 0, this.Width - 1, this.Height - 1);
+                };
+
+                lblIcon = new Label
+                {
+                    Text = type == SyncType.Upload ? "↑" : "↓",
+                    Font = new Font("Segoe UI", 12F, FontStyle.Bold),
+                    ForeColor = type == SyncType.Upload ? Color.FromArgb(16, 185, 129) : Color.FromArgb(59, 130, 246),
+                    Location = new Point(5, 6),
+                    Size = new Size(20, 30),
+                    TextAlign = ContentAlignment.MiddleCenter
+                };
+
+                lblName = new Label
+                {
+                    Text = fileName,
+                    Font = new Font("Segoe UI", 8.5F, FontStyle.Bold),
+                    ForeColor = Color.FromArgb(15, 23, 42),
+                    Location = new Point(30, 4),
+                    Size = new Size(245, 18),
+                    UseMnemonic = false
+                };
+
+                lblStatus = new Label
+                {
+                    Text = "Đang chờ...",
+                    Font = new Font("Segoe UI", 7.5F),
+                    ForeColor = Color.FromArgb(100, 116, 139),
+                    Location = new Point(30, 22),
+                    Size = new Size(245, 14)
+                };
+
+                pbProgress = new ProgressBar
+                {
+                    Location = new Point(30, 38),
+                    Size = new Size(245, 4),
+                    Style = ProgressBarStyle.Continuous,
+                    Minimum = 0,
+                    Maximum = 100,
+                    Value = 0
+                };
+
+                this.Controls.AddRange(new Control[] { lblIcon, lblName, lblStatus, pbProgress });
+            }
+
+            public void UpdateProgress(int percent)
+            {
+                if (pbProgress.IsDisposed) return;
+                pbProgress.Value = Math.Min(percent, 100);
+                lblStatus.Text = $"Đang {(Type == SyncType.Upload ? "tải lên" : "tải xuống")}... {percent}%";
+                lblStatus.ForeColor = Color.FromArgb(100, 116, 139);
+            }
+
+            public void SetSuccess()
+            {
+                IsActiveTransfer = false;
+                if (pbProgress.IsDisposed) return;
+                pbProgress.Value = 100;
+                lblStatus.Text = $"✓ Đã {(Type == SyncType.Upload ? "tải lên" : "tải xuống")} thành công!";
+                lblStatus.ForeColor = Color.FromArgb(16, 185, 129);
+                lblIcon.Text = "✓";
+                lblIcon.ForeColor = Color.FromArgb(16, 185, 129);
+            }
+
+            public void SetError(string error)
+            {
+                IsActiveTransfer = false;
+                if (pbProgress.IsDisposed) return;
+                lblStatus.Text = $"✗ Lỗi: {error}";
+                lblStatus.ForeColor = Color.FromArgb(239, 68, 68);
+                lblIcon.Text = "✗";
+                lblIcon.ForeColor = Color.FromArgb(239, 68, 68);
+            }
+        }
+
+        #endregion
     }
 
     /// <summary>

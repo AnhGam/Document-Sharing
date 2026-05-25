@@ -1,66 +1,30 @@
-<div align="center">
+# Document Sharing Manager
 
-![Document Sharing Manager](docs/assets/hero-banner.png)
+Đây là ứng dụng Document Sharing Manager (Chia sẻ tài liệu mạng ngang hàng / tự Host).
+Phần mềm bao gồm 2 thành phần:
+1. **Client (UI)**: Chạy trên WinForms (Thư mục `document-sharing-manager`).
+2. **Server (API)**: Chạy trên ASP.NET Core (Thư mục `document-sharing-manager-api`).
 
-[![CI/CD Status](https://img.shields.io/badge/CI%2FCD-Enterprise_Pipeline_2026-success?style=for-the-badge&logo=github-actions)](https://github.com/AnhGam/Document-Sharing/actions)
-[![DevOps Excellence](https://img.shields.io/badge/Strategy-Platform_Engineering-blueviolet?style=for-the-badge)](.ai_docs/CI_CD_PIPELINE.md)
+Khi bạn mở UI, nó sẽ tự động chạy Server ngầm bên trong.
 
-</div>
+## Yêu cầu hệ thống bắt buộc (Prerequisites)
 
-## Project Evolution
-Formerly known as *Study Document Management*, this project has evolved into the **Document Sharing Manager**.
+Do phần mềm dùng kiến trúc tự Host Server ngay trên máy tính của bạn, máy bạn **BẮT BUỘC PHẢI CÀI ĐẶT CƠ SỞ DỮ LIỆU POSTGRESQL** để API có thể lưu trữ dữ liệu (User, Link chia sẻ, File,...).
 
-**Goal:** Transitioning from a local desktop manager to a modern, cloud-ready Document Sharing ecosystem. We are implementing robust synchronization, virtual storage, and enterprise-grade DevOps infrastructure based on the latest 2026 industry standards.
+Nếu bạn không cài PostgreSQL, API sẽ bị Crash ngay lập tức khi mở lên, dẫn đến nút "Tạo link" báo lỗi.
 
-**Key Features:**
-*   **Managed Virtual Storage:** Documents are securely copied to an internal app-managed directory for seamless sharing.
-*   **Cloud-Ready Architecture:** Designed with Backend-Frontend decoupling for future server integration.
-*   **Enterprise CI/CD:** A multi-stage pipeline featuring AI-driven analysis, security gates, and Capacity Management.
+### Hướng dẫn cài đặt PostgreSQL trên Windows:
+1. Tải **PostgreSQL 15** tại đây: [Download PostgreSQL for Windows](https://www.enterprisedb.com/downloads/postgres-postgresql-downloads)
+2. Chạy file cài đặt.
+3. **QUAN TRỌNG:** Trong quá trình cài đặt, trình cài đặt sẽ hỏi bạn nhập Password cho tài khoản siêu quản trị `postgres`. Bạn **phải nhập Mật Khẩu là `123456`** (Trùng khớp với file `.env` ở thư mục gốc của code này).
+4. **VÔ CÙNG QUAN TRỌNG:** Ở bước cấu hình Port (cổng kết nối), bạn **BẮT BUỘC phải giữ nguyên số `5432`** (đây là port mặc định). Nếu bạn đổi số này, Code sẽ không tìm thấy Database và báo lỗi. Cứ nhấn Next đến khi hoàn tất cài đặt.
+5. Mở phần mềm Document Sharing Manager của bạn lên và Tận hưởng!
 
-**Collaborators:** 
-- AnhGam
-- Redamancy2107
+> **Lưu ý:** Nếu bạn muốn dùng mật khẩu khác, hãy mở file `.env` ở thư mục gốc và sửa dòng `POSTGRES_PASSWORD=123456` thành mật khẩu của bạn.
 
----
+## Về Cloudflare Tunnel
 
-## The Enterprise DevOps Stack
-This repository serves as a showcase for advanced DevOps and Platform Engineering:
-
-### FinOps & Capacity Management
-*   **Size Guards:** Automated monitoring of installer and repository growth.
-*   **Artifact Optimization:** Multi-stage builds and asset compression to minimize TCO.
-
-### Multi-AI Intelligence
-*   **Gemini 1.5 Pro:** Real-time build failure diagnostics.
-*   **Groq (Llama 3):** Ultra-fast security auditing and dependency scanning.
-*   **GPT-4o:** Automated architectural reviews and PR intelligence.
-
-### Quality & Security Gates
-*   **Observability:** Implementing the three pillars (Metrics, Logs, Traces).
-*   **DevSecOps:** Integrated Gitleaks, CodeQL, and NuGet vulnerability scanning.
-*   **Reliability:** Mutation testing with Stryker and memory leak detection.
-
----
-
-## Technical Stack
-- **Frontend:** .NET Framework 4.8 (WinForms) - Transitioning to Managed Storage.
-- **Backend (Planned):** ASP.NET Core 8.0 (Dockerized).
-- **Database:** SQLite (Local Cache) & PostgreSQL (Planned Server).
-- **IaC:** Terraform for infrastructure standardization.
-
-## Getting Started
-1. git clone https://github.com/AnhGam/Document-Sharing.git
-2. Open `document-sharing-manager.sln` in Visual Studio.
-3. Ensure `GEMINI_API_KEY`, `GROQ_API_KEY`, and `DISCORD_WEBHOOK` are set in your environment/secrets.
-
----
-
-## Credits
-- **Lead Developers:** AnhGam & Redamancy2107.
-- **Original Foundation:** Forked from [study-document-manager](https://github.com/hayato-shino05/study-document-manager).
-
----
-
-<div align="center">
-Enterprise DevOps Practice Project | 2026
-</div>
+Phần mềm dùng Cloudflare Tunnel để đưa server nội bộ của bạn ra Internet (cho phép người khác truy cập qua tên miền do Cloudflare cấp phát ngẫu nhiên, ví dụ như `xyz.trycloudflare.com`).
+- File `cloudflared.exe` đã được tải sẵn và nhúng vào thư mục `document-sharing-manager/Resources/`.
+- Khi bạn Build dự án, file sẽ tự động đi kèm phần mềm.
+- Bạn không cần phải cài đặt thêm Cloudflare Tunnel bằng tay nữa!

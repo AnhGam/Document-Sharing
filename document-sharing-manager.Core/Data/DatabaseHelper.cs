@@ -103,6 +103,17 @@ namespace document_sharing_manager.Core.Data
         private static void CreateTables()
         {
             string createTablesQuery = @"
+                -- Bảng tài khoản nội bộ (Local Login)
+                CREATE TABLE IF NOT EXISTS tai_khoan (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ten_dang_nhap TEXT NOT NULL UNIQUE,
+                    mat_khau TEXT NOT NULL,
+                    ho_ten TEXT,
+                    email TEXT,
+                    vai_tro TEXT,
+                    thoi_gian_tao DATETIME DEFAULT (datetime('now', 'localtime'))
+                );
+
                 -- Bảng tài liệu chính
                 CREATE TABLE IF NOT EXISTS tai_lieu (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -140,6 +151,35 @@ namespace document_sharing_manager.Core.Data
                     user_id INTEGER NOT NULL DEFAULT 1,
                     remote_id INTEGER,
                     UNIQUE(base_url, user_id)
+                );
+
+                -- Bảng invite_links
+                CREATE TABLE IF NOT EXISTS invite_links (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    code TEXT NOT NULL UNIQUE,
+                    requires_approval INTEGER DEFAULT 0,
+                    server_id INTEGER,
+                    created_at DATETIME DEFAULT (datetime('now', 'localtime'))
+                );
+
+                -- Bảng join_requests
+                CREATE TABLE IF NOT EXISTS join_requests (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    display_name TEXT NOT NULL,
+                    invite_code TEXT NOT NULL,
+                    status INTEGER DEFAULT 0,
+                    server_id INTEGER,
+                    created_at DATETIME DEFAULT (datetime('now', 'localtime'))
+                );
+
+                -- Bảng audit_logs
+                CREATE TABLE IF NOT EXISTS audit_logs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    action TEXT NOT NULL,
+                    details TEXT,
+                    user_name TEXT,
+                    server_id INTEGER,
+                    created_at DATETIME DEFAULT (datetime('now', 'localtime'))
                 );
 
                 -- Bảng collections (bộ sưu tập)
@@ -1317,6 +1357,12 @@ namespace document_sharing_manager.Core.Data
         {
             string query = "DELETE FROM managed_servers WHERE id = @id AND user_id = @user";
             return ExecuteNonQuery(query, [new("@id", id), new("@user", UserSession.CurrentUserId)]) > 0;
+        }
+
+        public static bool UpdateServerRemoteId(int id, int remoteId)
+        {
+            string query = "UPDATE managed_servers SET remote_id = @remote, updated_at = datetime('now', 'localtime') WHERE id = @id";
+            return ExecuteNonQuery(query, [new("@id", id), new("@remote", remoteId)]) > 0;
         }
 
         public static bool UpdateServerTokens(int id, string accessToken, string refreshToken)

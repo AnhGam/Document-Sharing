@@ -49,7 +49,17 @@ namespace document_sharing_manager_api.Controllers
 
             if (!string.IsNullOrEmpty(requiredPassword) && incomingPassword != requiredPassword)
             {
-                return Unauthorized(new { message = "Invalid server join password." });
+                // Bypass password check if the user has an approved JoinRequest specifically for this server (matching its BaseUrl)
+                bool isApprovedMember = await _context.JoinRequests.AnyAsync(r => 
+                    r.UserId == CurrentUserId && 
+                    r.Status == JoinRequestStatus.Approved &&
+                    _context.InviteLinks.Any(l => l.Code == r.InviteCode && 
+                        _context.Servers.Any(s => s.UserId == l.CreatedByUserId && s.BaseUrl == server.BaseUrl)), ct);
+
+                if (!isApprovedMember)
+                {
+                    return Unauthorized(new { message = "Invalid server join password." });
+                }
             }
 
             // Check if already exists for this user

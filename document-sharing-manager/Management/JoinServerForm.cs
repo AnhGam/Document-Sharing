@@ -13,11 +13,21 @@ namespace document_sharing_manager.Management
 {
     public partial class JoinServerForm : Form
     {
+        private TabControl tabControl;
+        private TabPage tabInvite;
+        private TabPage tabManual;
+
+        // Invite Tab Controls
+        private TextBox txtInviteCode;
+        private TextBox txtDisplayName;
+        private Button btnJoinInvite;
+
+        // Manual Tab Controls
         private TextBox txtName;
         private TextBox txtUrl;
         private TextBox txtPassword;
-        private Button btnJoin;
-        private Button btnCancel;
+        private Button btnJoinManual;
+
         private Label lblStatus;
         
         public bool Success { get; private set; }
@@ -25,108 +35,304 @@ namespace document_sharing_manager.Management
         private readonly document_sharing_manager.Core.Services.SyncEngine _syncEngine;
         private readonly document_sharing_manager.Core.Services.AuthServiceClient _authServiceClient;
 
-        public JoinServerForm(document_sharing_manager.Core.Services.SyncEngine syncEngine, document_sharing_manager.Core.Services.AuthServiceClient authClient)
+        public JoinServerForm(document_sharing_manager.Core.Services.SyncEngine syncEngine, document_sharing_manager.Core.Services.AuthServiceClient authClient, string defaultInviteCode = "")
         {
             _syncEngine = syncEngine;
             _authServiceClient = authClient;
-            InitializeComponent();
-            SetupUI();
+            InitializeComponentManual();
             ApplyTheme();
+            
+            if (!string.IsNullOrEmpty(defaultInviteCode))
+            {
+                txtInviteCode.Text = defaultInviteCode;
+                tabControl.SelectedTab = tabInvite;
+            }
         }
 
-        private void SetupUI()
+        private void InitializeComponentManual()
         {
-            this.Text = "Kết nối Server mới";
-            this.Size = new Size(400, 420);
+            this.Text = "Kết nối Server";
+            this.Size = new Size(420, 480);
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.StartPosition = FormStartPosition.CenterParent;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
 
-            int left = 30;
-            int top = 30;
-            int width = 320;
+            tabControl = new TabControl { Dock = DockStyle.Top, Height = 340, Padding = new Point(15, 8) };
+            tabInvite = new TabPage("Sử dụng Link Mời");
+            tabManual = new TabPage("Kết nối Thủ Công");
 
-            var lblName = new Label { Text = "Tên Server (Gợi nhớ):", Location = new Point(left, top), AutoSize = true };
-            txtName = new TextBox { Location = new Point(left, top + 25), Width = width };
+            int left = 20;
+            int width = 340;
+
+            // --- Invite Tab ---
+            var lblInvite = new Label { Text = "Mã mời hoặc Link (docshare://join/...):", Location = new Point(left, 20), AutoSize = true };
+            txtInviteCode = new TextBox { Location = new Point(left, 45), Width = width };
+            AppTheme.ApplyTextBoxStyle(txtInviteCode);
+
+            var lblDisplay = new Label { Text = "Tên hiển thị của bạn:", Location = new Point(left, 90), AutoSize = true };
+            txtDisplayName = new TextBox { Location = new Point(left, 115), Width = width, Text = document_sharing_manager.Core.Data.UserSession.Username };
+            AppTheme.ApplyTextBoxStyle(txtDisplayName);
+
+            btnJoinInvite = new Button { Text = "Tham gia", Location = new Point(left + 110, 180), Size = new Size(120, 40), Cursor = Cursors.Hand };
+            btnJoinInvite.Click += BtnJoinInvite_Click;
+
+            tabInvite.Controls.AddRange([lblInvite, txtInviteCode, lblDisplay, txtDisplayName, btnJoinInvite]);
+            tabInvite.BackColor = AppTheme.BackgroundMain;
+
+            // --- Manual Tab ---
+            var lblName = new Label { Text = "Tên Server (Gợi nhớ):", Location = new Point(left, 20), AutoSize = true };
+            txtName = new TextBox { Location = new Point(left, 45), Width = width };
             AppTheme.ApplyTextBoxStyle(txtName);
 
-            var lblUrl = new Label { Text = "Địa chỉ Server (IP/URL):", Location = new Point(left, top + 65), AutoSize = true };
-            txtUrl = new TextBox { Location = new Point(left, top + 90), Width = width };
+            var lblUrl = new Label { Text = "Địa chỉ Server (IP/URL):", Location = new Point(left, 90), AutoSize = true };
+            txtUrl = new TextBox { Location = new Point(left, 115), Width = width, Text = "http://127.0.0.1:5000/" };
             AppTheme.ApplyTextBoxStyle(txtUrl);
 
-            var lblPass = new Label { Text = "Mật khẩu tham gia Server:", Location = new Point(left, top + 130), AutoSize = true };
-            txtPassword = new TextBox { Location = new Point(left, top + 155), Width = width, UseSystemPasswordChar = true };
+            var lblPass = new Label { Text = "Mật khẩu tham gia Server:", Location = new Point(left, 160), AutoSize = true };
+            txtPassword = new TextBox { Location = new Point(left, 185), Width = width, UseSystemPasswordChar = true };
             AppTheme.ApplyTextBoxStyle(txtPassword);
 
-            lblStatus = new Label { Text = "", Location = new Point(left, top + 195), Width = width, AutoSize = false, Height = 40, ForeColor = AppTheme.StatusInfo };
+            btnJoinManual = new Button { Text = "Kết nối ngay", Location = new Point(left + 110, 240), Size = new Size(120, 40), Cursor = Cursors.Hand };
+            btnJoinManual.Click += BtnJoinManual_Click;
 
-            btnJoin = new Button { Text = "Kết nối ngay", Location = new Point(left + 80, top + 245), Size = new Size(120, 40), Cursor = Cursors.Hand };
-            btnCancel = new Button { Text = "Hủy", Location = new Point(left + 210, top + 245), Size = new Size(100, 40), Cursor = Cursors.Hand };
+            tabManual.Controls.AddRange([lblName, txtName, lblUrl, txtUrl, lblPass, txtPassword, btnJoinManual]);
+            tabManual.BackColor = AppTheme.BackgroundMain;
 
-            btnJoin.Click += BtnJoin_Click;
+            tabControl.TabPages.Add(tabInvite);
+            tabControl.TabPages.Add(tabManual);
+
+            lblStatus = new Label { Text = "", Location = new Point(left, 350), Width = width, AutoSize = false, Height = 40, ForeColor = AppTheme.StatusInfo, TextAlign = ContentAlignment.TopCenter };
+
+            var btnCancel = new Button { Text = "Hủy", Location = new Point(left + 130, 395), Size = new Size(100, 35), Cursor = Cursors.Hand };
             btnCancel.Click += (s, e) => this.Close();
 
-            this.Controls.AddRange([lblName, txtName, lblUrl, txtUrl, lblPass, txtPassword, lblStatus, btnJoin, btnCancel]);
-            this.Size = new Size(width + 100, top + 350);
-            txtUrl.Text = "http://127.0.0.1:5000/";
+            this.Controls.AddRange([tabControl, lblStatus, btnCancel]);
+
+            // Add standard hidden components to satisfy partial class if designer created anything
+            this.SuspendLayout();
+            this.Name = "JoinServerForm";
+            this.ResumeLayout(false);
         }
 
         private void ApplyTheme()
         {
             this.BackColor = AppTheme.BackgroundMain;
-            AppTheme.ApplyButtonPrimary(btnJoin);
-            AppTheme.ApplyButtonSecondary(btnCancel);
+            AppTheme.ApplyButtonPrimary(btnJoinInvite);
+            AppTheme.ApplyButtonPrimary(btnJoinManual);
             
-            foreach (Control c in this.Controls)
+            foreach (TabPage page in tabControl.TabPages)
             {
-                if (c is Label lbl) lbl.ForeColor = AppTheme.TextPrimary;
+                foreach (Control c in page.Controls)
+                {
+                    if (c is Label lbl) lbl.ForeColor = AppTheme.TextPrimary;
+                }
             }
         }
 
-        private async void BtnJoin_Click(object sender, EventArgs e)
+        private (string code, string url) ParseInviteInput(string input)
+        {
+            input = input.Trim();
+            
+            // 1. Dạng deep link: docshare://join?url=...&code=...
+            if (input.StartsWith("docshare://join?"))
+            {
+                try
+                {
+                    string query = input.Substring(input.IndexOf('?') + 1);
+                    return ParseQueryString(query);
+                }
+                catch { }
+            }
+            
+            // 2. Dạng deep link cũ: docshare://join/{code}
+            if (input.StartsWith("docshare://join/"))
+            {
+                return (input.Substring(16).Trim('/'), null);
+            }
+
+            // 3. Dạng URL thông thường: http://domain/join?code=xxx hoặc https://domain/join?code=xxx
+            // Hoặc chỉ đơn giản là https://domain&code=xxx (do chat client highlight hyperlink)
+            if (input.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || 
+                input.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    string url = "";
+                    string code = "";
+                    
+                    int codeIndex = input.IndexOf("code=", StringComparison.OrdinalIgnoreCase);
+                    if (codeIndex != -1)
+                    {
+                        code = input.Substring(codeIndex + 5).Split('&')[0];
+                        
+                        int delimiterIndex = input.IndexOf('?');
+                        if (delimiterIndex == -1) delimiterIndex = input.IndexOf('&');
+                        
+                        if (delimiterIndex != -1)
+                        {
+                            url = input.Substring(0, delimiterIndex);
+                        }
+                        else
+                        {
+                            url = input;
+                        }
+                        return (code, url);
+                    }
+                }
+                catch { }
+            }
+
+            // 4. Trường hợp copy bị mất https:// ở đầu (ví dụ: domain.com&code=xxx)
+            if (input.Contains("code="))
+            {
+                try
+                {
+                    string code = "";
+                    string url = "";
+                    int codeIndex = input.IndexOf("code=", StringComparison.OrdinalIgnoreCase);
+                    code = input.Substring(codeIndex + 5).Split('&')[0];
+                    
+                    int delimiterIndex = input.IndexOf('?');
+                    if (delimiterIndex == -1) delimiterIndex = input.IndexOf('&');
+                    
+                    if (delimiterIndex > 0)
+                    {
+                        string domain = input.Substring(0, delimiterIndex);
+                        url = "https://" + domain; // Mặc định dùng https cho các Tunnel
+                    }
+                    return (code, url);
+                }
+                catch { }
+            }
+
+            return (input, null);
+        }
+
+        private (string code, string url) ParseQueryString(string query)
+        {
+            var parts = query.Split('&');
+            string url = "";
+            string code = "";
+            foreach (var part in parts)
+            {
+                var kv = part.Split('=');
+                if (kv.Length == 2)
+                {
+                    if (kv[0].ToLower() == "url") url = Uri.UnescapeDataString(kv[1]);
+                    if (kv[0].ToLower() == "code") code = Uri.UnescapeDataString(kv[1]);
+                }
+            }
+            return (code, url);
+        }
+
+        private async void BtnJoinInvite_Click(object sender, EventArgs e)
+        {
+            var parsed = ParseInviteInput(txtInviteCode.Text);
+            string code = parsed.code;
+            string displayName = txtDisplayName.Text.Trim();
+
+            if (string.IsNullOrEmpty(code) || string.IsNullOrEmpty(displayName))
+            {
+                ShowStatus("Vui lòng nhập Mã mời và Tên hiển thị!", true);
+                return;
+            }
+
+            string originalUrl = _authServiceClient.BaseUrl;
+            if (!string.IsNullOrEmpty(parsed.url))
+            {
+                _authServiceClient.UpdateBaseUrl(parsed.url);
+            }
+
+            btnJoinInvite.Enabled = false;
+            ShowStatus("Đang kiểm tra mã mời...", false);
+
+            var info = await _authServiceClient.GetInviteInfoAsync(code);
+            if (!info.valid)
+            {
+                ShowStatus(info.message, true);
+                _authServiceClient.UpdateBaseUrl(originalUrl); // Khôi phục URL cũ khi thất bại
+                btnJoinInvite.Enabled = true;
+                return;
+            }
+
+            ShowStatus("Đang tham gia server...", false);
+            var joinRes = await _authServiceClient.JoinWithInviteAsync(code, displayName);
+            
+            if (joinRes.success)
+            {
+                // Lưu server vào database local (giống như luồng kết nối thủ công)
+                string serverUrl = parsed.url ?? _authServiceClient.BaseUrl;
+                string serverName = "";
+                try
+                {
+                    var uri = new Uri(serverUrl);
+                    serverName = uri.Host; // Dùng hostname làm tên server
+                }
+                catch { serverName = serverUrl; }
+
+                string token = document_sharing_manager.Core.Data.UserSession.AccessToken;
+                
+                // Đăng ký server lên API cloud để tránh lỗi 403 Forbidden khi sync và lấy Cloud Server ID
+                int? cloudId = await _authServiceClient.SaveServerToCloudAsync(serverName, serverUrl, token);
+                
+                DatabaseHelper.InsertServer(serverName, serverUrl, accessToken: token, remoteId: cloudId);
+
+                // Thêm server vào SyncEngine để hiện ở sidebar
+                var allServers = DatabaseHelper.GetManagedServers();
+                var newServer = allServers.FirstOrDefault(s => s.BaseUrl.TrimEnd('/') == serverUrl.TrimEnd('/'));
+                if (newServer != null)
+                {
+                    _syncEngine?.AddServer(newServer);
+                }
+
+                Success = true;
+                MessageBox.Show(joinRes.message, "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                this.DialogResult = DialogResult.OK;
+                this.Close();
+            }
+            else
+            {
+                ShowStatus(joinRes.message, true);
+                _authServiceClient.UpdateBaseUrl(originalUrl); // Khôi phục URL cũ khi thất bại
+                btnJoinInvite.Enabled = true;
+            }
+        }
+
+        private async void BtnJoinManual_Click(object sender, EventArgs e)
         {
             string name = txtName.Text.Trim();
             string url = txtUrl.Text.Trim();
 
             if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(url))
             {
-                lblStatus.Text = "Vui lòng nhập đủ Tên và URL!";
-                lblStatus.ForeColor = AppTheme.StatusError;
+                ShowStatus("Vui lòng nhập đủ Tên và URL!", true);
                 return;
             }
 
-            btnJoin.Enabled = false;
-            lblStatus.Text = "Đang kiểm tra kết nối...";
-            lblStatus.ForeColor = AppTheme.StatusInfo;
+            btnJoinManual.Enabled = false;
+            ShowStatus("Đang kiểm tra kết nối...", false);
 
             try
             {
-                // Dùng endpoint Auth/login để check vì chắc chắn nó tồn tại
                 string testUrl = $"{url.TrimEnd('/')}/api/Auth/login";
                 using var response = await _httpClient.GetAsync(testUrl);
 
-                // Nếu không phải 404 thì nghĩa là Server đã phản hồi (có thể là 405 Method Not Allowed nhưng vẫn là có kết nối)
-                // Nếu không phải 404 thì nghĩa là Server đã phản hồi
                 if (response.StatusCode != System.Net.HttpStatusCode.NotFound)
                 {
                     string joinPass = txtPassword.Text;
                     string token = document_sharing_manager.Core.Data.UserSession.AccessToken;
                     
-                    // Upload to cloud for persistence across account logins
-                    var cloudResult = await _authServiceClient.SaveServerToCloudAsync(name, url, token, joinPass);
-                    if (!cloudResult)
+                    var cloudId = await _authServiceClient.SaveServerToCloudAsync(name, url, token, joinPass);
+                    if (!cloudId.HasValue)
                     {
-                        lblStatus.Text = "Sai mật khẩu Server hoặc lỗi phân quyền!";
-                        lblStatus.ForeColor = AppTheme.StatusError;
-                        btnJoin.Enabled = true;
+                        ShowStatus("Sai mật khẩu Server hoặc lỗi phân quyền!", true);
+                        btnJoinManual.Enabled = true;
                         return;
                     }
 
-                    // Lưu vào DB local
-                    DatabaseHelper.InsertServer(name, url, password: joinPass, accessToken: token);
+                    DatabaseHelper.InsertServer(name, url, password: joinPass, accessToken: token, remoteId: cloudId.Value);
                     
-                    // Fetch the newly inserted server to add it to SyncEngine
                     var allServers = DatabaseHelper.GetManagedServers();
                     var newServer = allServers.FirstOrDefault(s => s.BaseUrl.TrimEnd('/') == url.TrimEnd('/'));
                     if (newServer != null)
@@ -135,33 +341,28 @@ namespace document_sharing_manager.Management
                     }
                     Success = true;
                     this.DialogResult = DialogResult.OK;
-                    this.Hide(); // Hide immediately for better UX
+                    this.Hide();
                     this.Close();
                 }
                 else
                 {
-                    string errorDetail = $"Lỗi { (int)response.StatusCode } ({ response.ReasonPhrase })";
-                    lblStatus.Text = $"Không thể kết nối! {errorDetail}";
-                    lblStatus.ForeColor = AppTheme.StatusError;
+                    ShowStatus($"Không thể kết nối! Lỗi {(int)response.StatusCode}", true);
                 }
             }
             catch (Exception ex)
             {
-                lblStatus.Text = "Lỗi: " + ex.Message;
-                lblStatus.ForeColor = AppTheme.StatusError;
+                ShowStatus("Lỗi: " + ex.Message, true);
             }
             finally
             {
-                btnJoin.Enabled = true;
+                btnJoinManual.Enabled = true;
             }
         }
 
-        private void InitializeComponent()
+        private void ShowStatus(string message, bool isError)
         {
-            this.SuspendLayout();
-            this.ClientSize = new System.Drawing.Size(400, 320);
-            this.Name = "JoinServerForm";
-            this.ResumeLayout(false);
+            lblStatus.Text = message;
+            lblStatus.ForeColor = isError ? AppTheme.StatusError : AppTheme.StatusInfo;
         }
     }
 }

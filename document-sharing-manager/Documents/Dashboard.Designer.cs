@@ -54,6 +54,7 @@ namespace document_sharing_manager.Documents
 
             this.contextMenuDocument = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.ctxMenuOpen = new System.Windows.Forms.ToolStripMenuItem();
+            this.ctxMenuDownloadAs = new System.Windows.Forms.ToolStripMenuItem();
             this.ctxMenuEdit = new System.Windows.Forms.ToolStripMenuItem();
             this.ctxMenuDelete = new System.Windows.Forms.ToolStripMenuItem();
             this.ctxMenuSeparator1 = new System.Windows.Forms.ToolStripSeparator();
@@ -218,6 +219,7 @@ namespace document_sharing_manager.Documents
             this.contextMenuDocument.ImageScalingSize = new System.Drawing.Size(24, 24);
             this.contextMenuDocument.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.ctxMenuOpen,
+            this.ctxMenuDownloadAs,
             this.ctxMenuEdit,
             this.ctxMenuDelete,
             this.ctxMenuSeparator1,
@@ -226,7 +228,7 @@ namespace document_sharing_manager.Documents
             this.ctxMenuSeparator2,
             this.ctxMenuToggleImportant});
             this.contextMenuDocument.Name = "contextMenuDocument";
-            this.contextMenuDocument.Size = new System.Drawing.Size(256, 208);
+            this.contextMenuDocument.Size = new System.Drawing.Size(256, 240);
             // 
             // ctxMenuOpen
             // 
@@ -234,6 +236,13 @@ namespace document_sharing_manager.Documents
             this.ctxMenuOpen.Size = new System.Drawing.Size(255, 32);
             this.ctxMenuOpen.Text = "Mở file";
             this.ctxMenuOpen.Click += new System.EventHandler(this.CtxMenuOpenClick);
+            // 
+            // ctxMenuDownloadAs
+            // 
+            this.ctxMenuDownloadAs.Name = "ctxMenuDownloadAs";
+            this.ctxMenuDownloadAs.Size = new System.Drawing.Size(255, 32);
+            this.ctxMenuDownloadAs.Text = "Tải xuống máy (Save As)...";
+            this.ctxMenuDownloadAs.Click += new System.EventHandler(this.CtxMenuDownloadAsClick);
             // 
             // ctxMenuEdit
             // 
@@ -733,6 +742,7 @@ namespace document_sharing_manager.Documents
         private document_sharing_manager.UI.Controls.ModernButton btnClearAdvancedFilter;
         private System.Windows.Forms.ContextMenuStrip contextMenuDocument;
         private System.Windows.Forms.ToolStripMenuItem ctxMenuOpen;
+        private System.Windows.Forms.ToolStripMenuItem ctxMenuDownloadAs;
         private System.Windows.Forms.ToolStripMenuItem ctxMenuEdit;
         private System.Windows.Forms.ToolStripMenuItem ctxMenuDelete;
         private System.Windows.Forms.ToolStripSeparator ctxMenuSeparator1;

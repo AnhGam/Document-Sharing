@@ -23,6 +23,12 @@ namespace document_sharing_manager.Documents
         private Guid _remoteId = Guid.NewGuid();
         private int? _serverId = null;
 
+        public int? ServerId
+        {
+            get => _serverId;
+            set => _serverId = value;
+        }
+
         public AddEditForm()
         {
             InitializeComponent();
@@ -241,7 +247,8 @@ namespace document_sharing_manager.Documents
                     string finalPath = txtDuongDan.Text.Trim();
                     if (finalPath != _originalPath)
                     {
-                        finalPath = FileStorageService.ImportFile(finalPath);
+                        string subFolder = _serverId.HasValue ? $"documents_{UserSession.CurrentUserId}_server_{_serverId.Value}" : null;
+                        finalPath = FileStorageService.ImportFile(finalPath, subFolder);
                     }
 
                     _currentSyncStatus = 1;      // SyncStatus: PendingUpload
@@ -273,17 +280,21 @@ namespace document_sharing_manager.Documents
                 else
                 {
                     // Thêm tài liệu mới
+                    string subFolder = _serverId.HasValue ? $"documents_{UserSession.CurrentUserId}_server_{_serverId.Value}" : null;
                     success = DatabaseHelper.InsertDocument(
                         txtTen.Text.Trim(),
                         cboDinhDang.Text.Trim(),
-                        FileStorageService.ImportFile(txtDuongDan.Text.Trim()),
+                        FileStorageService.ImportFile(txtDuongDan.Text.Trim(), subFolder),
                         txtGhiChu.Text.Trim(),
                         kichThuoc,
                         chkQuanTrong.Checked,
                         UserSession.CurrentUserId,
                         _remoteId,
                         1, // Version
-                        tags
+                        tags,
+                        1, // syncStatus
+                        1, // localVersion
+                        _serverId
                     );
 
                     if (success)

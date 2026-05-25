@@ -1,38 +1,44 @@
-# HƯỚNG DẪN CẤU HÌNH HỆ THỐNG (DEPLOYMENT GUIDE)
+# Hướng dẫn Cài đặt (Setup Guide)
 
-Tài liệu này hướng dẫn các bước cần thiết để đưa hệ thống Document Sharing vào hoạt động, bao gồm cấu hình Server và kết nối Client.
+Dự án Document Sharing Manager hiện tại đã loại bỏ "Server-Only mode" qua dòng lệnh (CLI). Tất cả các chức năng khởi tạo máy chủ, quản lý phê duyệt tham gia, tạo link mời đều được tích hợp thẳng vào giao diện Desktop Client.
 
-## 1. Yêu cầu hệ thống (Server Side)
-Để chạy bản **Server Only** hoặc **Full Bundle (Host Mode)**, bạn cần chuẩn bị:
-- **Runtime**: .NET 8.0 SDK/Runtime.
-- **Database**: PostgreSQL (Khuyến nghị dùng Docker để nhanh nhất).
-- **Storage**: Mặc định hệ thống dùng Local Storage (lưu file vào folder local trên server).
+## Yêu cầu hệ thống
+- Hệ điều hành: Windows 10/11.
+- .NET SDK 8.0 (cho API Server).
+- .NET Framework 4.8 Developer Pack (cho WinForms Client).
+- PostgreSQL Server (để lưu trữ dữ liệu).
 
-## 2. Các biến môi trường (Environment Variables)
-Server cần các biến môi trường sau để khởi chạy an toàn. Bạn có thể thiết lập trong hệ điều hành hoặc qua file `.env` (nếu dùng Docker).
+## Cài đặt Database
+1. Cài đặt và khởi chạy PostgreSQL.
+2. Tạo database: `document_sharing_db`.
+3. Đặt biến môi trường `POSTGRES_PASSWORD` thành mật khẩu PostgreSQL của bạn.
+4. (Tùy chọn) Cài đặt chuỗi kết nối trong `appsettings.json` của thư mục `document-sharing-manager-api`.
 
-| Biến môi trường | Ý nghĩa | Ví dụ |
-| :--- | :--- | :--- |
-| `POSTGRES_PASSWORD` | Mật khẩu cho Database PostgreSQL | `123456` |
-| `JWT_SECRET_KEY` | Mã bí mật để tạo Token bảo mật (Tối thiểu 32 ký tự) | `secret_test_key_12345678901234567890` |
-| `ASPNETCORE_URLS` | Cấu hình IP và Port mà Server sẽ lắng nghe | `http://0.0.0.0:5000` |
+## Build và Chạy ứng dụng
 
-### Cách kết nối Database (Connection String):
-Trong file `appsettings.json` của API, chuỗi kết nối mặc định là:
-`Host=localhost;Database=docshare;Username=postgres;Password=${POSTGRES_PASSWORD}`
+Bạn không cần phải khởi chạy Server và Client riêng biệt qua dòng lệnh nữa. Bạn chỉ cần Build toàn bộ Solution.
 
-## 3. Cấu hình dịch vụ lưu trữ (Storage)
-Hiện tại hệ thống đang dùng `LocalFileStorageService`.
-- **Thư mục lưu trữ**: File sẽ được lưu tại thư mục `uploads` nằm cùng cấp với file thực thi của API.
-- **Lưu ý**: Nếu bạn deploy lên Cloud (như Azure/AWS), trong tương lai chúng ta có thể cấu hình thêm `S3StorageService` mà không cần sửa mã nguồn (chỉ cần đổi Dependency Injection).
+1. Khôi phục các gói (Restore packages):
+   ```powershell
+   dotnet restore document-sharing-manager.sln
+   ```
 
-## 4. Hướng dẫn cho người dùng Client
-Người dùng chỉ cần cài bản **Client Only**, sau đó thực hiện:
-1. Mở ứng dụng.
-2. Click vào icon **Cài đặt (Bánh răng)** trên thanh công cụ.
-3. Nhập URL của Server (Ví dụ: `http://103.x.x.x:5000/api/documents`).
-4. Khởi động lại App và bắt đầu sử dụng.
+2. Build ứng dụng:
+   ```powershell
+   dotnet build document-sharing-manager.sln
+   ```
 
-## 5. Danh sách các tài liệu hướng dẫn khác
-- [Hướng dẫn Test với Docker (Giả lập mạng ngoài)](DOCKER_TEST_GUIDE.md)
-- [Quy trình CI/CD tự động](.ai_docs/CI_CD_PIPELINE.md)
+3. Chạy ứng dụng Client:
+   ```powershell
+   # Trong thư mục dự án WinForms
+   cd document-sharing-manager
+   dotnet run
+   ```
+
+Khi ứng dụng chạy lên, nó sẽ tự động chạy Server nền ở bên trong.
+
+## Custom URI Scheme (docshare://)
+Để ứng dụng có thể bắt được các link lời mời `docshare://join/{code}` từ trình duyệt, chương trình sẽ tự động đăng ký giao thức `docshare` vào Windows Registry trong lần chạy đầu tiên (Yêu cầu quyền Administrator nếu chưa được cấp).
+
+## Giới hạn tải lên
+Ứng dụng đã được nâng cấu hình giới hạn tải tài liệu lên **10GB**, đảm bảo chia sẻ dữ liệu lớn dễ dàng qua LAN và Internet (nếu đã cấu hình Port Forwarding/Ngrok).
