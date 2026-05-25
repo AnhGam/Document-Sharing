@@ -128,27 +128,53 @@ namespace document_sharing_manager.Management
             txtUrl.Text = "";
             btnStart.Enabled = false;
 
+            // Dọn dẹp các tiến trình tunnel rác cũ do ứng dụng tạo ra để tránh xung đột
+            KillOrphanedTunnels();
+
             try
             {
-                string cloudflaredPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "cloudflared.exe");
-                if (!System.IO.File.Exists(cloudflaredPath))
-                {
-                    cloudflaredPath = "cloudflared"; // Fallback to PATH if not bundled
-                }
+                string tunnelName = txtTunnelName.Text.Trim();
+                bool isServeo = string.IsNullOrEmpty(tunnelName);
 
                 _sshProcess = new Process();
-                _sshProcess.StartInfo.FileName = cloudflaredPath;
-                
-                string tunnelName = txtTunnelName.Text.Trim();
-                if (!string.IsNullOrEmpty(tunnelName))
+
+                if (isServeo)
                 {
-                    _sshProcess.StartInfo.Arguments = $"tunnel run {tunnelName}";
+                    // Xác định đường dẫn ssh.exe chính xác, bypass Wow64 redirection nếu app chạy 32-bit trên Windows 64-bit
+                    string sshPath = "ssh";
+                    if (Environment.Is64BitOperatingSystem && !Environment.Is64BitProcess)
+                    {
+                        string sysnativePath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Sysnative", "OpenSSH", "ssh.exe");
+                        if (System.IO.File.Exists(sysnativePath))
+                        {
+                            sshPath = sysnativePath;
+                        }
+                    }
+                    else
+                    {
+                        string system32Path = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "OpenSSH", "ssh.exe");
+                        if (System.IO.File.Exists(system32Path))
+                        {
+                            sshPath = system32Path;
+                        }
+                    }
+
+                    _sshProcess.StartInfo.FileName = sshPath;
+                    // Dùng localhost.run làm Tunnel ngẫu nhiên, không bị DNS Quad9 chặn và không bị WAF/Anti-Bot chặn
+                    _sshProcess.StartInfo.Arguments = "-o StrictHostKeyChecking=no -R 80:localhost:5000 nokey@localhost.run";
                 }
                 else
                 {
-                    _sshProcess.StartInfo.Arguments = "tunnel --url http://localhost:5000";
+                    // Chạy Cloudflare cho tunnel cố định (Named Tunnel)
+                    string cloudflaredPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "cloudflared.exe");
+                    if (!System.IO.File.Exists(cloudflaredPath))
+                    {
+                        cloudflaredPath = "cloudflared"; // Fallback to PATH if not bundled
+                    }
+                    _sshProcess.StartInfo.FileName = cloudflaredPath;
+                    _sshProcess.StartInfo.Arguments = $"tunnel run {tunnelName}";
                 }
-                
+
                 _sshProcess.StartInfo.UseShellExecute = false;
                 _sshProcess.StartInfo.RedirectStandardOutput = true;
                 _sshProcess.StartInfo.RedirectStandardError = true;
@@ -161,27 +187,27 @@ namespace document_sharing_manager.Management
                 _sshProcess.BeginOutputReadLine();
                 _sshProcess.BeginErrorReadLine();
 
-                Log("Bắt đầu khởi chạy Cloudflare Tunnel...");
-                btnStart.Text = "Dừng Tunnel";
-                btnStart.Enabled = true;
-                
-                if (!string.IsNullOrEmpty(tunnelName))
+                if (isServeo)
                 {
+                    Log("Bắt đầu khởi chạy SSH Tunnel (Localhost.run)...");
+                    txtUrl.Text = "Đang lấy URL ngẫu nhiên...";
+                }
+                else
+                {
+                    Log("Bắt đầu khởi chạy Cloudflare Tunnel...");
                     string url = $"https://{tunnelName}.me";
                     txtUrl.Text = $"{url} (Tham khảo)";
                     document_sharing_manager.Core.Data.UserSession.PublicUrl = url;
                     Log($"Đang kết nối Cloudflare Tunnel cá nhân: {tunnelName}...");
                 }
-                else
-                {
-                    txtUrl.Text = "Đang lấy URL ngẫu nhiên...";
-                    Log("Đang kết nối Cloudflare Quick Tunnel...");
-                }
+
+                btnStart.Text = "Dừng Tunnel";
+                btnStart.Enabled = true;
             }
             catch (Exception ex)
             {
                 Log($"Lỗi: {ex.Message}");
-                Log("Có thể máy bạn chưa cài đặt cloudflared hoặc chưa đưa vào biến môi trường PATH.");
+                Log("Hãy đảm bảo OpenSSH Client đã được cài đặt và kích hoạt trong Windows Features.");
                 btnStart.Text = "Khởi chạy Tunnel";
                 btnStart.Enabled = true;
                 if (_sshProcess != null)
@@ -207,7 +233,6 @@ namespace document_sharing_manager.Management
                     if (startIndex != -1)
                     {
                         string url = e.Data.Substring(startIndex).Trim().TrimEnd('|', ' ', '\t');
-                        // Nếu có dấu cách phía sau URL thì cắt đi
                         int spaceIndex = url.IndexOf(' ');
                         if (spaceIndex > 0)
                         {
@@ -216,7 +241,29 @@ namespace document_sharing_manager.Management
                         
                         txtUrl.Text = url;
                         document_sharing_manager.Core.Data.UserSession.PublicUrl = url;
-                        Log("==> Cấp phát URL thành công: " + url);
+                        Log("==> Cấp phát URL thành công (Cloudflare): " + url);
+                    }
+                }
+
+                // Parse URL ngẫu nhiên (.lhr.life) từ localhost.run
+                if (e.Data.Contains("lhr.life") && e.Data.Contains("https://"))
+                {
+                    int startIndex = e.Data.IndexOf("https://");
+                    if (startIndex != -1)
+                    {
+                        string url = e.Data.Substring(startIndex).Trim().TrimEnd('|', ' ', '\t');
+                        int spaceIndex = url.IndexOf(' ');
+                        if (spaceIndex > 0)
+                        {
+                            url = url.Substring(0, spaceIndex);
+                        }
+                        
+                        if (url.Contains("lhr.life"))
+                        {
+                            txtUrl.Text = url;
+                            document_sharing_manager.Core.Data.UserSession.PublicUrl = url;
+                            Log("==> Cấp phát URL thành công (Localhost.run): " + url);
+                        }
                     }
                 }
             }));
@@ -240,16 +287,77 @@ namespace document_sharing_manager.Management
             else
             {
                 _isClosing = true;
-                try
-                {
-                    if (_sshProcess != null)
-                    {
-                        try { if (!_sshProcess.HasExited) _sshProcess.Kill(); } catch { }
-                        try { _sshProcess.Dispose(); } catch { }
-                    }
-                }
-                catch { }
+                StopTunnelProcess();
             }
+        }
+
+        public static void StopAndDispose()
+        {
+            if (_instance != null)
+            {
+                _instance._isClosing = true;
+                _instance.StopTunnelProcess();
+                _instance.Dispose();
+                _instance = null;
+            }
+            // Dọn dẹp một lần cuối trước khi tắt hẳn ứng dụng
+            KillOrphanedTunnels();
+        }
+
+        private void StopTunnelProcess()
+        {
+            try
+            {
+                if (_sshProcess != null)
+                {
+                    try { if (!_sshProcess.HasExited) _sshProcess.Kill(); } catch { }
+                    try { _sshProcess.Dispose(); } catch { }
+                    _sshProcess = null;
+                }
+            }
+            catch { }
+        }
+
+        public static void KillOrphanedTunnels()
+        {
+            try
+            {
+                // 1. Dọn dẹp tiến trình cloudflared rác
+                string appDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd('\\', '/');
+                var processes = Process.GetProcessesByName("cloudflared");
+                foreach (var p in processes)
+                {
+                    try
+                    {
+                        string fileName = p.MainModule.FileName;
+                        if (fileName.StartsWith(appDir, StringComparison.OrdinalIgnoreCase))
+                        {
+                            p.Kill();
+                        }
+                    }
+                    catch { }
+                }
+
+                // 2. Dọn dẹp tiến trình ssh serveo/localhost.run rác bằng lệnh PowerShell an toàn
+                KillOrphanedSsh();
+            }
+            catch { }
+        }
+
+        private static void KillOrphanedSsh()
+        {
+            try
+            {
+                var psi = new ProcessStartInfo
+                {
+                    FileName = "powershell",
+                    Arguments = "-Command \"Get-CimInstance Win32_Process -Filter \\\"Name = 'ssh.exe' AND (CommandLine LIKE '%serveo.net%' OR CommandLine LIKE '%localhost.run%')\\\" | Invoke-CimMethod -MethodName Terminate\"",
+                    CreateNoWindow = true,
+                    UseShellExecute = false
+                };
+                Process.Start(psi)?.WaitForExit(5000);
+            }
+            catch { }
         }
     }
 }

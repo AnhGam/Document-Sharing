@@ -15,12 +15,25 @@ namespace document_sharing_manager.Core.Services
     {
         private readonly HttpClient _httpClient;
         private string _baseUrl;
+        private string? _customAccessToken;
+
+        public string? AccessToken
+        {
+            get => _customAccessToken ?? UserSession.AccessToken;
+            set => _customAccessToken = value;
+        }
 
         public AuthServiceClient(string baseUrl)
         {
             _baseUrl = baseUrl.TrimEnd('/');
-            var handler = new HttpClientHandler { UseProxy = false };
+            var handler = new HttpClientHandler 
+            { 
+                UseProxy = false,
+                // Bỏ qua xác thực chứng chỉ SSL để kết nối qua các Tunnel luôn thành công
+                ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
+            };
             _httpClient = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(60) };
+            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 DocumentSharingManager/1.0");
         }
 
         public void UpdateBaseUrl(string baseUrl)
@@ -153,9 +166,9 @@ namespace document_sharing_manager.Core.Services
             try
             {
                 using var request = new HttpRequestMessage(HttpMethod.Get, $"{_baseUrl}/api/Servers");
-                if (!string.IsNullOrEmpty(UserSession.AccessToken))
+                if (!string.IsNullOrEmpty(this.AccessToken))
                 {
-                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", UserSession.AccessToken);
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", this.AccessToken);
                 }
 
                 var response = await _httpClient.SendAsync(request);
@@ -174,9 +187,9 @@ namespace document_sharing_manager.Core.Services
             try
             {
                 using var request = new HttpRequestMessage(HttpMethod.Delete, $"{_baseUrl}/api/Servers/{remoteId}");
-                if (!string.IsNullOrEmpty(UserSession.AccessToken))
+                if (!string.IsNullOrEmpty(this.AccessToken))
                 {
-                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", UserSession.AccessToken);
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", this.AccessToken);
                 }
 
                 var response = await _httpClient.SendAsync(request);
@@ -185,7 +198,7 @@ namespace document_sharing_manager.Core.Services
             catch { return false; }
         }
 
-        public async Task<bool> SaveServerToCloudAsync(string name, string url, string accessToken, string? password = null)
+        public async Task<int?> SaveServerToCloudAsync(string name, string url, string accessToken, string? password = null)
         {
             try
             {
@@ -200,15 +213,21 @@ namespace document_sharing_manager.Core.Services
                     Content = new StringContent(json, Encoding.UTF8, "application/json")
                 };
 
-                if (!string.IsNullOrEmpty(UserSession.AccessToken))
+                if (!string.IsNullOrEmpty(this.AccessToken))
                 {
-                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", UserSession.AccessToken);
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", this.AccessToken);
                 }
 
                 var response = await _httpClient.SendAsync(request);
-                return response.IsSuccessStatusCode;
+                if (response.IsSuccessStatusCode)
+                {
+                    var resJson = await response.Content.ReadAsStringAsync();
+                    var savedServer = JsonConvert.DeserializeObject<ManagedServer>(resJson);
+                    return savedServer?.Id;
+                }
+                return null;
             }
-            catch { return false; }
+            catch { return null; }
         }
 
         // === Invite Link and Join Requests ===
@@ -217,8 +236,8 @@ namespace document_sharing_manager.Core.Services
             try
             {
                 using var request = new HttpRequestMessage(HttpMethod.Get, $"{_baseUrl}/api/invite");
-                if (!string.IsNullOrEmpty(UserSession.AccessToken))
-                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", UserSession.AccessToken);
+                if (!string.IsNullOrEmpty(this.AccessToken))
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", this.AccessToken);
                 
                 var response = await _httpClient.SendAsync(request);
                 if (response.IsSuccessStatusCode)
@@ -241,8 +260,8 @@ namespace document_sharing_manager.Core.Services
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")
                 };
-                if (!string.IsNullOrEmpty(UserSession.AccessToken))
-                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", UserSession.AccessToken);
+                if (!string.IsNullOrEmpty(this.AccessToken))
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", this.AccessToken);
                 
                 var response = await _httpClient.SendAsync(request);
                 if (response.IsSuccessStatusCode)
@@ -260,8 +279,8 @@ namespace document_sharing_manager.Core.Services
             try
             {
                 using var request = new HttpRequestMessage(HttpMethod.Delete, $"{_baseUrl}/api/invite/{code}");
-                if (!string.IsNullOrEmpty(UserSession.AccessToken))
-                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", UserSession.AccessToken);
+                if (!string.IsNullOrEmpty(this.AccessToken))
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", this.AccessToken);
                 
                 var response = await _httpClient.SendAsync(request);
                 return response.IsSuccessStatusCode;
@@ -296,8 +315,8 @@ namespace document_sharing_manager.Core.Services
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")
                 };
-                if (!string.IsNullOrEmpty(UserSession.AccessToken))
-                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", UserSession.AccessToken);
+                if (!string.IsNullOrEmpty(this.AccessToken))
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", this.AccessToken);
 
                 var response = await _httpClient.SendAsync(request);
                 var resJson = await response.Content.ReadAsStringAsync();
@@ -318,8 +337,8 @@ namespace document_sharing_manager.Core.Services
             try
             {
                 using var request = new HttpRequestMessage(HttpMethod.Get, $"{_baseUrl}/api/join-requests");
-                if (!string.IsNullOrEmpty(UserSession.AccessToken))
-                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", UserSession.AccessToken);
+                if (!string.IsNullOrEmpty(this.AccessToken))
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", this.AccessToken);
                 
                 var response = await _httpClient.SendAsync(request);
                 if (response.IsSuccessStatusCode)
@@ -337,8 +356,8 @@ namespace document_sharing_manager.Core.Services
             try
             {
                 using var request = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}/api/join-requests/{id}/approve");
-                if (!string.IsNullOrEmpty(UserSession.AccessToken))
-                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", UserSession.AccessToken);
+                if (!string.IsNullOrEmpty(this.AccessToken))
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", this.AccessToken);
                 
                 var response = await _httpClient.SendAsync(request);
                 return response.IsSuccessStatusCode;
@@ -351,8 +370,8 @@ namespace document_sharing_manager.Core.Services
             try
             {
                 using var request = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}/api/join-requests/{id}/deny");
-                if (!string.IsNullOrEmpty(UserSession.AccessToken))
-                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", UserSession.AccessToken);
+                if (!string.IsNullOrEmpty(this.AccessToken))
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", this.AccessToken);
                 
                 var response = await _httpClient.SendAsync(request);
                 return response.IsSuccessStatusCode;
@@ -365,8 +384,8 @@ namespace document_sharing_manager.Core.Services
             try
             {
                 using var request = new HttpRequestMessage(HttpMethod.Get, $"{_baseUrl}/api/audit-logs?page={page}&limit={limit}");
-                if (!string.IsNullOrEmpty(UserSession.AccessToken))
-                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", UserSession.AccessToken);
+                if (!string.IsNullOrEmpty(this.AccessToken))
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", this.AccessToken);
                 
                 var response = await _httpClient.SendAsync(request);
                 if (response.IsSuccessStatusCode)

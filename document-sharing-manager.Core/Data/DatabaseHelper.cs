@@ -1359,6 +1359,12 @@ namespace document_sharing_manager.Core.Data
             return ExecuteNonQuery(query, [new("@id", id), new("@user", UserSession.CurrentUserId)]) > 0;
         }
 
+        public static bool UpdateServerRemoteId(int id, int remoteId)
+        {
+            string query = "UPDATE managed_servers SET remote_id = @remote, updated_at = datetime('now', 'localtime') WHERE id = @id";
+            return ExecuteNonQuery(query, [new("@id", id), new("@remote", remoteId)]) > 0;
+        }
+
         public static bool UpdateServerTokens(int id, string accessToken, string refreshToken)
         {
             string query = "UPDATE managed_servers SET access_token = @access, refresh_token = @refresh, updated_at = datetime('now', 'localtime') WHERE id = @id";

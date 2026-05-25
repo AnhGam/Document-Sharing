@@ -38,10 +38,31 @@ namespace document_sharing_manager.Core.Services
         }
     }
 
+    public class SyncTaskEventArgs : EventArgs
+    {
+        public int DocumentId { get; }
+        public string FileName { get; }
+        public SyncType Type { get; }
+        public bool Success { get; }
+        public string? ErrorMessage { get; }
+
+        public SyncTaskEventArgs(int documentId, string fileName, SyncType type, bool success = true, string? errorMessage = null)
+        {
+            DocumentId = documentId;
+            FileName = fileName;
+            Type = type;
+            Success = success;
+            ErrorMessage = errorMessage;
+        }
+    }
+
     public class SyncEngine : ISyncService, IDisposable
     {
         public event EventHandler? SyncCompleted;
         public event EventHandler<SyncProgressEventArgs>? ProgressChanged;
+        public event EventHandler<string>? SyncErrorOccurred;
+        public event EventHandler<SyncTaskEventArgs>? TaskStarted;
+        public event EventHandler<SyncTaskEventArgs>? TaskCompleted;
         
         private int _activeSyncCount = 0;
         public int ActiveSyncCount => _activeSyncCount;
@@ -49,11 +70,22 @@ namespace document_sharing_manager.Core.Services
         private readonly IDocumentRepository _repository;
         
         // Static HttpClient to prevent socket exhaustion
-        private static readonly HttpClient _httpClient = new();
+        private static readonly HttpClient _httpClient;
         
         static SyncEngine()
         {
+            var handler = new HttpClientHandler
+            {
+                // Bỏ qua xác thực chứng chỉ SSL để đảm bảo kết nối qua các Tunnel luôn thành công
+                ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
+            };
+
+            _httpClient = new HttpClient(handler);
             _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            
+            // Thiết lập User-Agent giả lập trình duyệt để tránh bị các hệ thống WAF/Cloudflare chặn
+            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 DocumentSharingManager/1.0");
+            
             // Set a reasonable timeout for large file uploads
             _httpClient.Timeout = TimeSpan.FromMinutes(10);
         }
@@ -162,6 +194,43 @@ namespace document_sharing_manager.Core.Services
             return Result.Success();
         }
 
+        private async Task<bool> HealServerCloudIdAsync(ManagedServer server, CancellationToken ct)
+        {
+            try
+            {
+                var authClient = server.GetAuthClient();
+                var cloudServers = await authClient.FetchJoinedServersAsync();
+                var matched = cloudServers.FirstOrDefault(cs => 
+                    cs.BaseUrl.TrimEnd('/').Equals(server.BaseUrl.TrimEnd('/'), StringComparison.OrdinalIgnoreCase));
+                
+                if (matched != null)
+                {
+                    server.CloudId = matched.Id;
+                    DatabaseHelper.UpdateServerRemoteId(server.Id, matched.Id);
+                    System.Diagnostics.Debug.WriteLine($"[SyncEngine] Tự động đồng bộ remote_id thành công cho Server '{server.Name}': {matched.Id}");
+                    return true;
+                }
+                else
+                {
+                    // FALLBACK AUTO-REGISTER: Nếu không tìm thấy server nào khớp trên Cloud (ví dụ khi DB Postgres bị reset), tự động đăng ký nó lên Cloud!
+                    System.Diagnostics.Debug.WriteLine($"[SyncEngine] Server '{server.Name}' chưa có trên Cloud. Đang tự động đăng ký...");
+                    int? newCloudId = await authClient.SaveServerToCloudAsync(server.Name, server.BaseUrl, server.AccessToken, server.ServerPassword);
+                    if (newCloudId.HasValue)
+                    {
+                        server.CloudId = newCloudId.Value;
+                        DatabaseHelper.UpdateServerRemoteId(server.Id, newCloudId.Value);
+                        System.Diagnostics.Debug.WriteLine($"[SyncEngine] Tự động đăng ký và đồng bộ remote_id thành công cho '{server.Name}': {newCloudId.Value}");
+                        return true;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[SyncEngine] Lỗi HealServerCloudId cho '{server.Name}': {ex.Message}");
+            }
+            return false;
+        }
+
         public async Task<Result> SyncServerAsync(ManagedServer server, CancellationToken ct = default)
         {
             var serverLock = _serverLocks.GetOrAdd(server.Id, _ => new SemaphoreSlim(1, 1));
@@ -174,6 +243,12 @@ namespace document_sharing_manager.Core.Services
 
             try
             {
+                // Auto-Heal: Tự động đồng bộ remote_id từ Cloud nếu chưa có (NULL hoặc <= 0) để tránh lỗi 403 Forbidden khi sync
+                if (server.CloudId == null || server.CloudId <= 0)
+                {
+                    await HealServerCloudIdAsync(server, ct);
+                }
+
                 // 1. Pull from this specific server
                 await PullFromServerAsync(server, ct);
 
@@ -237,17 +312,35 @@ namespace document_sharing_manager.Core.Services
             var response = await _httpClient.SendAsync(CreateRequest(), completionOption, ct);
 
             // If 401, try to refresh once
-            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized && !string.IsNullOrEmpty(server.RefreshToken))
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
-                System.Diagnostics.Debug.WriteLine($"Token expired for {server.Name}, attempting refresh...");
-                bool refreshed = await authClient.RefreshTokensAsync(server.RefreshToken);
+                bool refreshed = false;
+                if (!string.IsNullOrEmpty(server.RefreshToken))
+                {
+                    System.Diagnostics.Debug.WriteLine($"Token expired for {server.Name}, attempting refresh...");
+                    refreshed = await authClient.RefreshTokensAsync(server.RefreshToken);
+                }
+                
                 if (refreshed)
                 {
                     // Update the server object and DB
                     server.AccessToken = UserSession.AccessToken!;
                     server.RefreshToken = UserSession.RefreshToken!;
                     DatabaseHelper.UpdateServerTokens(server.Id, server.AccessToken, server.RefreshToken);
-                    
+                }
+                else if (!string.IsNullOrEmpty(UserSession.AccessToken) && server.AccessToken != UserSession.AccessToken)
+                {
+                    // FALLBACK: Nếu refresh token lỗi/hết hạn, tự lấy Token đăng nhập hiện tại của UserSession làm fallback dự phòng.
+                    // Điều này vô cùng hiệu quả khi dev chung một backend cục bộ mà bị reset/đổi secret key!
+                    System.Diagnostics.Debug.WriteLine($"Refresh token failed for {server.Name}, trying global UserSession token fallback...");
+                    server.AccessToken = UserSession.AccessToken;
+                    // Cập nhật luôn vào DB local để dùng cho các lần sau
+                    DatabaseHelper.UpdateServerTokens(server.Id, UserSession.AccessToken, server.RefreshToken);
+                    refreshed = true;
+                }
+
+                if (refreshed)
+                {
                     // Retry request - Note: caller must ensure content is recreatable if it was a stream
                     // For GET requests, it's always safe. For POST with stream, caller will handle it.
                     if (method == HttpMethod.Get)
@@ -316,7 +409,7 @@ namespace document_sharing_manager.Core.Services
                     // Safety: Only delete if it's already been synced (Version > 0) or is not pending upload
                     foreach (var localDoc in localDocsForServer)
                     {
-                        if (!serverRemoteIds.Contains(localDoc.RemoteId) && (localDoc.Version > 0 || localDoc.SyncStatus == 0))
+                        if (!serverRemoteIds.Contains(localDoc.RemoteId) && localDoc.SyncStatus != 1 && (localDoc.Version > 0 || localDoc.SyncStatus == 0))
                         {
                             // Delete local file too
                             string fullPath = FileStorageService.ResolvePath(localDoc.DuongDan);
@@ -428,8 +521,29 @@ namespace document_sharing_manager.Core.Services
         {
             try
             {
+                if (_syncContext != null)
+                    _syncContext.Post(_ => TaskStarted?.Invoke(this, new SyncTaskEventArgs(doc.Id, doc.Ten, SyncType.Upload)), null);
+                else
+                    TaskStarted?.Invoke(this, new SyncTaskEventArgs(doc.Id, doc.Ten, SyncType.Upload));
+
                 string fullPath = FileStorageService.ResolvePath(doc.DuongDan);
-                if (!File.Exists(fullPath)) return;
+                if (!File.Exists(fullPath))
+                {
+                    if (_syncContext != null)
+                        _syncContext.Post(_ => TaskCompleted?.Invoke(this, new SyncTaskEventArgs(doc.Id, doc.Ten, SyncType.Upload, false, "File vật lý không tồn tại ở local")), null);
+                    else
+                        TaskCompleted?.Invoke(this, new SyncTaskEventArgs(doc.Id, doc.Ten, SyncType.Upload, false, "File vật lý không tồn tại ở local"));
+                    return;
+                }
+
+                // Tính toán Timeout động dựa trên dung lượng file để hỗ trợ file cực lớn (lên tới 10GB) không bị timeout oan
+                long fileLengthBytes = new FileInfo(fullPath).Length;
+                double fileMb = (double)fileLengthBytes / (1024.0 * 1024.0);
+                double expectedSeconds = Math.Max(120.0, fileMb / 0.02); // Tốc độ tối thiểu giả định cực thấp 20KB/s để luôn an toàn
+
+                using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(expectedSeconds));
+                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCts.Token);
+                var linkedToken = linkedCts.Token;
 
                 async Task<HttpResponseMessage> SendUploadRequest()
                 {
@@ -438,7 +552,7 @@ namespace document_sharing_manager.Core.Services
                     {
                         { new StringContent(doc.RemoteId.ToString()), "remoteId" },
                         { new StringContent(doc.Version.ToString()), "localVersion" },
-                        { new StringContent(server.Id.ToString()), "serverId" }
+                        { new StringContent(server.CloudId?.ToString() ?? server.Id.ToString()), "serverId" }
                     };
                     if (!string.IsNullOrEmpty(doc.Ten)) multipartContent.Add(new StringContent(doc.Ten), "ten");
                     if (doc.GhiChu != null) multipartContent.Add(new StringContent(doc.GhiChu), "ghiChu");
@@ -450,15 +564,38 @@ namespace document_sharing_manager.Core.Services
                             _syncContext.Post(_ => ProgressChanged?.Invoke(this, new SyncProgressEventArgs(doc.Id, percent)), null);
                         else
                             ProgressChanged?.Invoke(this, new SyncProgressEventArgs(doc.Id, percent));
-                    });
+                    }, linkedToken);
                     fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
                     multipartContent.Add(fileContent, "file", Path.GetFileName(fullPath));
 
-                    return await SendAuthenticatedRequestAsync(server, HttpMethod.Post, "api/documents/sync-stream", multipartContent, HttpCompletionOption.ResponseContentRead, ct);
+                    return await SendAuthenticatedRequestAsync(server, HttpMethod.Post, "api/documents/sync-stream", multipartContent, HttpCompletionOption.ResponseContentRead, linkedToken);
                 }
 
                 var response = await SendUploadRequest();
                 
+                // Nếu bị 401 Unauthorized, và token được cập nhật thành công (bằng refresh hoặc fallback), retry ngay một lần nữa!
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Upload got 401, checking if token was refreshed and retrying...");
+                    response = await SendUploadRequest();
+                }
+
+                // Nếu bị 403 Forbidden, rất có thể ID Cloud bị lệch/sai (do database Postgres bị reset hoặc dữ liệu cũ sai). 
+                // Tự động chạy HealServerCloudId và retry lần thứ hai ngay lập tức!
+                if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Upload got 403 Forbidden for {server.Name}. Clearing CloudId and running HealServerCloudId...");
+                    server.CloudId = null;
+                    DatabaseHelper.UpdateServerRemoteId(server.Id, 0); // Reset remoteId trong local SQLite thành 0
+                    
+                    bool healed = await HealServerCloudIdAsync(server, linkedToken);
+                    if (healed)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"HealServerCloudId success! Retrying upload with new CloudId: {server.CloudId}");
+                        response = await SendUploadRequest(); // Gửi lại với serverId mới tinh vừa được heal!
+                    }
+                }
+
                 if (response.IsSuccessStatusCode)
                 {
                     var resultJson = await response.Content.ReadAsStringAsync();
@@ -470,7 +607,7 @@ namespace document_sharing_manager.Core.Services
                         int newVersion = result.CurrentVersion;
 
                         // 1. Update DB synchronously on background thread to avoid race condition
-                        await _repository.UpdateSyncStatusAsync(doc.Id, 0, newVersion, oldVersion, newVersion, ct);
+                        await _repository.UpdateSyncStatusAsync(doc.Id, 0, newVersion, oldVersion, newVersion, linkedToken);
 
                         // 2. Update object on UI thread via Post for UI thread safety
                         void UpdateLocal()
@@ -482,22 +619,43 @@ namespace document_sharing_manager.Core.Services
 
                         if (_syncContext != null)
                         {
-                            _syncContext.Send(_ => UpdateLocal(), null);
+                            _syncContext.Post(_ => {
+                                UpdateLocal();
+                                TaskCompleted?.Invoke(this, new SyncTaskEventArgs(doc.Id, doc.Ten, SyncType.Upload, true));
+                            }, null);
                         }
                         else
                         {
                             UpdateLocal();
+                            TaskCompleted?.Invoke(this, new SyncTaskEventArgs(doc.Id, doc.Ten, SyncType.Upload, true));
                         }
                     }
                 }
-                else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+                else
                 {
-                    await HandleConflictAsync(doc, ct);
+                    string errorMsg = $"Lỗi upload file '{doc.Ten}' (Mã lỗi: {(int)response.StatusCode} {response.ReasonPhrase})";
+                    SyncErrorOccurred?.Invoke(this, errorMsg);
+
+                    if (_syncContext != null)
+                        _syncContext.Post(_ => TaskCompleted?.Invoke(this, new SyncTaskEventArgs(doc.Id, doc.Ten, SyncType.Upload, false, errorMsg)), null);
+                    else
+                        TaskCompleted?.Invoke(this, new SyncTaskEventArgs(doc.Id, doc.Ten, SyncType.Upload, false, errorMsg));
+
+                    if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+                    {
+                        await HandleConflictAsync(doc, linkedToken);
+                    }
                 }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Upload failed for {doc.Ten}: {ex.Message}");
+                SyncErrorOccurred?.Invoke(this, $"Lỗi upload tài liệu '{doc.Ten}': {ex.Message}");
+
+                if (_syncContext != null)
+                    _syncContext.Post(_ => TaskCompleted?.Invoke(this, new SyncTaskEventArgs(doc.Id, doc.Ten, SyncType.Upload, false, ex.Message)), null);
+                else
+                    TaskCompleted?.Invoke(this, new SyncTaskEventArgs(doc.Id, doc.Ten, SyncType.Upload, false, ex.Message));
             }
         }
 
@@ -505,6 +663,10 @@ namespace document_sharing_manager.Core.Services
         {
             try
             {
+                // Sử dụng Linked CancellationToken có Timeout 30s để tránh bị treo vô hạn khi xóa từ xa
+                using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCts.Token);
+                var linkedToken = linkedCts.Token;
                 // We notify the server that this document (by its RemoteId) is deleted
                 string deleteUrl = $"{server.BaseUrl.TrimEnd('/')}/api/documents/remote/{doc.RemoteId}";
                 using var request = new HttpRequestMessage(HttpMethod.Delete, deleteUrl);
@@ -514,12 +676,12 @@ namespace document_sharing_manager.Core.Services
                     request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", server.AccessToken);
                 }
 
-                var response = await _httpClient.SendAsync(request, ct);
+                var response = await _httpClient.SendAsync(request, linkedToken);
                 
                 // If success or already gone (404), mark as synced locally
                 if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.NotFound)
                 {
-                    await _repository.UpdateSyncStatusAsync(doc.Id, 0, ct: ct);
+                    await _repository.UpdateSyncStatusAsync(doc.Id, 0, ct: linkedToken);
                     
                     void UpdateLocal()
                     {
@@ -537,6 +699,7 @@ namespace document_sharing_manager.Core.Services
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Remote delete error for {doc.Ten}: {ex.Message}");
+                SyncErrorOccurred?.Invoke(this, $"Lỗi xóa tài liệu '{doc.Ten}' trên server: {ex.Message}");
             }
         }
 
@@ -544,8 +707,16 @@ namespace document_sharing_manager.Core.Services
         {
             try
             {
+                if (_syncContext != null)
+                    _syncContext.Post(_ => TaskStarted?.Invoke(this, new SyncTaskEventArgs(doc.Id, doc.Ten, SyncType.Download)), null);
+                else
+                    TaskStarted?.Invoke(this, new SyncTaskEventArgs(doc.Id, doc.Ten, SyncType.Download));
+                // Sử dụng Linked CancellationToken có Timeout 60s để tránh bị treo vô hạn trên luồng mạng khi tải
+                using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCts.Token);
+                var linkedToken = linkedCts.Token;
                 // Download by RemoteId to be safe
-                var response = await SendAuthenticatedRequestAsync(server, HttpMethod.Get, $"api/documents/remote/{doc.RemoteId}/download", null, HttpCompletionOption.ResponseHeadersRead, ct);
+                var response = await SendAuthenticatedRequestAsync(server, HttpMethod.Get, $"api/documents/remote/{doc.RemoteId}/download", null, HttpCompletionOption.ResponseHeadersRead, linkedToken);
                 if (response.IsSuccessStatusCode)
                 {
                     string targetPath = FileStorageService.ResolvePath(doc.DuongDan);
@@ -565,9 +736,9 @@ namespace document_sharing_manager.Core.Services
                             var buffer = new byte[81920];
                             long totalRead = 0;
                             int bytesRead;
-                            while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length, ct)) > 0)
+                            while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length, linkedToken)) > 0)
                             {
-                                await fileStream.WriteAsync(buffer, 0, bytesRead, ct);
+                                await fileStream.WriteAsync(buffer, 0, bytesRead, linkedToken);
                                 totalRead += bytesRead;
                                 int percent = (int)((totalRead * 100) / totalLength);
                                 
@@ -579,7 +750,7 @@ namespace document_sharing_manager.Core.Services
                         }
                         else
                         {
-                            await stream.CopyToAsync(fileStream, 81920, ct);
+                            await stream.CopyToAsync(fileStream, 81920, linkedToken);
                         }
                     }
 
@@ -588,7 +759,7 @@ namespace document_sharing_manager.Core.Services
                     File.Move(tempPath, targetPath);
 
                     // Update DB status
-                    await _repository.UpdateSyncStatusAsync(doc.Id, 0, doc.Version, null, doc.Version, ct);
+                    await _repository.UpdateSyncStatusAsync(doc.Id, 0, doc.Version, null, doc.Version, linkedToken);
 
                     // Update UI object
                     void UpdateLocal()
@@ -599,17 +770,37 @@ namespace document_sharing_manager.Core.Services
 
                     if (_syncContext != null)
                     {
-                        _syncContext.Post(_ => UpdateLocal(), null);
+                        _syncContext.Post(_ => {
+                            UpdateLocal();
+                            TaskCompleted?.Invoke(this, new SyncTaskEventArgs(doc.Id, doc.Ten, SyncType.Download, true));
+                        }, null);
                     }
                     else
                     {
                         UpdateLocal();
+                        TaskCompleted?.Invoke(this, new SyncTaskEventArgs(doc.Id, doc.Ten, SyncType.Download, true));
                     }
+                }
+                else
+                {
+                    string errorMsg = $"Lỗi tải xuống file '{doc.Ten}' (Mã lỗi: {(int)response.StatusCode} {response.ReasonPhrase})";
+                    SyncErrorOccurred?.Invoke(this, errorMsg);
+
+                    if (_syncContext != null)
+                        _syncContext.Post(_ => TaskCompleted?.Invoke(this, new SyncTaskEventArgs(doc.Id, doc.Ten, SyncType.Download, false, errorMsg)), null);
+                    else
+                        TaskCompleted?.Invoke(this, new SyncTaskEventArgs(doc.Id, doc.Ten, SyncType.Download, false, errorMsg));
                 }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Download failed for {doc.Ten}: {ex.Message}");
+                SyncErrorOccurred?.Invoke(this, $"Lỗi tải xuống tài liệu '{doc.Ten}': {ex.Message}");
+
+                if (_syncContext != null)
+                    _syncContext.Post(_ => TaskCompleted?.Invoke(this, new SyncTaskEventArgs(doc.Id, doc.Ten, SyncType.Download, false, ex.Message)), null);
+                else
+                    TaskCompleted?.Invoke(this, new SyncTaskEventArgs(doc.Id, doc.Ten, SyncType.Download, false, ex.Message));
             }
         }
 

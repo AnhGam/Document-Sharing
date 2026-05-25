@@ -27,7 +27,12 @@ namespace document_sharing_manager.Core.Domain
         private Services.AuthServiceClient? _authClient;
         public Services.AuthServiceClient GetAuthClient()
         {
-            return _authClient ??= new Services.AuthServiceClient(BaseUrl);
+            if (_authClient == null)
+            {
+                _authClient = new Services.AuthServiceClient(BaseUrl);
+                _authClient.AccessToken = AccessToken;
+            }
+            return _authClient;
         }
     }
 }

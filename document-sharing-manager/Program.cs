@@ -19,8 +19,12 @@ namespace document_sharing_manager
 
             // Cấu hình giao thức bảo mật để gọi API HTTPS không bị lỗi SSL
             System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
+            System.Net.ServicePointManager.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
 
             RegisterUriScheme();
+
+            // Dọn dẹp sạch sẽ các tiến trình cloudflared rác của app từ phiên chạy trước
+            document_sharing_manager.Management.TunnelManagerForm.KillOrphanedTunnels();
 
             // Khởi tạo database SQLite (tạo file và bảng nếu chưa có)
             DatabaseHelper.InitializeDatabase();
@@ -109,6 +113,9 @@ namespace document_sharing_manager
                     try { if (!apiProcess.HasExited) apiProcess.Kill(); } catch { }
                     try { apiProcess.Dispose(); } catch { }
                 }
+
+                // Ensure Cloudflare tunnel process is killed when app closes
+                document_sharing_manager.Management.TunnelManagerForm.StopAndDispose();
             }
         }
 

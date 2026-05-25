@@ -156,6 +156,12 @@ namespace document_sharing_manager_api.Controllers
         {
             try
             {
+                if (string.IsNullOrEmpty(document.DuongDan))
+                {
+                    var emptyStream = new MemoryStream();
+                    return File(emptyStream, "application/octet-stream", document.Ten);
+                }
+
                 var stream = await _storageService.GetFileAsync(document.DuongDan, ct);
                 if (!_contentTypeProvider.TryGetContentType(document.DuongDan, out string? contentType))
                 {
@@ -217,7 +223,7 @@ namespace document_sharing_manager_api.Controllers
             if (ghiChu != null) document.GhiChu = ghiChu;
 
             // Handle file stream if provided
-            if (file != null && file.Length > 0)
+            if (file != null)
             {
                 using var stream = file.OpenReadStream();
                 string extension = System.IO.Path.GetExtension(file.FileName)?.TrimStart('.') ?? 
