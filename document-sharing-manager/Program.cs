@@ -17,9 +17,46 @@ namespace document_sharing_manager
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            // Cấu hình giao thức bảo mật để gọi API HTTPS không bị lỗi SSL
+            // Cấu hình giao thức bảo mật để gọi API HTTPS không bị lỗi SSL bảo mật hơn
             System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
-            System.Net.ServicePointManager.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
+            System.Net.ServicePointManager.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) =>
+            {
+                if (sslPolicyErrors == System.Net.Security.SslPolicyErrors.None) return true;
+                
+                string host = null;
+                if (sender is System.Net.HttpWebRequest req)
+                {
+                    host = req.RequestUri.Host;
+                }
+                else if (sender is System.Net.Http.HttpRequestMessage httpReq)
+                {
+                    host = httpReq.RequestUri?.Host;
+                }
+                else if (sender != null)
+                {
+                    try
+                    {
+                        var prop = sender.GetType().GetProperty("RequestUri");
+                        if (prop != null && prop.GetValue(sender) is Uri uri)
+                        {
+                            host = uri.Host;
+                        }
+                    }
+                    catch { }
+                }
+
+                if (host != null)
+                {
+                    if (host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+                        host.Equals("127.0.0.1") ||
+                        host.EndsWith(".lhr.life", StringComparison.OrdinalIgnoreCase) ||
+                        host.EndsWith(".trycloudflare.com", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            };
 
             RegisterUriScheme();
 

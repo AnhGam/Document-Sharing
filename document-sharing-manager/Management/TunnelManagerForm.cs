@@ -134,6 +134,14 @@ namespace document_sharing_manager.Management
             try
             {
                 string tunnelName = txtTunnelName.Text.Trim();
+                if (!string.IsNullOrEmpty(tunnelName) && !System.Text.RegularExpressions.Regex.IsMatch(tunnelName, @"^[a-zA-Z0-9-]+$"))
+                {
+                    Log("Tên Tunnel không hợp lệ. Chỉ chấp nhận chữ cái, số và dấu gạch ngang.");
+                    btnStart.Enabled = true;
+                    btnStart.Text = "Khởi chạy Tunnel";
+                    return;
+                }
+                
                 bool isServeo = string.IsNullOrEmpty(tunnelName);
 
                 _sshProcess = new Process();

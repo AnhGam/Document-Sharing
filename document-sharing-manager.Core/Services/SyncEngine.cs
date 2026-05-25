@@ -332,10 +332,9 @@ namespace document_sharing_manager.Core.Services
                 {
                     // FALLBACK: Nếu refresh token lỗi/hết hạn, tự lấy Token đăng nhập hiện tại của UserSession làm fallback dự phòng.
                     // Điều này vô cùng hiệu quả khi dev chung một backend cục bộ mà bị reset/đổi secret key!
-                    System.Diagnostics.Debug.WriteLine($"Refresh token failed for {server.Name}, trying global UserSession token fallback...");
-                    server.AccessToken = UserSession.AccessToken;
+                    server.AccessToken = UserSession.AccessToken!;
                     // Cập nhật luôn vào DB local để dùng cho các lần sau
-                    DatabaseHelper.UpdateServerTokens(server.Id, UserSession.AccessToken, server.RefreshToken);
+                    DatabaseHelper.UpdateServerTokens(server.Id, UserSession.AccessToken!, server.RefreshToken ?? "");
                     refreshed = true;
                 }
 

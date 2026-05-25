@@ -34,21 +34,20 @@ namespace document_sharing_manager.Core.Http
             long totalBytes = _content.Length;
             long uploadedBytes = 0;
 
-            using (_content)
+            if (_content.CanSeek) _content.Position = 0;
+
+            while (true)
             {
-                while (true)
+                int length = await _content.ReadAsync(buffer, 0, buffer.Length, _cancellationToken);
+                if (length <= 0)
                 {
-                    int length = await _content.ReadAsync(buffer, 0, buffer.Length, _cancellationToken);
-                    if (length <= 0)
-                    {
-                        break;
-                    }
-
-                    uploadedBytes += length;
-                    _progressCallback?.Invoke(uploadedBytes, totalBytes);
-
-                    await stream.WriteAsync(buffer, 0, length, _cancellationToken);
+                    break;
                 }
+
+                uploadedBytes += length;
+                _progressCallback?.Invoke(uploadedBytes, totalBytes);
+
+                await stream.WriteAsync(buffer, 0, length, _cancellationToken);
             }
         }
 

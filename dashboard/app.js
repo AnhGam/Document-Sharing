@@ -250,6 +250,17 @@ document.addEventListener("DOMContentLoaded", () => {
         renderFailedBuilds(latestBuild);
     }
 
+    const escapeHtml = (str) => {
+        if (!str) return "";
+        return str.toString().replace(/[&<>"']/g, (m) => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        }[m]));
+    };
+
     function renderFailedBuilds(build) {
         const aiSection = document.getElementById("ai-analysis-section");
         const aiContainer = document.getElementById("ai-analysis-container");
@@ -267,45 +278,56 @@ document.addEventListener("DOMContentLoaded", () => {
 
         aiContainer.innerHTML = "";
 
-        const shortSha = build.shortSha || (build.commitSha ? build.commitSha.substring(0, 7) : 'N/A');
+        const rawShortSha = build.shortSha || (build.commitSha ? build.commitSha.substring(0, 7) : 'N/A');
+        const shortSha = escapeHtml(rawShortSha);
+        
+        const rawBranch = build.branch || "";
+        const branchEscaped = escapeHtml(formatBranchName(rawBranch));
+
+        const durationEscaped = escapeHtml(build.buildDuration || "0");
+        const commitMsgEscaped = escapeHtml(build.commitMessage || "N/A");
+
         const analysis = build.aiAnalysis || "AI analysis is pending or unavailable for this build failure.";
-            
-            // Format analysis to convert markdown-like backticks to code tags if needed
-            const formattedAnalysis = analysis.replace(/`([^`]+)`/g, '<code style="background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 4px; font-family: var(--font-code); font-size: 0.85em;">$1</code>').replace(/\n/g, '<br>');
+        const escapedAnalysis = escapeHtml(analysis);
+        
+        // Format analysis to convert markdown-like backticks to code tags if needed safely
+        const formattedAnalysis = escapedAnalysis
+            .replace(/`([^`]+)`/g, '<code style="background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 4px; font-family: var(--font-code); font-size: 0.85em;">$1</code>')
+            .replace(/\r?\n/g, '<br>');
 
-            const card = document.createElement("div");
-            card.className = "failure-card shadow-neon";
-            card.style.border = "1px solid rgba(255, 60, 60, 0.3)";
-            card.style.borderRadius = "8px";
-            card.style.padding = "1rem";
-            card.style.background = "var(--bg-card)";
-            card.style.position = "relative";
-            card.style.overflow = "hidden";
+        const card = document.createElement("div");
+        card.className = "failure-card shadow-neon";
+        card.style.border = "1px solid rgba(255, 60, 60, 0.3)";
+        card.style.borderRadius = "8px";
+        card.style.padding = "1rem";
+        card.style.background = "var(--bg-card)";
+        card.style.position = "relative";
+        card.style.overflow = "hidden";
 
-            card.innerHTML = `
-                <div style="position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: #ff1744; box-shadow: 0 0 10px #ff1744;"></div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                    <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem; color: #ff6b6b; font-size: 1.1rem;">
-                        <i data-lucide="alert-triangle" style="width: 18px; height: 18px;"></i>
-                        Build Failed: ${shortSha}
-                    </h3>
-                    <span style="font-size: 0.85rem; color: var(--text-secondary);">${new Date(build.timestamp).toLocaleString()}</span>
+        card.innerHTML = `
+            <div style="position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: #ff1744; box-shadow: 0 0 10px #ff1744;"></div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem; color: #ff6b6b; font-size: 1.1rem;">
+                    <i data-lucide="alert-triangle" style="width: 18px; height: 18px;"></i>
+                    Build Failed: ${shortSha}
+                </h3>
+                <span style="font-size: 0.85rem; color: var(--text-secondary);">${escapeHtml(new Date(build.timestamp).toLocaleString())}</span>
+            </div>
+            <div style="font-size: 0.9rem; margin-bottom: 1rem; color: var(--text-secondary);">
+                <strong>Branch:</strong> <span style="color:var(--text-primary);">${branchEscaped}</span> &nbsp;|&nbsp; 
+                <strong>Duration:</strong> <span style="color:var(--text-primary);">${durationEscaped} min</span> &nbsp;|&nbsp;
+                <strong>Message:</strong> <span style="color:var(--text-primary);">${commitMsgEscaped}</span>
+            </div>
+            <div style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 6px; border-left: 3px solid #00f2fe;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; color: #00f2fe; font-weight: bold; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px;">
+                    <i data-lucide="sparkles" style="width: 14px; height: 14px;"></i> AI Diagnostic
                 </div>
-                <div style="font-size: 0.9rem; margin-bottom: 1rem; color: var(--text-secondary);">
-                    <strong>Branch:</strong> <span style="color:var(--text-primary);">${formatBranchName(build.branch)}</span> &nbsp;|&nbsp; 
-                    <strong>Duration:</strong> <span style="color:var(--text-primary);">${build.buildDuration} min</span> &nbsp;|&nbsp;
-                    <strong>Message:</strong> <span style="color:var(--text-primary);">${build.commitMessage || 'N/A'}</span>
+                <div style="color: var(--text-primary); line-height: 1.6; font-size: 0.95rem;">
+                    ${formattedAnalysis}
                 </div>
-                <div style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 6px; border-left: 3px solid #00f2fe;">
-                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; color: #00f2fe; font-weight: bold; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px;">
-                        <i data-lucide="sparkles" style="width: 14px; height: 14px;"></i> AI Diagnostic
-                    </div>
-                    <div style="color: var(--text-primary); line-height: 1.6; font-size: 0.95rem;">
-                        ${formattedAnalysis}
-                    </div>
-                </div>
-            `;
-            aiContainer.appendChild(card);
+            </div>
+        `;
+        aiContainer.appendChild(card);
         
         if (window.lucide) {
             window.lucide.createIcons();

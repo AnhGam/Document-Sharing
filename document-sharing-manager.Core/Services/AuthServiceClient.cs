@@ -29,8 +29,24 @@ namespace document_sharing_manager.Core.Services
             var handler = new HttpClientHandler 
             { 
                 UseProxy = false,
-                // Bỏ qua xác thực chứng chỉ SSL để kết nối qua các Tunnel luôn thành công
-                ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
+                // Bỏ qua xác thực chứng chỉ SSL cho localhost và các Tunnel đáng tin cậy
+                ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => 
+                {
+                    if (sslPolicyErrors == System.Net.Security.SslPolicyErrors.None) return true;
+                    
+                    var host = sender?.RequestUri?.Host;
+                    if (host != null)
+                    {
+                        if (host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+                            host.Equals("127.0.0.1") ||
+                            host.EndsWith(".lhr.life", StringComparison.OrdinalIgnoreCase) ||
+                            host.EndsWith(".trycloudflare.com", StringComparison.OrdinalIgnoreCase))
+                        {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
             };
             _httpClient = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(60) };
             _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 DocumentSharingManager/1.0");
