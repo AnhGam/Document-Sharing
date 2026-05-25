@@ -23,21 +23,45 @@ namespace document_sharing_manager.Core.Security
 
         public static bool VerifyPassword(string hash, string password)
         {
+            if (string.IsNullOrEmpty(hash))
+            {
+                return false;
+            }
+
             var parts = hash.Split(new[] { '.' }, 3);
-            
             if (parts.Length != 3)
             {
                 return false;
             }
 
-            var iterations = Convert.ToInt32(parts[0]);
-            var salt = Convert.FromBase64String(parts[1]);
-            var key = Convert.FromBase64String(parts[2]);
-
-            using (var algorithm = new Rfc2898DeriveBytes(password, salt, iterations))
+            if (!int.TryParse(parts[0], out var iterations) || iterations <= 0)
             {
-                var keyToCheck = algorithm.GetBytes(KeySize);
-                return FixedTimeEquals(keyToCheck, key);
+                return false;
+            }
+
+            byte[] salt;
+            byte[] key;
+            try
+            {
+                salt = Convert.FromBase64String(parts[1]);
+                key = Convert.FromBase64String(parts[2]);
+            }
+            catch
+            {
+                return false;
+            }
+
+            try
+            {
+                using (var algorithm = new Rfc2898DeriveBytes(password, salt, iterations))
+                {
+                    var keyToCheck = algorithm.GetBytes(KeySize);
+                    return FixedTimeEquals(keyToCheck, key);
+                }
+            }
+            catch
+            {
+                return false;
             }
         }
 

@@ -158,8 +158,7 @@ namespace document_sharing_manager_api.Controllers
             {
                 if (string.IsNullOrEmpty(document.DuongDan))
                 {
-                    var emptyStream = new MemoryStream();
-                    return File(emptyStream, "application/octet-stream", document.Ten);
+                    return File(Array.Empty<byte>(), "application/octet-stream", document.Ten);
                 }
 
                 var stream = await _storageService.GetFileAsync(document.DuongDan, ct);

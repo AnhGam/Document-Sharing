@@ -76,8 +76,24 @@ namespace document_sharing_manager.Core.Services
         {
             var handler = new HttpClientHandler
             {
-                // Bỏ qua xác thực chứng chỉ SSL để đảm bảo kết nối qua các Tunnel luôn thành công
-                ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
+                // Bỏ qua xác thực chứng chỉ SSL cho localhost và các Tunnel đáng tin cậy
+                ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => 
+                {
+                    if (sslPolicyErrors == System.Net.Security.SslPolicyErrors.None) return true;
+                    
+                    var host = sender?.RequestUri?.Host;
+                    if (host != null)
+                    {
+                        if (host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+                            host.Equals("127.0.0.1") ||
+                            host.EndsWith(".lhr.life", StringComparison.OrdinalIgnoreCase) ||
+                            host.EndsWith(".trycloudflare.com", StringComparison.OrdinalIgnoreCase))
+                        {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
             };
 
             _httpClient = new HttpClient(handler);
@@ -556,7 +572,7 @@ namespace document_sharing_manager.Core.Services
                     if (!string.IsNullOrEmpty(doc.Ten)) multipartContent.Add(new StringContent(doc.Ten), "ten");
                     if (doc.GhiChu != null) multipartContent.Add(new StringContent(doc.GhiChu), "ghiChu");
 
-                    var fileStream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, useAsync: true);
+                    var fileStream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, useAsync: true);
                     var fileContent = new document_sharing_manager.Core.Http.ProgressableStreamContent(fileStream, (uploaded, total) => {
                         int percent = total > 0 ? (int)((uploaded * 100) / total) : 0;
                         if (_syncContext != null)
