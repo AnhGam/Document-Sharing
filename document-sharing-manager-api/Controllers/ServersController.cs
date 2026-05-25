@@ -49,10 +49,12 @@ namespace document_sharing_manager_api.Controllers
 
             if (!string.IsNullOrEmpty(requiredPassword) && incomingPassword != requiredPassword)
             {
-                // Bypass password check if the user has an approved JoinRequest (meaning they joined via Invite Link)
+                // Bypass password check if the user has an approved JoinRequest specifically for this server (matching its BaseUrl)
                 bool isApprovedMember = await _context.JoinRequests.AnyAsync(r => 
                     r.UserId == CurrentUserId && 
-                    r.Status == JoinRequestStatus.Approved, ct);
+                    r.Status == JoinRequestStatus.Approved &&
+                    _context.InviteLinks.Any(l => l.Code == r.InviteCode && 
+                        _context.Servers.Any(s => s.UserId == l.CreatedByUserId && s.BaseUrl == server.BaseUrl)), ct);
 
                 if (!isApprovedMember)
                 {

@@ -39,7 +39,8 @@ namespace document_sharing_manager_api.Controllers
         public async Task<ActionResult<IEnumerable<JoinRequest>>> GetPendingRequests(CancellationToken ct)
         {
             var requests = await _context.JoinRequests
-                .Where(r => r.Status == JoinRequestStatus.Pending)
+                .Where(r => r.Status == JoinRequestStatus.Pending && 
+                            _context.InviteLinks.Any(l => l.Code == r.InviteCode && l.CreatedByUserId == CurrentUserId))
                 .OrderByDescending(r => r.CreatedAt)
                 .ToListAsync(ct);
             return Ok(requests);
@@ -51,6 +52,10 @@ namespace document_sharing_manager_api.Controllers
         {
             var req = await _context.JoinRequests.FindAsync(new object[] { id }, ct);
             if (req == null) return NotFound();
+
+            var inviteLink = await _context.InviteLinks.FirstOrDefaultAsync(l => l.Code == req.InviteCode, ct);
+            if (inviteLink == null || inviteLink.CreatedByUserId != CurrentUserId)
+                return StatusCode(403, new { message = "You do not have permission to review this join request." });
 
             if (req.Status != JoinRequestStatus.Pending)
                 return BadRequest(new { message = "Request is already processed." });
@@ -72,6 +77,10 @@ namespace document_sharing_manager_api.Controllers
         {
             var req = await _context.JoinRequests.FindAsync(new object[] { id }, ct);
             if (req == null) return NotFound();
+
+            var inviteLink = await _context.InviteLinks.FirstOrDefaultAsync(l => l.Code == req.InviteCode, ct);
+            if (inviteLink == null || inviteLink.CreatedByUserId != CurrentUserId)
+                return StatusCode(403, new { message = "You do not have permission to review this join request." });
 
             if (req.Status != JoinRequestStatus.Pending)
                 return BadRequest(new { message = "Request is already processed." });
