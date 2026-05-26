@@ -177,9 +177,24 @@ jobs:
             *.md
           retention-days: 7
 
+  deploy:
+    name: Continuous Deployment (Self-Hosted Runner)
+    needs: build-and-test
+    runs-on: self-hosted
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Deploy Local Server Container
+        run: |
+          docker compose down
+          docker compose up -d --build api db
+
+
   notify:
     name: Discord Notification
-    needs: [build-and-test]
+    needs: [build-and-test, deploy]
     runs-on: ubuntu-latest
     if: always()
     steps:

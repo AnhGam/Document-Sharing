@@ -14,6 +14,7 @@ namespace document_sharing_manager.Core.Domain
         public int UserId { get; set; }
         public string DisplayName { get; set; } = string.Empty;
         public string InviteCode { get; set; } = string.Empty;
+        public int? ServerId { get; set; }
         public JoinRequestStatus Status { get; set; }
         public int? ReviewedByUserId { get; set; }
         public DateTime? ReviewedAt { get; set; }

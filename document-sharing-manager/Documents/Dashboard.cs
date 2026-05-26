@@ -269,19 +269,15 @@ namespace document_sharing_manager.Documents
             toolBtnLogout.Click += async (s, e) => await HandleLogoutAsync();
             toolStrip.Items.Add(toolBtnLogout);
 
-            // Add Local Server Management Dropdown to ToolStrip
-            var toolBtnServer = new ToolStripDropDownButton("Máy chủ Local")
+            // Add Sharing Channel Management Dropdown to ToolStrip
+            var toolBtnServer = new ToolStripDropDownButton("Kênh Chia sẻ")
             {
                 Image = IconHelper.CreateRoleIcon(16, AppTheme.Primary),
                 DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
                 Alignment = ToolStripItemAlignment.Right
             };
 
-            var mnuTunnel = new ToolStripMenuItem("Mở kết nối Internet (Tunnel)");
-            mnuTunnel.Click += (s, e) => { Management.TunnelManagerForm.ShowInstance(); };
-            toolBtnServer.DropDownItems.Add(mnuTunnel);
-
-            var mnuInvite = new ToolStripMenuItem("Quản lý Link Mời");
+            var mnuInvite = new ToolStripMenuItem("Quản lý Link Mời Kênh");
             mnuInvite.Click += (s, e) => 
             {
                 using var frm = new Management.InviteManagementForm(_authServiceClient, _authServiceClient.BaseUrl);
@@ -289,7 +285,7 @@ namespace document_sharing_manager.Documents
             };
             toolBtnServer.DropDownItems.Add(mnuInvite);
 
-            var mnuRequest = new ToolStripMenuItem("Yêu cầu tham gia");
+            var mnuRequest = new ToolStripMenuItem("Yêu cầu tham gia Kênh");
             mnuRequest.Click += (s, e) => 
             {
                 using var frm = new Management.JoinRequestsForm(_authServiceClient);
@@ -1559,10 +1555,6 @@ namespace document_sharing_manager.Documents
                 }
             });
 
-            var tunnelItem = new ToolStripMenuItem("Mở kết nối Internet (Tunnel)", null, (s, e) =>
-                Management.TunnelManagerForm.ShowInstance());
-
-            menu.Items.Add(tunnelItem);
             menu.Items.Add(inviteItem);
             menu.Items.Add(requestsItem);
             menu.Items.Add(auditItem);
@@ -1624,8 +1616,8 @@ namespace document_sharing_manager.Documents
             }
             catch { }
 
-            // Servers (header) - NEW
-            var nodeServers = treeCategory.Nodes.Add("servers", "Máy chủ đã tham gia");
+            // Servers (header) - NEW (Repurposed as Channels)
+            var nodeServers = treeCategory.Nodes.Add("servers", "Kênh chia sẻ");
             nodeServers.Tag = new TreeFilterInfo("header", null);
             try
             {
@@ -1640,7 +1632,7 @@ namespace document_sharing_manager.Documents
             }
             catch { }
 
-            var nodeJoin = nodeServers.Nodes.Add("join", "(+) Kết nối Server mới...");
+            var nodeJoin = nodeServers.Nodes.Add("join", "(+) Tham gia Kênh mới...");
             nodeJoin.Tag = new TreeFilterInfo("join", null);
             nodeJoin.NodeFont = new Font(treeCategory.Font, FontStyle.Italic);
             nodeJoin.ForeColor = AppTheme.Primary;

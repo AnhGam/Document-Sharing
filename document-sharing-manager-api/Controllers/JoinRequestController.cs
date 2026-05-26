@@ -64,6 +64,29 @@ namespace document_sharing_manager_api.Controllers
             req.ReviewedByUserId = CurrentUserId;
             req.ReviewedAt = System.DateTime.UtcNow;
 
+            // Đăng ký thành viên vào Kênh chia sẻ (tạo dòng trong bảng Servers cho User vừa được duyệt)
+            if (inviteLink.ServerId.HasValue)
+            {
+                var targetChannel = await _context.Servers.FirstOrDefaultAsync(s => s.Id == inviteLink.ServerId.Value, ct);
+                if (targetChannel != null)
+                {
+                    bool alreadyMember = await _context.Servers.AnyAsync(s => s.UserId == req.UserId && s.BaseUrl == targetChannel.BaseUrl, ct);
+                    if (!alreadyMember)
+                    {
+                        var membership = new ManagedServer
+                        {
+                            Name = targetChannel.Name,
+                            BaseUrl = targetChannel.BaseUrl,
+                            ServerPassword = targetChannel.ServerPassword,
+                            UserId = req.UserId, // ID của user tham gia (được duyệt)
+                            IsActive = true,
+                            ConnectionStatus = 0
+                        };
+                        _context.Servers.Add(membership);
+                    }
+                }
+            }
+
             await _context.SaveChangesAsync(ct);
 
             await _auditService.LogAsync(CurrentUserId, CurrentUserName, "ApproveJoin", "JoinRequest", id.ToString(), $"Approved user: {req.DisplayName}", HttpContext.Connection.RemoteIpAddress?.ToString() ?? "", ct);

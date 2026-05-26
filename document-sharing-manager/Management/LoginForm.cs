@@ -94,9 +94,8 @@ namespace document_sharing_manager.Management
                 AutoSize = true,
                 Font = new Font(AppTheme.FontFamily, 9F)
             };
-            lnkRegister.LinkClicked += (s, e) => 
+            lnkRegister.LinkClicked += async (s, ev) => 
             {
-                var localAuth = new document_sharing_manager.Core.Services.LocalAuthService();
                 string user = txtUsername.Text.Trim();
                 string pass = txtPassword.Text;
 
@@ -107,19 +106,22 @@ namespace document_sharing_manager.Management
                     return;
                 }
 
-                if (localAuth.RegisterLocal(user, pass, user, ""))
-                {
-                    // Đăng ký luôn trên API server cho đồng bộ
-                    _ = _authClient.RegisterAsync(user, pass, $"{user}@local.test").ContinueWith(t => { });
+                lblStatus.Text = "Đang đăng ký...";
+                lblStatus.ForeColor = AppTheme.StatusInfo;
+                lnkRegister.Enabled = false;
 
+                bool regSuccess = await _authClient.RegisterAsync(user, pass, $"{user}@domain.com");
+                if (regSuccess)
+                {
                     lblStatus.Text = "Đăng ký thành công! Bấm Đăng nhập.";
                     lblStatus.ForeColor = AppTheme.StatusInfo;
                 }
                 else
                 {
-                    lblStatus.Text = "Đăng ký thất bại (Tên đã tồn tại).";
+                    lblStatus.Text = _authClient.LastError ?? "Đăng ký thất bại (Username đã tồn tại).";
                     lblStatus.ForeColor = AppTheme.StatusError;
                 }
+                lnkRegister.Enabled = true;
             };
 
             this.Controls.AddRange(new Control[] { lblTitle, lblUser, txtUsername, lblPass, txtPassword, lblStatus, btnLogin, lnkRegister });
@@ -143,42 +145,46 @@ namespace document_sharing_manager.Management
             lblStatus.Text = "Đang xác thực...";
             lblStatus.ForeColor = AppTheme.StatusInfo;
 
-            var localAuth = new document_sharing_manager.Core.Services.LocalAuthService();
-            var result = localAuth.LoginLocal(user, pass);
+            // 1. Xác thực trực tiếp trên Server API trung tâm
+            bool apiSuccess = await _authClient.LoginAsync(user, pass);
             
-            if (result.Success)
+            if (apiSuccess)
             {
-                // Lấy JWT Token từ API Server để thực hiện gọi API (như Tạo Link)
-                bool apiSuccess = await _authClient.LoginAsync(user, pass);
-                if (!apiSuccess)
-                {
-                    // Tự động đăng ký trên API server nếu chưa có (ví dụ: host cũ đã có SQLite nhưng chưa có trên Postgres)
-                    bool regSuccess = await _authClient.RegisterAsync(user, pass, $"{user}@local.test");
-                    if (regSuccess)
-                    {
-                        apiSuccess = await _authClient.LoginAsync(user, pass);
-                    }
-                    
-                    if (!apiSuccess)
-                    {
-                        lblStatus.Text = "Lỗi cấp Token. Server API chưa sẵn sàng.";
-                        lblStatus.ForeColor = AppTheme.StatusError;
-                        btnLogin.Enabled = true;
-                        return;
-                    }
-                }
-
-                document_sharing_manager.Core.Data.UserSession.CurrentUserId = result.UserId;
-                document_sharing_manager.Core.Data.UserSession.Username = user;
+                // Khi đăng nhập thành công, các thông tin UserSession đã được tự động điền trong AuthServiceClient
                 
-                // Reset and Initialize DB for the specific user
+                // 2. Khởi tạo/Kết nối tới CSDL SQLite cục bộ dành riêng cho User này
                 DatabaseHelper.ResetConnection();
                 DatabaseHelper.InitializeDatabase();
 
+                // 3. Đảm bảo bản ghi tài khoản tồn tại trong CSDL SQLite cục bộ để đồng bộ hóa
+                try
+                {
+                    string checkQuery = "SELECT COUNT(*) FROM tai_khoan WHERE id = @id";
+                    var checkRes = DatabaseHelper.ExecuteScalar(checkQuery, [new System.Data.SQLite.SQLiteParameter("@id", UserSession.CurrentUserId)]);
+                    if (Convert.ToInt32(checkRes) == 0)
+                    {
+                        string insertQuery = "INSERT INTO tai_khoan (id, ten_dang_nhap, mat_khau, ho_ten) VALUES (@id, @username, @password, @username)";
+                        DatabaseHelper.ExecuteNonQuery(insertQuery, [
+                            new System.Data.SQLite.SQLiteParameter("@id", UserSession.CurrentUserId),
+                            new System.Data.SQLite.SQLiteParameter("@username", UserSession.Username),
+                            new System.Data.SQLite.SQLiteParameter("@password", "central_auth") // Mật khẩu quản lý tập trung trên Server
+                        ]);
+                    }
+                }
+                catch { }
+
                 LoggedIn = true;
-                
-                // Note: We don't fetch joined servers from the API anymore because this is purely local!
-                // The joined servers are ALREADY inside this user's specific document_sharing_{UserId}.db.
+
+                // 4. Tự động tải về danh sách các Kênh chia sẻ mà User này đã tham gia từ Server
+                try
+                {
+                    var joinedServers = await _authClient.FetchJoinedServersAsync();
+                    foreach (var srv in joinedServers)
+                    {
+                        DatabaseHelper.InsertServer(srv.Name, srv.BaseUrl, accessToken: UserSession.AccessToken ?? "", remoteId: srv.Id);
+                    }
+                }
+                catch { }
 
                 this.DialogResult = DialogResult.OK;
                 this.Close();

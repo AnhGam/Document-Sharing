@@ -50,6 +50,12 @@ namespace document_sharing_manager.Core.Services
             };
             _httpClient = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(60) };
             _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 DocumentSharingManager/1.0");
+
+            string secretHeader = EnvReader.GetValue("API_SECRET_HEADER");
+            if (!string.IsNullOrEmpty(secretHeader))
+            {
+                _httpClient.DefaultRequestHeaders.Add("X-App-Secret", secretHeader);
+            }
         }
 
         public void UpdateBaseUrl(string baseUrl)
