@@ -62,6 +62,43 @@ try {
     $gitHistory = (git log -n 5 --oneline) -join "`n"
 } catch {}
 
+# Capture full contents of modified source files for deep context
+$modifiedFilesContent = ""
+try {
+    $modifiedFiles = @()
+    if ($CommitSha) {
+        $modifiedFiles = (git show --pretty="" --name-only $CommitSha)
+    }
+    if ($modifiedFiles.Count -eq 0 -or -not $modifiedFiles) {
+        $modifiedFiles = (git show --pretty="" --name-only HEAD)
+    }
+    
+    $textExtensions = @(".cs", ".js", ".html", ".css", ".yml", ".json", ".sql", ".txt", ".md", ".ini", ".xml", ".ps1")
+    foreach ($file in $modifiedFiles) {
+        $trimmedFile = $file.Trim()
+        if ([string]::IsNullOrWhiteSpace($trimmedFile)) { continue }
+        if (Test-Path $trimmedFile) {
+            $ext = [System.IO.Path]::GetExtension($trimmedFile).ToLower()
+            if ($textExtensions -contains $ext) {
+                $size = (Get-Item $trimmedFile).Length
+                if ($size -lt 100000) {
+                    $fileContent = Get-Content $trimmedFile -Raw -ErrorAction SilentlyContinue
+                    if ($fileContent) {
+                        $modifiedFilesContent += "=== FULL FILE CONTENT: $trimmedFile ===`n$fileContent`n`n"
+                        Write-Host "Captured full file content: $trimmedFile"
+                    }
+                }
+            }
+        }
+    }
+} catch {
+    Write-Host "WARNING: Failed to capture modified files content: $_"
+}
+
+if ([string]::IsNullOrWhiteSpace($modifiedFilesContent)) {
+    $modifiedFilesContent = "No full source file contents available."
+}
+
 # Truncate gitDiff to avoid too large payload (max 15,000 chars)
 if ($gitDiff.Length -gt 15000) {
     $gitDiff = $gitDiff.Substring(0, 15000) + "`n... (diff truncated to fit context limits)"
@@ -160,6 +197,9 @@ $gitChanges
 FULL CODE DIFF (GIT PATCH):
 $gitDiff
 
+ACTUAL FULL CONTENT OF MODIFIED FILES:
+$modifiedFilesContent
+
 BUILD CONTEXT:
 - Commit: $shortSha
 - Branch: $Branch
@@ -170,24 +210,30 @@ BUILD CONTEXT:
 BUILD LOGS, COMPILER OUTPUT, TEST RUNS AND REPORTS:
 $buildLogs
 
-Based on the actual code changes (GIT PATCH and GIT STAT above) and the compiler/test execution console logs:
-1. Explain what functional or structural changes this commit introduced to the codebase. Review the actual code lines modified in the GIT PATCH.
-2. Provide a highly specific analysis of this commit rather than a generic template. 
-3. If there are any compiler warnings, errors, or failed test stack traces in the logs, perform a deep diagnostic of them.
-4. Identify potential risks, impact, or recommendations specific to the modified code files (e.g. database connections, security, UI design, resource leakages, etc.).
+Based on the actual code changes (GIT PATCH, GIT STAT, and ACTUAL FULL CONTENT OF MODIFIED FILES above) and the compiler/test execution console logs:
+1. Explain what functional or structural changes this commit introduced to the codebase. Review the actual code lines modified in the GIT PATCH and understand their context within the modified files.
+2. Provide an extremely detailed, highly specific, line-by-line engineering review of this commit. Do not use generic templates or empty general statements. Mention specific class names, function names, and variable names modified.
+3. If there are any compiler warnings, errors, or failed test stack traces in the logs, perform a deep diagnostic of them. If the build succeeded with zero warnings, explicitly highlight this achievement.
+4. Perform a rigorous, deep code design and architectural review of the modified code files:
+   - Identify potential design flaws, code smells, or style issues.
+   - Scan for resource leakages (e.g., disposable WinForms controls, Pen/Brush/Font objects, SQL commands/connections, streams not enclosed in 'using' blocks).
+   - Check thread safety, especially since WinForms UI controls can only be updated from the main UI thread.
+   - Assess error handling (e.g. catch blocks that swallow exceptions silently, lack of validation).
+5. Give highly concrete, copy-pasteable refactored code snippets showing exactly how to improve the code.
 
 Provide a structured analysis with these sections:
-1. **Build Summary** - One-line verdict explaining what this build achieved or why it failed, referencing the actual feature implemented or bug fixed.
-2. **Key Findings & Code Review** - Detailed technical review of the specific code changes in the GIT PATCH and compiler warnings/errors (use bullet points, link to the modified areas if applicable).
-3. **Test Results & Diagnostics** - Summary of test execution and deep debugging of any failed tests.
-4. **Security Posture** - Assessment based on audit data.
-5. **Performance & Capacity** - Build duration, footprint impact (installer/repo size changes).
-6. **Recommendations** - 3 actionable next steps specific to the code changed in this commit.
+1. **Build Summary** - A detailed build verdict explaining what this build achieved (the feature implemented or bug fixed) and the overall build quality.
+2. **Line-by-Line Code Review & Key Findings** - A deep technical, line-by-line review of the specific code changes using code snippets where relevant. Do not hold back on details.
+3. **WinForms UI & System Architecture Review** - Evaluation of UI design, resource leakages, layout, and background task safety.
+4. **Test Results & Diagnostics** - Summary of test execution, and deep debugging of any failed tests.
+5. **Security & Supply Chain Posture** - Assessment based on audit data.
+6. **Performance, Capacity & Footprint** - Build duration, installer size, and repository size impact.
+7. **Actionable Recommendations** - At least 3 extremely specific, concrete, code-level actionable recommendations with code examples.
 
 FORMAT RULES:
 - Use plain ASCII text only. No emoji, no unicode symbols, no special characters.
 - Use proper markdown formatting (headers ##, tables, bold **text**, code blocks).
-- Keep total response under 600 words.
+- Be incredibly comprehensive and detailed. Do NOT limit your word count. Spend as many words as necessary to give a professional, world-class code review.
 "@
 
 $body = @{
@@ -196,7 +242,7 @@ $body = @{
         @{ role = "user"; content = $prompt }
     )
     temperature = 0.4
-    max_tokens = 1200
+    max_tokens = 5000
 } | ConvertTo-Json -Depth 5
 
 try {
