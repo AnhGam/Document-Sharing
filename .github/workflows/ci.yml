@@ -124,14 +124,10 @@ jobs:
         run: |
           $startTime = [long]${{ steps.start_time.outputs.ts }}
           $now = [DateTimeOffset]::Now.ToUnixTimeSeconds()
-          $durationSeconds = $now - $startTime
+          $durationSeconds = [int]($now - $startTime)
           if ($durationSeconds -lt 0) { $durationSeconds = 0 }
           
-          # Convert to minutes and round to 2 decimal places for DORA duration
-          $durationMinutes = [Math]::Round($durationSeconds / 60, 2)
-          if ($durationMinutes -lt 0.01) { $durationMinutes = 0.01 }
-          
-          ./scripts/capacity-governance.ps1 -MaxInstallerSizeMB 50 -MaxRepoSizeMB 500 -BuildDurationSeconds $durationMinutes
+          ./scripts/capacity-governance.ps1 -MaxInstallerSizeMB 50 -MaxRepoSizeMB 500 -BuildDurationSeconds $durationSeconds
 
       - name: Publish Capacity Report
         if: always()
