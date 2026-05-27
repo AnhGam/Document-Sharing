@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document Sharing Manager | CI/CD Observability Dashboard</title>
+    <meta name="description" content="Real-time CI/CD observability dashboard for Document Sharing Manager — DORA metrics, capacity governance, server health monitoring, and AI-powered build analysis.">
     <!-- Google Fonts: Plus Jakarta Sans & Space Grotesk -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -31,13 +32,15 @@
                     <i data-lucide="layout-dashboard"></i>
                     <span>Dashboard</span>
                 </a>
-                <a href="https://github.com/AnhGam/Study-Document-Management" target="_blank" class="nav-item">
+                <a href="https://github.com/AnhGam/Study-Document-Management" target="_blank" rel="noopener noreferrer" class="nav-item" id="nav-repository" onclick="return handleExternalLink(this)">
                     <i data-lucide="github"></i>
                     <span>Repository</span>
+                    <i data-lucide="external-link" style="width:12px;height:12px;margin-left:auto;opacity:0.5;"></i>
                 </a>
-                <a href="https://github.com/AnhGam/Study-Document-Management/actions" target="_blank" class="nav-item">
+                <a href="https://github.com/AnhGam/Study-Document-Management/actions" target="_blank" rel="noopener noreferrer" class="nav-item" id="nav-actions" onclick="return handleExternalLink(this)">
                     <i data-lucide="activity"></i>
                     <span>GitHub Actions</span>
+                    <i data-lucide="external-link" style="width:12px;height:12px;margin-left:auto;opacity:0.5;"></i>
                 </a>
             </nav>
 
@@ -153,6 +156,117 @@
                     </div>
                     <div class="card-footer">
                         <span id="metric-repo-sub">Limit: 500.0 MB</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Server Health Monitoring Section -->
+            <section class="server-health-section" id="server-health-section">
+                <div class="section-header">
+                    <div class="section-title-group">
+                        <h2><i data-lucide="server" class="panel-icon"></i> Server Health Monitor</h2>
+                        <span class="badge server-status-badge" id="server-status-badge">
+                            <span class="server-beacon"></span> Connecting...
+                        </span>
+                    </div>
+                    <div class="server-uptime" id="server-uptime">
+                        <i data-lucide="clock" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i>
+                        <span id="server-uptime-text">Uptime: --</span>
+                    </div>
+                </div>
+
+                <div class="server-metrics-grid">
+                    <!-- CPU -->
+                    <div class="server-card shadow-neon" id="server-card-cpu">
+                        <div class="server-card-header">
+                            <div class="server-card-icon cpu-icon"><i data-lucide="cpu"></i></div>
+                            <span class="server-card-title">CPU</span>
+                        </div>
+                        <div class="server-card-body">
+                            <div class="gauge-container">
+                                <canvas id="gauge-cpu" width="120" height="120"></canvas>
+                                <div class="gauge-value" id="gauge-cpu-value">--%</div>
+                            </div>
+                            <div class="server-card-detail" id="cpu-detail">-- cores</div>
+                        </div>
+                    </div>
+
+                    <!-- Memory -->
+                    <div class="server-card shadow-neon" id="server-card-memory">
+                        <div class="server-card-header">
+                            <div class="server-card-icon mem-icon"><i data-lucide="memory-stick"></i></div>
+                            <span class="server-card-title">Memory</span>
+                        </div>
+                        <div class="server-card-body">
+                            <div class="gauge-container">
+                                <canvas id="gauge-memory" width="120" height="120"></canvas>
+                                <div class="gauge-value" id="gauge-memory-value">--%</div>
+                            </div>
+                            <div class="server-card-detail" id="memory-detail">-- / -- MB</div>
+                        </div>
+                    </div>
+
+                    <!-- Disk -->
+                    <div class="server-card shadow-neon" id="server-card-disk">
+                        <div class="server-card-header">
+                            <div class="server-card-icon disk-icon"><i data-lucide="hard-drive"></i></div>
+                            <span class="server-card-title">Disk</span>
+                        </div>
+                        <div class="server-card-body">
+                            <div class="gauge-container">
+                                <canvas id="gauge-disk" width="120" height="120"></canvas>
+                                <div class="gauge-value" id="gauge-disk-value">--%</div>
+                            </div>
+                            <div class="server-card-detail" id="disk-detail">-- / -- GB</div>
+                        </div>
+                    </div>
+
+                    <!-- Network -->
+                    <div class="server-card shadow-neon" id="server-card-network">
+                        <div class="server-card-header">
+                            <div class="server-card-icon net-icon"><i data-lucide="wifi"></i></div>
+                            <span class="server-card-title">Network</span>
+                        </div>
+                        <div class="server-card-body">
+                            <div class="network-stats">
+                                <div class="net-stat">
+                                    <span class="net-label">Host</span>
+                                    <span class="net-value" id="net-hostname">--</span>
+                                </div>
+                                <div class="net-stat">
+                                    <span class="net-label">IP</span>
+                                    <span class="net-value" id="net-ip">--</span>
+                                </div>
+                                <div class="net-stat">
+                                    <span class="net-label">OS</span>
+                                    <span class="net-value" id="net-os">--</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Docker Containers -->
+                <div class="docker-section shadow-neon" id="docker-section">
+                    <div class="docker-header">
+                        <h3><i data-lucide="container" style="width:16px;height:16px;vertical-align:middle;margin-right:6px;color:var(--color-cyan);"></i> Docker Containers</h3>
+                        <span class="badge" id="container-count">0 containers</span>
+                    </div>
+                    <div class="docker-table-wrap">
+                        <table class="docker-table">
+                            <thead>
+                                <tr>
+                                    <th>Container</th>
+                                    <th>CPU</th>
+                                    <th>Memory</th>
+                                    <th>Net I/O</th>
+                                    <th>PIDs</th>
+                                </tr>
+                            </thead>
+                            <tbody id="docker-table-body">
+                                <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px;">Waiting for server data...</td></tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </section>
