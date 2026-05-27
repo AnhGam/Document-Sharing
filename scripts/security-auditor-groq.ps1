@@ -57,6 +57,11 @@ try {
     Write-Host "Security Auditor: Captured full NuGet dependency inventory successfully."
 } catch {}
 
+# Truncate dependency list to avoid token limit issues (max 4000 characters)
+if ($dependencyList.Length -gt 4000) {
+    $dependencyList = $dependencyList.Substring(0, 4000) + "`n... (dependency inventory truncated to fit security context)"
+}
+
 # Capture full contents of modified source files for deep security context
 $modifiedFilesContent = ""
 try {
@@ -76,6 +81,10 @@ try {
                 if ($size -lt 100000) {
                     $fileContent = Get-Content $trimmedFile -Raw -ErrorAction SilentlyContinue
                     if ($fileContent) {
+                        # Cap individual file content to 4000 characters to prevent exceeding TPM limits
+                        if ($fileContent.Length -gt 4000) {
+                            $fileContent = $fileContent.Substring(0, 4000) + "`n... (file content truncated to fit security context)"
+                        }
                         $modifiedFilesContent += "=== FULL FILE CONTENT: $trimmedFile ===`n$fileContent`n`n"
                         Write-Host "Security Auditor: Captured full file content: $trimmedFile"
                     }
@@ -87,13 +96,18 @@ try {
     Write-Host "WARNING: Failed to capture modified files in security auditor: $_"
 }
 
+# Capping total modified files content to 8000 characters globally to avoid Groq TPM limits
+if ($modifiedFilesContent.Length -gt 8000) {
+    $modifiedFilesContent = $modifiedFilesContent.Substring(0, 8000) + "`n`n... (additional modified files truncated to stay within rate limits)"
+}
+
 if ([string]::IsNullOrWhiteSpace($modifiedFilesContent)) {
     $modifiedFilesContent = "No full source file contents available."
 }
 
-# Truncate diff to avoid token limit issues (max 15,000 characters)
-if ($gitDiff.Length -gt 15000) {
-    $gitDiff = $gitDiff.Substring(0, 15000) + "`n... (diff truncated to fit security context)"
+# Truncate diff to avoid token limit issues (max 6000 characters)
+if ($gitDiff.Length -gt 6000) {
+    $gitDiff = $gitDiff.Substring(0, 6000) + "`n... (diff truncated to fit security context)"
 }
 
 # Determine if there are vulnerable packages

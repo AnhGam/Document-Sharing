@@ -84,6 +84,10 @@ try {
                 if ($size -lt 100000) {
                     $fileContent = Get-Content $trimmedFile -Raw -ErrorAction SilentlyContinue
                     if ($fileContent) {
+                        # Cap individual file content to 4000 characters to prevent exceeding TPM limits
+                        if ($fileContent.Length -gt 4000) {
+                            $fileContent = $fileContent.Substring(0, 4000) + "`n... (file content truncated to fit rate limit context)"
+                        }
                         $modifiedFilesContent += "=== FULL FILE CONTENT: $trimmedFile ===`n$fileContent`n`n"
                         Write-Host "Captured full file content: $trimmedFile"
                     }
@@ -95,13 +99,18 @@ try {
     Write-Host "WARNING: Failed to capture modified files content: $_"
 }
 
+# Capping total modified files content to 8000 characters globally to avoid Groq TPM limits
+if ($modifiedFilesContent.Length -gt 8000) {
+    $modifiedFilesContent = $modifiedFilesContent.Substring(0, 8000) + "`n`n... (additional modified files truncated to stay within rate limits)"
+}
+
 if ([string]::IsNullOrWhiteSpace($modifiedFilesContent)) {
     $modifiedFilesContent = "No full source file contents available."
 }
 
-# Truncate gitDiff to avoid too large payload (max 15,000 chars)
-if ($gitDiff.Length -gt 15000) {
-    $gitDiff = $gitDiff.Substring(0, 15000) + "`n... (diff truncated to fit context limits)"
+# Truncate gitDiff to avoid too large payload (max 6000 chars to avoid TPM limits)
+if ($gitDiff.Length -gt 6000) {
+    $gitDiff = $gitDiff.Substring(0, 6000) + "`n... (diff truncated to fit context limits)"
 }
 
 # Collect build context
@@ -114,8 +123,8 @@ $logSources = @()
 if (Test-Path "build_output.txt") {
     $buildOutput = Get-Content "build_output.txt" -Raw -ErrorAction SilentlyContinue
     if ($buildOutput) {
-        if ($buildOutput.Length -gt 8000) {
-            $buildOutput = $buildOutput.Substring(0, 4000) + "`n`n... [TRUNCATED MIDDLE MSBUILD LOGS] ...`n`n" + $buildOutput.Substring($buildOutput.Length - 4000)
+        if ($buildOutput.Length -gt 3000) {
+            $buildOutput = $buildOutput.Substring(0, 1500) + "`n`n... [TRUNCATED MIDDLE MSBUILD LOGS] ...`n`n" + $buildOutput.Substring($buildOutput.Length - 1500)
         }
         $logSources += "--- MSBuild Compile Console Log ---`n$buildOutput"
     }
@@ -125,8 +134,8 @@ if (Test-Path "build_output.txt") {
 if (Test-Path "test_output.txt") {
     $testOutput = Get-Content "test_output.txt" -Raw -ErrorAction SilentlyContinue
     if ($testOutput) {
-        if ($testOutput.Length -gt 8000) {
-            $testOutput = $testOutput.Substring(0, 4000) + "`n`n... [TRUNCATED MIDDLE TEST LOGS] ...`n`n" + $testOutput.Substring($testOutput.Length - 4000)
+        if ($testOutput.Length -gt 3000) {
+            $testOutput = $testOutput.Substring(0, 1500) + "`n`n... [TRUNCATED MIDDLE TEST LOGS] ...`n`n" + $testOutput.Substring($testOutput.Length - 1500)
         }
         $logSources += "--- NUnit Test Console Log ---`n$testOutput"
     }
@@ -173,9 +182,9 @@ if (Test-Path "security_audit_summary.md") {
 
 $buildLogs = $logSources -join "`n`n"
 
-# Truncate to avoid token limits (allowing up to 35,000 characters for rich logs)
-if ($buildLogs.Length -gt 35000) {
-    $buildLogs = $buildLogs.Substring(0, 35000) + "`n... (build logs truncated to fit context limits)"
+# Truncate to avoid token limits (allowing up to 6000 characters for build logs to avoid TPM limits)
+if ($buildLogs.Length -gt 6000) {
+    $buildLogs = $buildLogs.Substring(0, 6000) + "`n... (build logs truncated to fit context limits)"
 }
 
 # If no logs collected at all, still produce a useful analysis
