@@ -35,6 +35,23 @@ Configure it in your repository settings to enable AI-powered build insights.
 
 Write-Host "--- AI Build Log Analysis (Groq Llama 3) ---"
 
+# Capture actual git code changes details
+$gitChanges = "No git diff statistics available."
+if ($CommitSha) {
+    try {
+        $gitChanges = (git show --stat --oneline $CommitSha) -join "`n"
+        Write-Host "Successfully captured git show statistics for commit: $CommitSha"
+    } catch {
+        Write-Host "WARNING: Failed to capture git show stat: $_"
+    }
+}
+if ([string]::IsNullOrWhiteSpace($gitChanges) -or $gitChanges -eq "No git diff statistics available.") {
+    try {
+        $gitChanges = (git show --stat --oneline HEAD) -join "`n"
+        Write-Host "Successfully captured git show statistics for HEAD as fallback."
+    } catch {}
+}
+
 # Collect build context
 $buildLogs = ""
 
@@ -95,7 +112,10 @@ if ([string]::IsNullOrWhiteSpace($buildLogs)) {
 $shortSha = if ($CommitSha.Length -ge 7) { $CommitSha.Substring(0, 7) } else { $CommitSha }
 
 $prompt = @"
-You are a DevOps/CI expert. Analyze this CI/CD build for a .NET WinForms project called "Document Sharing Manager".
+You are a DevOps/CI/Software Engineering expert. Analyze this CI/CD build for a .NET WinForms project called "Document Sharing Manager".
+
+COMMIT DETAILS & CODE CHANGES (GIT STAT):
+$gitChanges
 
 BUILD CONTEXT:
 - Commit: $shortSha
@@ -107,18 +127,22 @@ BUILD CONTEXT:
 BUILD LOGS AND REPORTS:
 $buildLogs
 
+Based on the actual code files that were added, modified, or deleted in this commit (shown in the GIT STAT above) and the build logs:
+- Explain what functional or structural changes this commit introduced to the codebase.
+- Provide a highly specific analysis of this commit rather than a generic template.
+- Identify any potential risks, impact, or recommendations specific to the modified code files (e.g. database, security, UI, etc.).
+
 Provide a structured analysis with these sections:
-1. **Build Summary** - One-line verdict
-2. **Key Findings** - Notable issues, warnings, or improvements (use bullet points)
-3. **Test Results** - Summary of test execution if available
-4. **Security Posture** - Brief assessment based on audit data
-5. **Performance Notes** - Build duration, capacity observations
-6. **Recommendations** - Actionable next steps (max 3 items)
+1. **Build Summary** - One-line verdict explaining what this build achieved or why it failed, referencing the actual feature implemented or bug fixed.
+2. **Key Findings** - Technical analysis of the specific code changes and reports (use bullet points, link to the modified areas if applicable).
+3. **Test Results** - Summary of test execution if available.
+4. **Security Posture** - Assessment based on audit data.
+5. **Performance & Capacity** - Build duration, footprint impact (installer/repo size changes).
+6. **Recommendations** - 3 actionable next steps specific to the code changed in this commit.
 
 FORMAT RULES:
 - Use plain ASCII text only. No emoji, no unicode symbols, no special characters.
 - Use proper markdown formatting (headers ##, tables, bold **text**, code blocks).
-- Be specific to THIS commit and build. Do not give generic advice.
 - Keep total response under 500 words.
 "@
 
