@@ -1,8 +1,14 @@
+name: CI/CD Pipeline
+
 on:
   push:
     branches: [main, master, development]
   pull_request:
     branches: [main, master, development]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   SOLUTION_FILE: document-sharing-manager.sln
@@ -52,6 +58,14 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.sln') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
 
       - name: Restore and Optimize Assets
         run: |
@@ -150,12 +164,13 @@ jobs:
           AI_BRANCH: ${{ github.head_ref || github.ref_name }}
           AI_COMMIT_MESSAGE: ${{ github.event.head_commit.message || 'No commit message' }}
         run: |
-          powershell ./scripts/ai-log-analyzer-groq.ps1 `
+          ./scripts/ai-log-analyzer-groq.ps1 `
             -ApiKey "$env:GROQ_API_KEY" `
             -BuildStatus "$env:AI_BUILD_STATUS" `
             -CommitSha "$env:AI_COMMIT_SHA" `
             -Branch "$env:AI_BRANCH" `
             -CommitMessage "$env:AI_COMMIT_MESSAGE"
+
 
       - name: Archive Build Reports (GitOps)
         if: always() && (github.event_name == 'push' || github.event_name == 'pull_request')

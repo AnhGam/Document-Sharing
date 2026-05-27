@@ -69,8 +69,8 @@ services:
     restart: always
     command: tunnel --no-autoupdate run --credentials-file /home/nonroot/.cloudflared/0ae5c700-29c2-4d9e-be87-d3b65c6f3386.json ${CLOUDFLARE_TUNNEL_NAME}
     volumes:
-      - C:/Users/Admin/.cloudflared:/home/nonroot/.cloudflared:ro
-      - C:/Users/Admin/.cloudflared:/root/.cloudflared:ro
+      - ${CLOUDFLARE_CONFIG_DIR:-C:/Users/Admin/.cloudflared}:/home/nonroot/.cloudflared:ro
+      - ${CLOUDFLARE_CONFIG_DIR:-C:/Users/Admin/.cloudflared}:/root/.cloudflared:ro
     depends_on:
       - api
       - monitor

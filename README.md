@@ -16,11 +16,10 @@ Nếu bạn không cài PostgreSQL, API sẽ bị Crash ngay lập tức khi m�
 ### Hướng dẫn cài đặt PostgreSQL trên Windows:
 1. Tải **PostgreSQL 15** tại đây: [Download PostgreSQL for Windows](https://www.enterprisedb.com/downloads/postgres-postgresql-downloads)
 2. Chạy file cài đặt.
-3. **QUAN TRỌNG:** Trong quá trình cài đặt, trình cài đặt sẽ hỏi bạn nhập Password cho tài khoản siêu quản trị `postgres`. Bạn **phải nhập Mật Khẩu là `123456`** (Trùng khớp với file `.env` ở thư mục gốc của code này).
-4. **VÔ CÙNG QUAN TRỌNG:** Ở bước cấu hình Port (cổng kết nối), bạn **BẮT BUỘC phải giữ nguyên số `5432`** (đây là port mặc định). Nếu bạn đổi số này, Code sẽ không tìm thấy Database và báo lỗi. Cứ nhấn Next đến khi hoàn tất cài đặt.
-5. Mở phần mềm Document Sharing Manager của bạn lên và Tận hưởng!
-
-> **Lưu ý:** Nếu bạn muốn dùng mật khẩu khác, hãy mở file `.env` ở thư mục gốc và sửa dòng `POSTGRES_PASSWORD=123456` thành mật khẩu của bạn.
+3. **CẤU HÌNH BẢO MẬT:** Trong quá trình cài đặt, trình cài đặt sẽ hỏi bạn nhập Password cho tài khoản siêu quản trị `postgres`. Hãy nhập mật khẩu của bạn (ví dụ: một mật khẩu mạnh bất kỳ).
+4. **Cấu hình file môi trường (.env):** Hãy tạo file `.env` ở thư mục gốc (bằng cách copy và đổi tên file `.env.example`) và cập nhật dòng `POSTGRES_PASSWORD=mật_khẩu_của_bạn` trùng khớp với mật khẩu PostgreSQL bạn vừa cài đặt.
+5. **VÔ CÙNG QUAN TRỌNG:** Ở bước cấu hình Port (cổng kết nối), bạn **BẮT BUỘC phải giữ nguyên số `5432`** (đây là port mặc định). Nếu bạn đổi số này, Code sẽ không tìm thấy Database và báo lỗi. Cứ nhấn Next đến khi hoàn tất cài đặt.
+6. Mở phần mềm Document Sharing Manager của bạn lên và Tận hưởng!
 
 ## Về Cloudflare Tunnel
 
