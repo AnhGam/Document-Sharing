@@ -228,9 +228,17 @@ jobs:
           Write-Host "Starting deployment..."
           $startTime = [DateTimeOffset]::Now.ToUnixTimeSeconds()
           
+          # Copy .env file from active workspace to runner directory
+          if (Test-Path "c:\Users\Admin\source\repos\Document-Sharing\.env") {
+              Copy-Item "c:\Users\Admin\source\repos\Document-Sharing\.env" -Destination "." -Force
+              Write-Host "Successfully copied .env file from active workspace."
+          } else {
+              Write-Host "WARNING: .env file not found in active workspace!"
+          }
+          
           # Deploy containers
           docker compose down
-          docker compose up -d --build api db monitor
+          docker compose up -d --build
           
           $endTime = [DateTimeOffset]::Now.ToUnixTimeSeconds()
           $durationSeconds = $endTime - $startTime
