@@ -7,6 +7,7 @@ namespace document_sharing_manager.Core.Domain
         public string Code { get; set; } = string.Empty;
         public int CreatedByUserId { get; set; }
         public bool RequiresApproval { get; set; }
+        public int? ServerId { get; set; }
         public DateTime? ExpiresAt { get; set; }
         public int? MaxUses { get; set; }
         public int UseCount { get; set; }

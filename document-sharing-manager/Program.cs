@@ -60,61 +60,15 @@ namespace document_sharing_manager
 
             RegisterUriScheme();
 
-            // Dọn dẹp sạch sẽ các tiến trình cloudflared rác của app từ phiên chạy trước
-            document_sharing_manager.Management.TunnelManagerForm.KillOrphanedTunnels();
-
             // Khởi tạo database SQLite (tạo file và bảng nếu chưa có)
             DatabaseHelper.InitializeDatabase();
 
-            // --- TỰ ĐỘNG CHẠY SERVER API NGẦM ---
-            System.Diagnostics.Process apiProcess = null;
             try
             {
-                string startupPath = Application.StartupPath;
-                string[] possiblePaths = {
-                    System.IO.Path.Combine(startupPath, "document-sharing-manager-api.exe"),
-                    System.IO.Path.GetFullPath(System.IO.Path.Combine(startupPath, @"..\..\..\document-sharing-manager-api\bin\Debug\net8.0\document-sharing-manager-api.exe")),
-                    System.IO.Path.GetFullPath(System.IO.Path.Combine(startupPath, @"..\..\..\document-sharing-manager-api\bin\Release\net8.0\document-sharing-manager-api.exe"))
-                };
-
-                string apiExePath = null;
-                foreach (var path in possiblePaths)
-                {
-                    if (System.IO.File.Exists(path)) { apiExePath = path; break; }
-                }
-
-                if (apiExePath != null)
-                {
-                    apiProcess = new System.Diagnostics.Process();
-                    apiProcess.StartInfo.FileName = apiExePath;
-                    apiProcess.StartInfo.WorkingDirectory = System.IO.Path.GetDirectoryName(apiExePath);
-                    apiProcess.StartInfo.UseShellExecute = false;
-                    apiProcess.StartInfo.CreateNoWindow = true;
-
-                    // Load .env if it exists
-                    string envPath = System.IO.Path.GetFullPath(System.IO.Path.Combine(startupPath, @"..\..\..\.env"));
-                    if (System.IO.File.Exists(envPath))
-                    {
-                        foreach (var line in System.IO.File.ReadAllLines(envPath))
-                        {
-                            if (!string.IsNullOrWhiteSpace(line) && !line.StartsWith("#") && line.Contains("="))
-                            {
-                                var parts = line.Split(new[] { '=' }, 2);
-                                apiProcess.StartInfo.EnvironmentVariables[parts[0].Trim()] = parts[1].Trim();
-                            }
-                        }
-                    }
-
-                    apiProcess.Start();
-                }
-            }
-            catch { }
-            // ------------------------------------
-
-            try
-            {
-                // Cấu hình API URL mặc định
-                string apiBaseUrl = System.Configuration.ConfigurationManager.AppSettings["ApiBaseUrl"] ?? "http://127.0.0.1:5000";
+                // Cấu hình API URL mặc định: Đọc từ biến API_URL trong tệp .env, nếu không có sẽ lấy từ App.config hoặc fallback về localhost
+                string configApiUrl = System.Configuration.ConfigurationManager.AppSettings["ApiBaseUrl"] ?? "http://127.0.0.1:5000";
+                string apiBaseUrl = document_sharing_manager.Core.Services.EnvReader.GetValue("API_URL", configApiUrl);
+                
                 var authClient = new document_sharing_manager.Core.Services.AuthServiceClient(apiBaseUrl);
 
                 bool isAuthenticated = false;
@@ -144,15 +98,7 @@ namespace document_sharing_manager
             }
             finally
             {
-                // Ensure API process is killed when app closes
-                if (apiProcess != null)
-                {
-                    try { if (!apiProcess.HasExited) apiProcess.Kill(); } catch { }
-                    try { apiProcess.Dispose(); } catch { }
-                }
-
-                // Ensure Cloudflare tunnel process is killed when app closes
-                document_sharing_manager.Management.TunnelManagerForm.StopAndDispose();
+                // Clean shutdown of local resources if any
             }
         }
 

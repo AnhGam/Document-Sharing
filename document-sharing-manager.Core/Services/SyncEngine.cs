@@ -101,6 +101,12 @@ namespace document_sharing_manager.Core.Services
             
             // Thiết lập User-Agent giả lập trình duyệt để tránh bị các hệ thống WAF/Cloudflare chặn
             _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 DocumentSharingManager/1.0");
+
+            string secretHeader = EnvReader.GetValue("API_SECRET_HEADER");
+            if (!string.IsNullOrEmpty(secretHeader))
+            {
+                _httpClient.DefaultRequestHeaders.Add("X-App-Secret", secretHeader);
+            }
             
             // Set a reasonable timeout for large file uploads
             _httpClient.Timeout = TimeSpan.FromMinutes(10);
@@ -118,6 +124,7 @@ namespace document_sharing_manager.Core.Services
         private readonly System.Threading.Timer _debounceTimer;
         private readonly ConcurrentDictionary<int, SemaphoreSlim> _serverLocks = new();
         private bool _isRunning = false;
+        private readonly ConcurrentDictionary<int, byte> _verifiedServers = new();
 
         public SyncEngine(IDocumentRepository repository)
         {
@@ -238,6 +245,10 @@ namespace document_sharing_manager.Core.Services
                         System.Diagnostics.Debug.WriteLine($"[SyncEngine] Tự động đăng ký và đồng bộ remote_id thành công cho '{server.Name}': {newCloudId.Value}");
                         return true;
                     }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[SyncEngine] THẤT BẠI: SaveServerToCloudAsync trả về null cho '{server.Name}' ({server.BaseUrl}). Có thể sai mật khẩu server hoặc API không phản hồi.");
+                    }
                 }
             }
             catch (Exception ex)
@@ -259,10 +270,13 @@ namespace document_sharing_manager.Core.Services
 
             try
             {
-                // Auto-Heal: Tự động đồng bộ remote_id từ Cloud nếu chưa có (NULL hoặc <= 0) để tránh lỗi 403 Forbidden khi sync
-                if (server.CloudId == null || server.CloudId <= 0)
+                // Auto-Heal: Tự động đồng bộ remote_id từ Cloud nếu chưa có (NULL hoặc <= 0) hoặc chưa được xác thực trong session này
+                if (server.CloudId == null || server.CloudId <= 0 || !_verifiedServers.ContainsKey(server.Id))
                 {
-                    await HealServerCloudIdAsync(server, ct);
+                    if (await HealServerCloudIdAsync(server, ct))
+                    {
+                        _verifiedServers.TryAdd(server.Id, 0);
+                    }
                 }
 
                 // 1. Pull from this specific server

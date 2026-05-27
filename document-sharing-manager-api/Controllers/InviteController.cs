@@ -44,6 +44,7 @@ namespace document_sharing_manager_api.Controllers
                 Code = Guid.NewGuid().ToString("N").Substring(0, 10), // Random 10-char code
                 CreatedByUserId = CurrentUserId,
                 RequiresApproval = request.RequiresApproval,
+                ServerId = request.ServerId,
                 ExpiresAt = null,
                 MaxUses = null,
                 UseCount = 0,
@@ -91,9 +92,21 @@ namespace document_sharing_manager_api.Controllers
             if (invite == null || invite.IsRevoked)
                 return NotFound(new { message = "Invalid or revoked invite code." });
 
+            string serverName = "Kênh Chia sẻ";
+            if (invite.ServerId.HasValue)
+            {
+                var targetChannel = await _context.Servers.FirstOrDefaultAsync(s => s.Id == invite.ServerId.Value, ct);
+                if (targetChannel != null)
+                {
+                    serverName = targetChannel.Name;
+                }
+            }
+
             return Ok(new { 
                 invite.Code, 
-                invite.RequiresApproval
+                invite.RequiresApproval,
+                serverId = invite.ServerId,
+                serverName = serverName
             });
         }
 
@@ -116,17 +129,57 @@ namespace document_sharing_manager_api.Controllers
                 UserId = CurrentUserId, // 0 if not logged in
                 DisplayName = displayName,
                 InviteCode = code,
+                ServerId = invite.ServerId,
                 Status = invite.RequiresApproval ? JoinRequestStatus.Pending : JoinRequestStatus.Approved
             };
 
             _context.JoinRequests.Add(joinRequest);
+            
+            int? joinedServerId = null;
+            string? joinedServerName = null;
+
+            // Nếu không cần kiểm duyệt, tự động kết nối thành viên vào Kênh chia sẻ
+            if (joinRequest.Status == JoinRequestStatus.Approved && invite.ServerId.HasValue)
+            {
+                var targetChannel = await _context.Servers.FirstOrDefaultAsync(s => s.Id == invite.ServerId.Value, ct);
+                if (targetChannel != null)
+                {
+                    joinedServerName = targetChannel.Name;
+                    
+                    // Check if already a member of this specific channel (original channel row or member row linking to it)
+                    var existingMembership = await _context.Servers.FirstOrDefaultAsync(s => s.UserId == CurrentUserId && (s.Id == targetChannel.Id || s.RefreshToken == targetChannel.Id.ToString()), ct);
+                    if (existingMembership == null)
+                    {
+                        var membership = new ManagedServer
+                        {
+                            Name = targetChannel.Name,
+                            BaseUrl = targetChannel.BaseUrl,
+                            ServerPassword = targetChannel.ServerPassword,
+                            RefreshToken = targetChannel.Id.ToString(), // Store parent server/channel ID!
+                            UserId = CurrentUserId,
+                            IsActive = true,
+                            ConnectionStatus = 0
+                        };
+                        _context.Servers.Add(membership);
+                        await _context.SaveChangesAsync(ct); // Save so we get the ID
+                        joinedServerId = membership.Id;
+                    }
+                    else
+                    {
+                        joinedServerId = existingMembership.Id;
+                    }
+                }
+            }
+
             await _context.SaveChangesAsync(ct);
 
             await _auditService.LogAsync(CurrentUserId, displayName, "JoinServer", "JoinRequest", joinRequest.Id.ToString(), $"Code: {code}, Status: {joinRequest.Status}", HttpContext.Connection.RemoteIpAddress?.ToString() ?? "", ct);
 
             return Ok(new { 
                 status = joinRequest.Status.ToString(),
-                message = invite.RequiresApproval ? "Yêu cầu đã gửi, vui lòng chờ duyệt." : "Tham gia thành công."
+                message = invite.RequiresApproval ? "Yêu cầu đã gửi, vui lòng chờ duyệt." : "Tham gia thành công.",
+                serverId = joinedServerId,
+                serverName = joinedServerName
             });
         }
     }
@@ -134,6 +187,7 @@ namespace document_sharing_manager_api.Controllers
     public class CreateInviteRequest
     {
         public bool RequiresApproval { get; set; }
+        public int ServerId { get; set; }
     }
 
     public class JoinRequestPayload

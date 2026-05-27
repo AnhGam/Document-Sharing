@@ -269,19 +269,15 @@ namespace document_sharing_manager.Documents
             toolBtnLogout.Click += async (s, e) => await HandleLogoutAsync();
             toolStrip.Items.Add(toolBtnLogout);
 
-            // Add Local Server Management Dropdown to ToolStrip
-            var toolBtnServer = new ToolStripDropDownButton("Máy chủ Local")
+            // Add Sharing Channel Management Dropdown to ToolStrip
+            var toolBtnServer = new ToolStripDropDownButton("Kênh Chia sẻ")
             {
                 Image = IconHelper.CreateRoleIcon(16, AppTheme.Primary),
                 DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
                 Alignment = ToolStripItemAlignment.Right
             };
 
-            var mnuTunnel = new ToolStripMenuItem("Mở kết nối Internet (Tunnel)");
-            mnuTunnel.Click += (s, e) => { Management.TunnelManagerForm.ShowInstance(); };
-            toolBtnServer.DropDownItems.Add(mnuTunnel);
-
-            var mnuInvite = new ToolStripMenuItem("Quản lý Link Mời");
+            var mnuInvite = new ToolStripMenuItem("Quản lý Link Mời Kênh");
             mnuInvite.Click += (s, e) => 
             {
                 using var frm = new Management.InviteManagementForm(_authServiceClient, _authServiceClient.BaseUrl);
@@ -289,7 +285,7 @@ namespace document_sharing_manager.Documents
             };
             toolBtnServer.DropDownItems.Add(mnuInvite);
 
-            var mnuRequest = new ToolStripMenuItem("Yêu cầu tham gia");
+            var mnuRequest = new ToolStripMenuItem("Yêu cầu tham gia Kênh");
             mnuRequest.Click += (s, e) => 
             {
                 using var frm = new Management.JoinRequestsForm(_authServiceClient);
@@ -753,6 +749,23 @@ namespace document_sharing_manager.Documents
         {
             using var form = new document_sharing_manager.Documents.BatchImportForm(_syncEngine);
             form.TargetServerId = this.SelectedServerId;
+            form.ImportCompleted += (s, ev) =>
+            {
+                if (this.InvokeRequired)
+                {
+                    this.Invoke(new Action(() =>
+                    {
+                        TriggerRefresh();
+                        _ = _syncEngine.SyncAsync(); // Trigger sync immediately in the background
+                    }));
+                }
+                else
+                {
+                    TriggerRefresh();
+                    _ = _syncEngine.SyncAsync(); // Trigger sync immediately in the background
+                }
+            };
+
             if (form.ShowDialog(this) == DialogResult.OK)
             {
                 TriggerRefresh();
@@ -988,7 +1001,23 @@ namespace document_sharing_manager.Documents
             if (dgvDocuments.SelectedRows[0].DataBoundItem is Document doc)
             {
                 using var sfd = new SaveFileDialog();
-                string ext = doc.DinhDang.TrimStart('.');
+                // Extract real file extension: prefer from filename (Ten), then from path (DuongDan)
+                // DinhDang may contain Vietnamese category names like "Hình ảnh" - not usable as extension
+                string ext = Path.GetExtension(doc.Ten).TrimStart('.');
+                if (string.IsNullOrEmpty(ext))
+                {
+                    ext = Path.GetExtension(doc.DuongDan).TrimStart('.');
+                }
+                if (string.IsNullOrEmpty(ext) && !string.IsNullOrEmpty(doc.DinhDang))
+                {
+                    // Only use DinhDang if it looks like a real extension (short, no spaces)
+                    string trimmed = doc.DinhDang.TrimStart('.');
+                    if (trimmed.Length <= 10 && !trimmed.Contains(' '))
+                    {
+                        ext = trimmed;
+                    }
+                }
+                
                 string fileName = doc.Ten;
                 if (!string.IsNullOrEmpty(ext))
                 {
@@ -1011,16 +1040,6 @@ namespace document_sharing_manager.Documents
                     lblStatus.Text = "Đang tải: " + doc.Ten;
                     try
                     {
-                        // Check if file already exists locally in managed storage
-                        string localPath = FileStorageService.ResolvePath(doc.DuongDan);
-                        if (File.Exists(localPath))
-                        {
-                            File.Copy(localPath, sfd.FileName, true);
-                            ToastNotification.Success("Đã tải xong!");
-                            lblStatus.Text = "Đã tải về: " + sfd.FileName;
-                            return;
-                        }
-
                         // Get server info
                         var servers = DatabaseHelper.GetManagedServers();
                         var server = servers.FirstOrDefault(s => s.Id == doc.ServerId);
@@ -1041,21 +1060,11 @@ namespace document_sharing_manager.Documents
                         
                         if (response.IsSuccessStatusCode)
                         {
-                            // Ensure local managed directory exists
-                            string localDir = Path.GetDirectoryName(localPath);
-                            if (!string.IsNullOrEmpty(localDir) && !Directory.Exists(localDir))
-                            {
-                                Directory.CreateDirectory(localDir);
-                            }
-
-                            // Download and write to local managed storage first
-                            using (var fileStream = new FileStream(localPath, FileMode.Create, FileAccess.Write, FileShare.None))
+                            // Download directly to user chosen path
+                            using (var fileStream = new FileStream(sfd.FileName, FileMode.Create, FileAccess.Write, FileShare.None))
                             {
                                 await response.Content.CopyToAsync(fileStream);
                             }
-
-                            // Copy to user chosen path
-                            File.Copy(localPath, sfd.FileName, true);
 
                             // Update DB status to Synced (0)
                             doc.SyncStatus = 0;
@@ -1395,7 +1404,7 @@ namespace document_sharing_manager.Documents
                     treeCategory.SelectedNode = ev.Node;
                     if (int.TryParse(filter.FilterValue, out int serverId))
                     {
-                        ShowServerContextMenu(treeCategory.PointToScreen(ev.Location), serverId);
+                        ShowServerContextMenu(ev.Location, serverId);
                     }
                 }
                 else if (ev.Button == MouseButtons.Left && filter?.FilterType == "header")
@@ -1530,7 +1539,7 @@ namespace document_sharing_manager.Documents
                 {
                     var client = new Core.Services.AuthServiceClient(server.BaseUrl);
                     client.AccessToken = server.AccessToken;
-                    using var frm = new Management.InviteManagementForm(client, server.BaseUrl);
+                    using var frm = new Management.InviteManagementForm(client, server.BaseUrl, server.CloudId ?? 0);
                     frm.ShowDialog();
                 }
             });
@@ -1559,16 +1568,12 @@ namespace document_sharing_manager.Documents
                 }
             });
 
-            var tunnelItem = new ToolStripMenuItem("Mở kết nối Internet (Tunnel)", null, (s, e) =>
-                Management.TunnelManagerForm.ShowInstance());
-
-            menu.Items.Add(tunnelItem);
             menu.Items.Add(inviteItem);
             menu.Items.Add(requestsItem);
             menu.Items.Add(auditItem);
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add(deleteItem);
-            menu.Show(treeCategory, location);
+            menu.Show(Cursor.Position);
         }
 
         private void PopulateCategoryTree()
@@ -1624,8 +1629,8 @@ namespace document_sharing_manager.Documents
             }
             catch { }
 
-            // Servers (header) - NEW
-            var nodeServers = treeCategory.Nodes.Add("servers", "Máy chủ đã tham gia");
+            // Servers (header) - NEW (Repurposed as Channels)
+            var nodeServers = treeCategory.Nodes.Add("servers", "Kênh chia sẻ");
             nodeServers.Tag = new TreeFilterInfo("header", null);
             try
             {
@@ -1640,7 +1645,7 @@ namespace document_sharing_manager.Documents
             }
             catch { }
 
-            var nodeJoin = nodeServers.Nodes.Add("join", "(+) Kết nối Server mới...");
+            var nodeJoin = nodeServers.Nodes.Add("join", "(+) Tham gia Kênh mới...");
             nodeJoin.Tag = new TreeFilterInfo("join", null);
             nodeJoin.NodeFont = new Font(treeCategory.Font, FontStyle.Italic);
             nodeJoin.ForeColor = AppTheme.Primary;

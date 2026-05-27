@@ -53,8 +53,7 @@ namespace document_sharing_manager_api.Controllers
                 bool isApprovedMember = await _context.JoinRequests.AnyAsync(r => 
                     r.UserId == CurrentUserId && 
                     r.Status == JoinRequestStatus.Approved &&
-                    _context.InviteLinks.Any(l => l.Code == r.InviteCode && 
-                        _context.Servers.Any(s => s.UserId == l.CreatedByUserId && s.BaseUrl == server.BaseUrl)), ct);
+                    _context.InviteLinks.Any(l => l.Code == r.InviteCode), ct);
 
                 if (!isApprovedMember)
                 {
@@ -62,7 +61,7 @@ namespace document_sharing_manager_api.Controllers
                 }
             }
 
-            // Check if already exists for this user
+            // Check if already exists for this user by matching BaseUrl only to support custom display names
             var existing = await _context.Servers
                 .FirstOrDefaultAsync(s => s.UserId == CurrentUserId && s.BaseUrl == server.BaseUrl, ct);
 

@@ -28,17 +28,10 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
         {
             var serverIdList = serverIds.ToList();
             
-            // Get URLs of servers user has joined
-            var userJoinedUrls = await _context.Servers
-                .Where(s => serverIdList.Contains(s.Id))
-                .Select(s => s.BaseUrl)
-                .Distinct()
-                .ToListAsync(ct);
-
             return await _context.Documents
                 .AsNoTracking()
                 .Include(d => d.Server)
-                .Where(d => !d.IsDeleted && (d.UserId == userId || (d.Server != null && userJoinedUrls.Contains(d.Server.BaseUrl))))
+                .Where(d => !d.IsDeleted && (d.UserId == userId || (d.ServerId.HasValue && serverIdList.Contains(d.ServerId.Value))))
                 .ToListAsync(ct);
         }
 
@@ -46,16 +39,10 @@ namespace document_sharing_manager.Infrastructure.Persistence.Repositories
         {
             var serverIdList = serverIds.ToList();
             
-            var userJoinedUrls = await _context.Servers
-                .Where(s => serverIdList.Contains(s.Id))
-                .Select(s => s.BaseUrl)
-                .Distinct()
-                .ToListAsync(ct);
-
             return await _context.Documents
                 .AsNoTracking()
                 .Include(d => d.Server)
-                .FirstOrDefaultAsync(d => d.Id == id && !d.IsDeleted && (d.UserId == userId || (d.Server != null && userJoinedUrls.Contains(d.Server.BaseUrl))), ct);
+                .FirstOrDefaultAsync(d => d.Id == id && !d.IsDeleted && (d.UserId == userId || (d.ServerId.HasValue && serverIdList.Contains(d.ServerId.Value))), ct);
         }
 
         public async Task AddAsync(Document entity, CancellationToken ct = default)

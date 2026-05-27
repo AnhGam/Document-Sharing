@@ -14,7 +14,7 @@ namespace document_sharing_manager_api.Controllers
     [ApiController]
     [Route("api/documents")]
     [Authorize]
-    public class DocumentsController(IDocumentRepository repository, IStorageService storageService, AppDbContext context) : ControllerBase
+    public class DocumentsController(IDocumentRepository repository, IStorageService storageService, AppDbContext context, IAuditService auditService) : ControllerBase
     {
         private static string SanitizeFileName(string fileName)
         {
@@ -26,18 +26,38 @@ namespace document_sharing_manager_api.Controllers
         private readonly IDocumentRepository _repository = repository;
         private readonly IStorageService _storageService = storageService;
         private readonly AppDbContext _context = context;
+        private readonly IAuditService _auditService = auditService;
+
+        private string CurrentUserName => User.Identity?.Name ?? "Anonymous";
 
         private async Task<bool> IsMemberOfServerAsync(int serverId, CancellationToken ct)
         {
-            return await _context.Servers.AnyAsync(s => s.UserId == CurrentUserId && s.Id == serverId, ct);
+            // Check direct ownership (user owns this exact server row)
+            // OR membership via RefreshToken storing the parent channel ID (joined members)
+            return await _context.Servers.AnyAsync(s => 
+                s.UserId == CurrentUserId && 
+                (s.Id == serverId || s.RefreshToken == serverId.ToString()), ct);
         }
 
         private async Task<List<int>> GetUserServerIdsAsync(CancellationToken ct)
         {
-            return await _context.Servers
+            var servers = await _context.Servers
                 .Where(s => s.UserId == CurrentUserId)
-                .Select(s => s.Id)
                 .ToListAsync(ct);
+
+            var canonicalIds = new List<int>();
+            foreach (var s in servers)
+            {
+                if (int.TryParse(s.RefreshToken, out int parentId))
+                {
+                    canonicalIds.Add(parentId);
+                }
+                else
+                {
+                    canonicalIds.Add(s.Id); // It is the original channel row
+                }
+            }
+            return canonicalIds.Distinct().ToList();
         }
 
         private int CurrentUserId
@@ -121,6 +141,7 @@ namespace document_sharing_manager_api.Controllers
             if (document == null)
                 return NotFound();
 
+            await _auditService.LogAsync(CurrentUserId, CurrentUserName, "DownloadFile", "Document", document.Id.ToString(), $"File: {document.Ten}", HttpContext.Connection.RemoteIpAddress?.ToString() ?? "", ct);
             return await SendFileResponse(document, ct);
         }
 
@@ -136,6 +157,7 @@ namespace document_sharing_manager_api.Controllers
             bool hasAccess = document.UserId == CurrentUserId || (document.ServerId.HasValue && serverIds.Contains(document.ServerId.Value));
             if (!hasAccess) return Forbid();
 
+            await _auditService.LogAsync(CurrentUserId, CurrentUserName, "DownloadFile", "Document", document.Id.ToString(), $"File: {document.Ten}", HttpContext.Connection.RemoteIpAddress?.ToString() ?? "", ct);
             return await SendFileResponse(document, ct);
         }
 
@@ -181,6 +203,14 @@ namespace document_sharing_manager_api.Controllers
         {
             if (!await IsMemberOfServerAsync(serverId, ct)) return Forbid();
 
+            // Resolve canonical parent server/channel ID if serverId is a member row
+            int canonicalServerId = serverId;
+            var serverObj = await _context.Servers.FirstOrDefaultAsync(s => s.Id == serverId, ct);
+            if (serverObj != null && int.TryParse(serverObj.RefreshToken, out int parentId))
+            {
+                canonicalServerId = parentId;
+            }
+
             var document = await _repository.GetByRemoteIdAsync(remoteId, ct);
             
             // If document doesn't exist, create it (First-time sync/upload)
@@ -190,7 +220,7 @@ namespace document_sharing_manager_api.Controllers
                 {
                     RemoteId = remoteId,
                     UserId = CurrentUserId,
-                    ServerId = serverId,
+                    ServerId = canonicalServerId,
                     Version = 0, // Will be incremented to 1 below
                     Ten = ten ?? "Unnamed Document",
                     GhiChu = ghiChu ?? "",
@@ -239,6 +269,7 @@ namespace document_sharing_manager_api.Controllers
             try 
             {
                 await _repository.UpdateAsync(document, ct);
+                await _auditService.LogAsync(CurrentUserId, CurrentUserName, "UploadFile", "Document", document.Id.ToString(), $"File: {document.Ten}, Version: {document.Version}", HttpContext.Connection.RemoteIpAddress?.ToString() ?? "", ct);
             }
             catch (Exception ex) when (ex is System.Data.DBConcurrencyException || ex is DbUpdateConcurrencyException)
             {
@@ -328,6 +359,7 @@ namespace document_sharing_manager_api.Controllers
             try 
             {
                 await _repository.UpdateAsync(document, ct);
+                await _auditService.LogAsync(CurrentUserId, CurrentUserName, "SyncDocument", "Document", document.Id.ToString(), $"File: {document.Ten}, Version: {document.Version}", HttpContext.Connection.RemoteIpAddress?.ToString() ?? "", ct);
             }
             catch (Exception ex) when (ex is System.Data.DBConcurrencyException || ex.GetType().Name == "DbUpdateConcurrencyException")
             {
