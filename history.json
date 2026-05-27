@@ -1,5 +1,20 @@
 [
   {
+    "commitSha": "b42e64f95a024addf2500e582b3f3a5c4a655647",
+    "shortSha": "b42e64f",
+    "runId": "26499103705",
+    "date": "2026-05-27",
+    "time": "08:11",
+    "buildStatus": "success",
+    "installerSize": 7.89,
+    "repoSize": 266.26,
+    "buildDuration": 3.13,
+    "deployDuration": 0.0,
+    "branch": "nma",
+    "actor": "AnhGam",
+    "commitMessage": "Merge d61a1fb5accdd2e49b754c0a088b3ff0e329aca8 into 1179849cc5f7b479ccc4825addd4314473580b92 "
+  },
+  {
     "commitSha": "f58ed1963e73d45348aac1f76c1b75f90cc8a3af",
     "shortSha": "f58ed19",
     "runId": "26498885190",
