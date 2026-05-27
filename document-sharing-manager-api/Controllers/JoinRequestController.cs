@@ -70,7 +70,7 @@ namespace document_sharing_manager_api.Controllers
                 var targetChannel = await _context.Servers.FirstOrDefaultAsync(s => s.Id == inviteLink.ServerId.Value, ct);
                 if (targetChannel != null)
                 {
-                    bool alreadyMember = await _context.Servers.AnyAsync(s => s.UserId == req.UserId && s.BaseUrl == targetChannel.BaseUrl, ct);
+                    bool alreadyMember = await _context.Servers.AnyAsync(s => s.UserId == req.UserId && (s.Id == targetChannel.Id || s.RefreshToken == targetChannel.Id.ToString()), ct);
                     if (!alreadyMember)
                     {
                         var membership = new ManagedServer
@@ -78,6 +78,7 @@ namespace document_sharing_manager_api.Controllers
                             Name = targetChannel.Name,
                             BaseUrl = targetChannel.BaseUrl,
                             ServerPassword = targetChannel.ServerPassword,
+                            RefreshToken = targetChannel.Id.ToString(), // Store parent server/channel ID!
                             UserId = req.UserId, // ID của user tham gia (được duyệt)
                             IsActive = true,
                             ConnectionStatus = 0

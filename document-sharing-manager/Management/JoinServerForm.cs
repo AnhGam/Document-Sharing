@@ -16,6 +16,7 @@ namespace document_sharing_manager.Management
         // Invite Controls
         private TextBox txtInviteCode;
         private TextBox txtDisplayName;
+        private TextBox txtChannelName;
         private Button btnJoinInvite;
 
         private Label lblStatus;
@@ -41,7 +42,7 @@ namespace document_sharing_manager.Management
         private void InitializeComponentManual()
         {
             this.Text = "Tham gia Kênh chia sẻ";
-            this.Size = new Size(400, 360);
+            this.Size = new Size(400, 430);
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.StartPosition = FormStartPosition.CenterParent;
             this.MaximizeBox = false;
@@ -59,17 +60,21 @@ namespace document_sharing_manager.Management
             txtDisplayName = new TextBox { Location = new Point(left, 120), Width = width, Text = document_sharing_manager.Core.Data.UserSession.Username };
             AppTheme.ApplyTextBoxStyle(txtDisplayName);
 
-            btnJoinInvite = new Button { Text = "Tham gia Kênh", Location = new Point(left + 90, 185), Size = new Size(150, 40), Cursor = Cursors.Hand };
+            var lblChannel = new Label { Text = "Tên Kênh chia sẻ (Để trống nếu dùng mặc định):", Location = new Point(left, 170), AutoSize = true, ForeColor = AppTheme.TextPrimary };
+            txtChannelName = new TextBox { Location = new Point(left, 195), Width = width };
+            AppTheme.ApplyTextBoxStyle(txtChannelName);
+
+            btnJoinInvite = new Button { Text = "Tham gia Kênh", Location = new Point(left + 90, 250), Size = new Size(150, 40), Cursor = Cursors.Hand };
             btnJoinInvite.Click += BtnJoinInvite_Click;
             AppTheme.ApplyButtonPrimary(btnJoinInvite);
 
-            lblStatus = new Label { Text = "", Location = new Point(left, 240), Width = width, AutoSize = false, Height = 40, ForeColor = AppTheme.StatusInfo, TextAlign = ContentAlignment.TopCenter };
+            lblStatus = new Label { Text = "", Location = new Point(left, 305), Width = width, AutoSize = false, Height = 40, ForeColor = AppTheme.StatusInfo, TextAlign = ContentAlignment.TopCenter };
 
-            var btnCancel = new Button { Text = "Hủy", Location = new Point(left + 115, 280), Size = new Size(100, 32), Cursor = Cursors.Hand };
+            var btnCancel = new Button { Text = "Hủy", Location = new Point(left + 115, 345), Size = new Size(100, 32), Cursor = Cursors.Hand };
             btnCancel.Click += (s, e) => this.Close();
             AppTheme.ApplyButtonSecondary(btnCancel);
 
-            this.Controls.AddRange([lblInvite, txtInviteCode, lblDisplay, txtDisplayName, btnJoinInvite, lblStatus, btnCancel]);
+            this.Controls.AddRange([lblInvite, txtInviteCode, lblDisplay, txtDisplayName, lblChannel, txtChannelName, btnJoinInvite, lblStatus, btnCancel]);
 
             // Add standard hidden components to satisfy partial class if designer created anything
             this.SuspendLayout();
@@ -214,26 +219,37 @@ namespace document_sharing_manager.Management
             
             if (joinRes.success)
             {
-                // Lưu server vào database local (giống như luồng kết nối thủ công)
+                // Lưu server vào database local
                 string serverUrl = parsed.url ?? _authServiceClient.BaseUrl;
-                string serverName = "";
-                try
+                string serverName = txtChannelName.Text.Trim();
+                if (string.IsNullOrEmpty(serverName))
                 {
-                    var uri = new Uri(serverUrl);
-                    serverName = uri.Host; // Dùng hostname làm tên server
+                    serverName = joinRes.serverName ?? "";
                 }
-                catch { serverName = serverUrl; }
+                if (string.IsNullOrEmpty(serverName))
+                {
+                    try
+                    {
+                        var uri = new Uri(serverUrl);
+                        serverName = uri.Host; // Fallback
+                    }
+                    catch { serverName = serverUrl; }
+                }
 
                 string token = document_sharing_manager.Core.Data.UserSession.AccessToken;
                 
-                // Đăng ký server lên API cloud để tránh lỗi 403 Forbidden khi sync và lấy Cloud Server ID
-                int? cloudId = await _authServiceClient.SaveServerToCloudAsync(serverName, serverUrl, token);
+                int? cloudId = joinRes.serverId;
+                if (!cloudId.HasValue)
+                {
+                    // Fallback to SaveServerToCloudAsync
+                    cloudId = await _authServiceClient.SaveServerToCloudAsync(serverName, serverUrl, token);
+                }
                 
                 DatabaseHelper.InsertServer(serverName, serverUrl, accessToken: token, remoteId: cloudId);
 
                 // Thêm server vào SyncEngine để hiện ở sidebar
                 var allServers = DatabaseHelper.GetManagedServers();
-                var newServer = allServers.FirstOrDefault(s => s.BaseUrl.TrimEnd('/') == serverUrl.TrimEnd('/'));
+                var newServer = allServers.FirstOrDefault(s => s.BaseUrl.TrimEnd('/') == serverUrl.TrimEnd('/') && s.CloudId == cloudId);
                 if (newServer != null)
                 {
                     _syncEngine?.AddServer(newServer);

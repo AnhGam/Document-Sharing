@@ -150,7 +150,7 @@ namespace document_sharing_manager.Core.Data
                     updated_at DATETIME,
                     user_id INTEGER NOT NULL DEFAULT 1,
                     remote_id INTEGER,
-                    UNIQUE(base_url, user_id)
+                    UNIQUE(base_url, remote_id, user_id)
                 );
 
                 -- Bảng invite_links
@@ -235,6 +235,13 @@ namespace document_sharing_manager.Core.Data
             MigrateAddColumn(conn, "managed_servers", "user_id", "INTEGER NOT NULL DEFAULT 1");
             MigrateAddColumn(conn, "managed_servers", "remote_id", "INTEGER");
             MigrateRenameColumn(conn, "personal_notes", "content", "note_content");
+            MigrateManagedServersConstraint(conn);
+
+            // Cleanup legacy stale servers (Removed to prevent joined channels from disappearing on startup)
+            // using (var cmdCleanup = new SQLiteCommand("DELETE FROM managed_servers WHERE remote_id IS NULL OR remote_id = 0 OR name = 'edgeparty.me';", conn))
+            // {
+            //     cmdCleanup.ExecuteNonQuery();
+            // }
 
             // Create indexes for migrated columns
             using (var cmdIdx = new SQLiteCommand("CREATE INDEX IF NOT EXISTS idx_tai_lieu_user_id ON tai_lieu(user_id);", conn))
@@ -278,12 +285,99 @@ namespace document_sharing_manager.Core.Data
             cmd3.ExecuteNonQuery();
         }
 
+        private static void MigrateManagedServersConstraint(SQLiteConnection conn)
+        {
+            string schema = "";
+            try
+            {
+                using (var cmd = new SQLiteCommand("SELECT sql FROM sqlite_master WHERE type='table' AND name='managed_servers'", conn))
+                {
+                    using var reader = cmd.ExecuteReader();
+                    if (reader.Read())
+                    {
+                        schema = reader.GetString(0);
+                    }
+                }
+            }
+            catch { }
+
+            if (!string.IsNullOrEmpty(schema) && schema.Contains("UNIQUE(base_url, user_id)"))
+            {
+                using var transaction = conn.BeginTransaction();
+                try
+                {
+                    using (var cmd = new SQLiteCommand("ALTER TABLE managed_servers RENAME TO managed_servers_old", conn, transaction))
+                        cmd.ExecuteNonQuery();
+
+                    string createTable = @"
+                        CREATE TABLE managed_servers (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            name TEXT NOT NULL,
+                            base_url TEXT NOT NULL,
+                            access_token TEXT,
+                            refresh_token TEXT,
+                            server_password TEXT,
+                            is_active INTEGER DEFAULT 1,
+                            last_sync_date DATETIME,
+                            connection_status INTEGER DEFAULT 0,
+                            created_at DATETIME DEFAULT (datetime('now', 'localtime')),
+                            updated_at DATETIME,
+                            user_id INTEGER NOT NULL DEFAULT 1,
+                            remote_id INTEGER,
+                            UNIQUE(base_url, remote_id, user_id)
+                        );";
+                    using (var cmd = new SQLiteCommand(createTable, conn, transaction))
+                        cmd.ExecuteNonQuery();
+
+                    string copyData = @"
+                        INSERT INTO managed_servers (id, name, base_url, access_token, refresh_token, server_password, is_active, last_sync_date, connection_status, created_at, updated_at, user_id, remote_id)
+                        SELECT id, name, base_url, access_token, refresh_token, server_password, is_active, last_sync_date, connection_status, created_at, updated_at, user_id, remote_id
+                        FROM managed_servers_old;";
+                    using (var cmd = new SQLiteCommand(copyData, conn, transaction))
+                        cmd.ExecuteNonQuery();
+
+                    using (var cmd = new SQLiteCommand("DROP TABLE managed_servers_old", conn, transaction))
+                        cmd.ExecuteNonQuery();
+
+                    transaction.Commit();
+                    System.Diagnostics.Debug.WriteLine("[DatabaseHelper] Migrated UNIQUE constraint for managed_servers successfully.");
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    System.Diagnostics.Debug.WriteLine($"[DatabaseHelper] Migration of UNIQUE constraint failed: {ex.Message}");
+                }
+            }
+        }
+
+        private static bool ColumnExists(SQLiteConnection conn, string table, string column)
+        {
+            try
+            {
+                using var cmd = new SQLiteCommand($"PRAGMA table_info({table})", conn);
+                using var reader = cmd.ExecuteReader();
+                while (reader.Read())
+                {
+                    string columnName = reader["name"].ToString();
+                    if (string.Equals(columnName, column, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                }
+            }
+            catch { }
+            return false;
+        }
+
         private static void MigrateAddColumn(SQLiteConnection conn, string table, string column, string type)
         {
             try
             {
-                using var cmd = new SQLiteCommand($"ALTER TABLE {table} ADD COLUMN {column} {type}", conn);
-                cmd.ExecuteNonQuery();
+                if (!ColumnExists(conn, table, column))
+                {
+                    using var cmd = new SQLiteCommand($"ALTER TABLE {table} ADD COLUMN {column} {type}", conn);
+                    cmd.ExecuteNonQuery();
+                }
             }
             catch (SQLiteException)
             {
@@ -295,9 +389,12 @@ namespace document_sharing_manager.Core.Data
         {
             try
             {
-                // SQLite 3.25.0+ supports RENAME COLUMN
-                using var cmd = new SQLiteCommand($"ALTER TABLE {table} RENAME COLUMN {oldColumn} TO {newColumn}", conn);
-                cmd.ExecuteNonQuery();
+                if (ColumnExists(conn, table, oldColumn) && !ColumnExists(conn, table, newColumn))
+                {
+                    // SQLite 3.25.0+ supports RENAME COLUMN
+                    using var cmd = new SQLiteCommand($"ALTER TABLE {table} RENAME COLUMN {oldColumn} TO {newColumn}", conn);
+                    cmd.ExecuteNonQuery();
+                }
             }
             catch (SQLiteException)
             {
@@ -1333,7 +1430,7 @@ namespace document_sharing_manager.Core.Data
             string query = @"INSERT INTO managed_servers 
                 (name, base_url, access_token, refresh_token, server_password, user_id, remote_id) 
                 VALUES (@name, @url, @access, @refresh, @pass, @user, @remote)
-                ON CONFLICT(base_url, user_id) DO UPDATE SET
+                ON CONFLICT(base_url, remote_id, user_id) DO UPDATE SET
                     name = excluded.name,
                     access_token = excluded.access_token,
                     server_password = excluded.server_password,
@@ -1355,6 +1452,10 @@ namespace document_sharing_manager.Core.Data
 
         public static bool DeleteServer(int id)
         {
+            // Soft-delete all documents associated with this server first to prevent duplicate inheritance
+            string docQuery = "UPDATE tai_lieu SET is_deleted = 1, deleted_at = datetime('now','localtime') WHERE server_id = @id AND user_id = @user";
+            ExecuteNonQuery(docQuery, [new("@id", id), new("@user", UserSession.CurrentUserId)]);
+
             string query = "DELETE FROM managed_servers WHERE id = @id AND user_id = @user";
             return ExecuteNonQuery(query, [new("@id", id), new("@user", UserSession.CurrentUserId)]) > 0;
         }

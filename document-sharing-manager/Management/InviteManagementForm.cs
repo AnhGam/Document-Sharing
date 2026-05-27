@@ -5,6 +5,7 @@ using document_sharing_manager.UI;
 using document_sharing_manager.Core.Domain;
 using document_sharing_manager.Core.Services;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace document_sharing_manager.Management
 {
@@ -16,11 +17,28 @@ namespace document_sharing_manager.Management
         private Button btnClose;
         private readonly AuthServiceClient _authClient;
         private readonly string _serverBaseUrl;
+        private int _serverId;
 
-        public InviteManagementForm(AuthServiceClient authClient, string serverBaseUrl)
+        public InviteManagementForm(AuthServiceClient authClient, string serverBaseUrl, int serverId = 0)
         {
             _authClient = authClient;
             _serverBaseUrl = serverBaseUrl.TrimEnd('/');
+            _serverId = serverId;
+
+            if (_serverId == 0)
+            {
+                try
+                {
+                    var server = document_sharing_manager.Core.Data.DatabaseHelper.GetManagedServers()
+                        .FirstOrDefault(x => x.BaseUrl.TrimEnd('/').Equals(_serverBaseUrl, StringComparison.OrdinalIgnoreCase));
+                    if (server != null && server.CloudId.HasValue)
+                    {
+                        _serverId = server.CloudId.Value;
+                    }
+                }
+                catch { }
+            }
+
             InitializeComponentManual();
             LoadInvites();
         }
@@ -110,7 +128,7 @@ namespace document_sharing_manager.Management
 
         private async System.Threading.Tasks.Task CreateInvite(bool requiresApproval)
         {
-            var inv = await _authClient.CreateInviteAsync(requiresApproval);
+            var inv = await _authClient.CreateInviteAsync(requiresApproval, _serverId);
             if (inv != null)
             {
                 MessageBox.Show("Tạo link thành công!\nChuột phải vào danh sách để Copy.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);

@@ -54,34 +54,14 @@ services:
     image: cloudflare/cloudflared:latest
     container_name: docshare_tunnel
     restart: always
-    entrypoint: >
-      sh -c '
-      if [ -n "$$CLOUDFLARE_TUNNEL_TOKEN" ] && [ "$$CLOUDFLARE_TUNNEL_TOKEN" != "your_cloudflare_tunnel_token_here" ]; then
-        echo "==========================================================";
-        echo "STARTING TUNNEL VIA TOKEN...";
-        echo "==========================================================";
-        exec cloudflared tunnel --no-autoupdate run;
-      elif [ -n "$$CLOUDFLARE_TUNNEL_NAME" ] && [ "$$CLOUDFLARE_TUNNEL_NAME" != "your_cloudflare_tunnel_name_here" ] && [ -n "$$CLOUDFLARE_TUNNEL_NAME" ]; then
-        echo "==========================================================";
-        echo "STARTING TUNNEL VIA LOCAL CONFIG (Name: $$CLOUDFLARE_TUNNEL_NAME)...";
-        echo "==========================================================";
-        exec cloudflared tunnel --no-autoupdate run "$$CLOUDFLARE_TUNNEL_NAME";
-      else
-        echo "==========================================================";
-        echo "STARTING QUICK TUNNEL (FREE, NO ACCOUNT, TRYCLOUDFLARE.COM)";
-        echo "==========================================================";
-        exec cloudflared tunnel --no-autoupdate --url http://api:5000;
-      fi
-      '
-    environment:
-      - CLOUDFLARE_TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
-      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
-      - CLOUDFLARE_TUNNEL_NAME=${CLOUDFLARE_TUNNEL_NAME}
+    command: tunnel --no-autoupdate run --credentials-file /home/nonroot/.cloudflared/0ae5c700-29c2-4d9e-be87-d3b65c6f3386.json ${CLOUDFLARE_TUNNEL_NAME}
     volumes:
       - C:/Users/Admin/.cloudflared:/home/nonroot/.cloudflared:ro
       - C:/Users/Admin/.cloudflared:/root/.cloudflared:ro
     depends_on:
       - api
+
+
 
 volumes:
   postgres_data:

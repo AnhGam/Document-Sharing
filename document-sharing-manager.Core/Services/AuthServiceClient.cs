@@ -224,7 +224,8 @@ namespace document_sharing_manager.Core.Services
         {
             try
             {
-                var server = new ManagedServer { Name = name, BaseUrl = url, AccessToken = accessToken, ServerPassword = password ?? string.Empty };
+                string actualPassword = !string.IsNullOrEmpty(password) ? password! : (EnvReader.GetValue("SERVER_JOIN_PASSWORD") ?? "admin");
+                var server = new ManagedServer { Name = name, BaseUrl = url, AccessToken = accessToken, ServerPassword = actualPassword };
                 var settings = new JsonSerializerSettings 
                 { 
                     ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver() 
@@ -272,11 +273,11 @@ namespace document_sharing_manager.Core.Services
             return new List<InviteLink>();
         }
 
-        public async Task<InviteLink?> CreateInviteAsync(bool requiresApproval)
+        public async Task<InviteLink?> CreateInviteAsync(bool requiresApproval, int serverId)
         {
             try
             {
-                var payload = new { requiresApproval };
+                var payload = new { requiresApproval, serverId };
                 var json = JsonConvert.SerializeObject(payload);
                 using var request = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}/api/invite")
                 {
@@ -327,7 +328,7 @@ namespace document_sharing_manager.Core.Services
             catch (Exception ex) { return (false, false, $"Lỗi kết nối ({_baseUrl}): {ex.Message}"); }
         }
 
-        public async Task<(bool success, string message)> JoinWithInviteAsync(string code, string displayName)
+        public async Task<(bool success, string message, int? serverId, string? serverName)> JoinWithInviteAsync(string code, string displayName)
         {
             try
             {
@@ -346,12 +347,14 @@ namespace document_sharing_manager.Core.Services
                 if (response.IsSuccessStatusCode)
                 {
                     var result = Newtonsoft.Json.Linq.JObject.Parse(resJson);
-                    return (true, result["message"]?.ToString() ?? "");
+                    int? serverId = (int?)result["serverId"];
+                    string? serverName = result["serverName"]?.ToString();
+                    return (true, result["message"]?.ToString() ?? "", serverId, serverName);
                 }
-                return (false, $"Lỗi từ server: {(int)response.StatusCode}");
+                return (false, $"Lỗi từ server: {(int)response.StatusCode}", null, null);
             }
-            catch (TaskCanceledException) { return (false, $"Hết thời gian chờ phản hồi từ server ({_baseUrl}). Hãy kiểm tra Tunnel đã chạy chưa."); }
-            catch (Exception ex) { return (false, $"Lỗi kết nối ({_baseUrl}): {ex.Message}"); }
+            catch (TaskCanceledException) { return (false, $"Hết thời gian chờ phản hồi từ server ({_baseUrl}). Hãy kiểm tra Tunnel đã chạy chưa.", null, null); }
+            catch (Exception ex) { return (false, $"Lỗi kết nối ({_baseUrl}): {ex.Message}", null, null); }
         }
 
         public async Task<List<JoinRequest>> GetPendingJoinRequestsAsync()

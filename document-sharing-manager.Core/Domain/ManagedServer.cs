@@ -30,8 +30,9 @@ namespace document_sharing_manager.Core.Domain
             if (_authClient == null)
             {
                 _authClient = new Services.AuthServiceClient(BaseUrl);
-                _authClient.AccessToken = AccessToken;
             }
+            // Fallback to UserSession.AccessToken if server's own token is missing/empty
+            _authClient.AccessToken = !string.IsNullOrEmpty(AccessToken) ? AccessToken : Data.UserSession.AccessToken;
             return _authClient;
         }
     }
