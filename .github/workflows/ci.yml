@@ -44,10 +44,6 @@ jobs:
       repo_size: ${{ steps.capacity.outputs.repo_size }}
       build_duration: ${{ steps.capacity.outputs.build_duration }}
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - name: Record Start Time
         id: start_time
         shell: pwsh
@@ -55,6 +51,9 @@ jobs:
           $ts = [DateTimeOffset]::Now.ToUnixTimeSeconds()
           echo "ts=$ts" >> $env:GITHUB_OUTPUT
 
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Prepare Dynamic Semantic Versioning
         id: version
