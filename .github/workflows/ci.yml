@@ -140,6 +140,19 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: AI Build Log Analysis (Groq)
+        if: always()
+        shell: pwsh
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          powershell ./scripts/ai-log-analyzer-groq.ps1 `
+            -ApiKey "$env:GROQ_API_KEY" `
+            -BuildStatus "${{ job.status }}" `
+            -CommitSha "${{ github.sha }}" `
+            -Branch "${{ github.head_ref || github.ref_name }}" `
+            -CommitMessage "${{ github.event.head_commit.message }}"
+
       - name: Archive Build Reports (GitOps)
         if: always() && (github.event_name == 'push' || github.event_name == 'pull_request')
         shell: pwsh
@@ -189,7 +202,7 @@ jobs:
       - name: Deploy Local Server Container
         run: |
           docker compose down
-          docker compose up -d --build api db
+          docker compose up -d --build api db monitor
 
 
   notify:

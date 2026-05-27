@@ -1,0 +1,193 @@
+# ai-log-analyzer-groq.ps1
+# AI-powered build log analysis using Groq (Llama 3)
+# Generates ai_analysis.md with insights about the build
+
+param(
+    [string]$ApiKey,
+    [string]$BuildStatus = "unknown",
+    [string]$CommitSha = "",
+    [string]$Branch = "main",
+    [string]$CommitMessage = ""
+)
+
+# Helper: strip non-ASCII characters
+function Remove-NonAscii {
+    param([string]$Text)
+    $Text -replace '[^\x20-\x7E\r\n]', ''
+}
+
+if (-not $ApiKey) {
+    Write-Host "WARNING: GROQ_API_KEY is missing. Generating local-only build analysis."
+    $localReport = @"
+## AI Build Analysis
+
+**Status:** $BuildStatus
+
+AI analysis was skipped because the GROQ_API_KEY secret is not configured.
+Configure it in your repository settings to enable AI-powered build insights.
+
+---
+*Generated at $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') | AI: Skipped*
+"@
+    $localReport | Out-File "ai_analysis.md" -Encoding utf8
+    exit 0
+}
+
+Write-Host "--- AI Build Log Analysis (Groq Llama 3) ---"
+
+# Collect build context
+$buildLogs = ""
+
+# 1. Capture build output if available
+$logSources = @()
+
+# Test results
+if (Test-Path "document-sharing-manager.Tests/TestResults/*.trx") {
+    $trxFile = Get-ChildItem "document-sharing-manager.Tests/TestResults/*.trx" -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($trxFile) {
+        $trxContent = Get-Content $trxFile.FullName -Raw -ErrorAction SilentlyContinue
+        # Extract summary from TRX XML
+        if ($trxContent -match 'outcome="([^"]+)"') {
+            $logSources += "Test Outcome: $($Matches[1])"
+        }
+        if ($trxContent -match 'total="(\d+)".*passed="(\d+)".*failed="(\d+)"') {
+            $logSources += "Tests: Total=$($Matches[1]) Passed=$($Matches[2]) Failed=$($Matches[3])"
+        }
+    }
+}
+
+# Audit log
+if (Test-Path "audit_log.txt") {
+    $auditContent = (Get-Content "audit_log.txt" -Raw -ErrorAction SilentlyContinue)
+    if ($auditContent) {
+        $logSources += "--- NuGet Audit ---`n$auditContent"
+    }
+}
+
+# Capacity report
+if (Test-Path "capacity_report.md") {
+    $capacityContent = (Get-Content "capacity_report.md" -Raw -ErrorAction SilentlyContinue)
+    if ($capacityContent) {
+        $logSources += "--- Capacity Report ---`n$capacityContent"
+    }
+}
+
+# Security audit
+if (Test-Path "security_audit_summary.md") {
+    $secContent = (Get-Content "security_audit_summary.md" -Raw -ErrorAction SilentlyContinue)
+    if ($secContent) {
+        $logSources += "--- Security Audit ---`n$secContent"
+    }
+}
+
+$buildLogs = $logSources -join "`n`n"
+
+# Truncate to avoid token limits
+if ($buildLogs.Length -gt 4000) {
+    $buildLogs = $buildLogs.Substring(0, 4000) + "`n... (truncated)"
+}
+
+# If no logs collected at all, still produce a useful analysis
+if ([string]::IsNullOrWhiteSpace($buildLogs)) {
+    $buildLogs = "No detailed build logs were captured for this run."
+}
+
+$shortSha = if ($CommitSha.Length -ge 7) { $CommitSha.Substring(0, 7) } else { $CommitSha }
+
+$prompt = @"
+You are a DevOps/CI expert. Analyze this CI/CD build for a .NET WinForms project called "Document Sharing Manager".
+
+BUILD CONTEXT:
+- Commit: $shortSha
+- Branch: $Branch
+- Status: $BuildStatus
+- Message: $CommitMessage
+- Date: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
+
+BUILD LOGS AND REPORTS:
+$buildLogs
+
+Provide a structured analysis with these sections:
+1. **Build Summary** - One-line verdict
+2. **Key Findings** - Notable issues, warnings, or improvements (use bullet points)
+3. **Test Results** - Summary of test execution if available
+4. **Security Posture** - Brief assessment based on audit data
+5. **Performance Notes** - Build duration, capacity observations
+6. **Recommendations** - Actionable next steps (max 3 items)
+
+FORMAT RULES:
+- Use plain ASCII text only. No emoji, no unicode symbols, no special characters.
+- Use proper markdown formatting (headers ##, tables, bold **text**, code blocks).
+- Be specific to THIS commit and build. Do not give generic advice.
+- Keep total response under 500 words.
+"@
+
+$body = @{
+    model = "llama-3.3-70b-versatile"
+    messages = @(
+        @{ role = "user"; content = $prompt }
+    )
+    temperature = 0.4
+    max_tokens = 1200
+} | ConvertTo-Json -Depth 5
+
+try {
+    $response = Invoke-RestMethod -Uri "https://api.groq.com/openai/v1/chat/completions" `
+        -Method Post -Headers @{ Authorization = "Bearer $ApiKey" } `
+        -Body $body -ContentType "application/json"
+    
+    $analysis = $response.choices[0].message.content
+    
+    # Strip non-ASCII
+    $analysis = Remove-NonAscii -Text $analysis
+    
+    Write-Host "`nAI BUILD ANALYSIS:`n"
+    Write-Host $analysis
+    
+    $finalReport = @"
+## AI Build Analysis - Commit $shortSha
+
+**Branch:** $Branch | **Status:** $BuildStatus | **Date:** $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
+
+---
+
+$analysis
+
+---
+*Analysis by Groq AI (Llama 3.3) | Commit: $shortSha | Run: $(Get-Date -Format 'yyyyMMdd-HHmmss')*
+"@
+    
+    $finalReport | Out-File "ai_analysis.md" -Encoding utf8
+    Write-Host "[+] AI analysis report generated: ai_analysis.md"
+    
+} catch {
+    Write-Host "WARNING: Groq API call failed: $_"
+    
+    # Generate fallback report
+    $fallbackReport = @"
+## AI Build Analysis - Commit $shortSha
+
+**Branch:** $Branch | **Status:** $BuildStatus | **Date:** $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
+
+---
+
+### Build Summary
+Build completed with status: **$BuildStatus**
+
+### Notes
+AI analysis could not be performed due to an API connectivity issue.
+The build artifacts and test results should be reviewed manually.
+
+### Available Data
+``````
+$buildLogs
+``````
+
+---
+*Fallback Report (AI unavailable) | Commit: $shortSha*
+"@
+    $fallbackReport | Out-File "ai_analysis.md" -Encoding utf8
+    Write-Host "[*] Fallback analysis report generated: ai_analysis.md"
+}
+
+exit 0

@@ -1,0 +1,12 @@
+{
+  "name": "dsm-server-monitor",
+  "version": "1.0.0",
+  "description": "Lightweight server health monitor for DSM CI/CD Dashboard",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "systeminformation": "^5.22.0"
+  }
+}
