@@ -1,5 +1,20 @@
 [
   {
+    "commitSha": "1dbb7a34f7e54e78bceb2e4a4d378ba570b2b062",
+    "shortSha": "1dbb7a3",
+    "runId": "26519011494",
+    "date": "2026-05-27",
+    "time": "14:55",
+    "buildStatus": "success",
+    "installerSize": 6.14,
+    "repoSize": 259.09,
+    "buildDuration": 1.93,
+    "deployDuration": 0.0,
+    "branch": "main",
+    "actor": "AnhGam",
+    "commitMessage": "Merge pull request #23 from AnhGam/nma\n\nfix deploy"
+  },
+  {
     "commitSha": "184ef3fe278f8343bf84089aa94c1bf0cd5a0cc3",
     "shortSha": "184ef3f",
     "runId": "26514875359",
