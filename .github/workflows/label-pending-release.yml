@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       issues: write
-      pull-requests: read
+      pull-requests: write
 
     steps:
       - name: Label linked issues as pending-release
@@ -46,8 +46,10 @@ jobs:
       - name: Add PR comment
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
         run: |
-          PR_TEXT="${{ github.event.pull_request.title }} ${{ github.event.pull_request.body }}"
+          PR_TEXT="$PR_TITLE $PR_BODY"
           ISSUES=$(echo "$PR_TEXT" | grep -oE "(Fixes|Closes|Resolves|Refs?) #[0-9]+" | grep -oE "#[0-9]+" | sort -u || true)
 
           if [[ -n "$ISSUES" ]]; then
