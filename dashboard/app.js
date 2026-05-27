@@ -7,6 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let telemetryData = [];
     let activeBranch = "all";
     let activeStatus = "all";
+    let activeTimeLimit = "all";
     let searchQuery = "";
     
     // Chart References
@@ -35,6 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const installerProgress = document.getElementById("installer-progress");
     const repoProgress = document.getElementById("repo-progress");
     
+    const timeFilter = document.getElementById("time-filter");
     const branchFilter = document.getElementById("branch-filter");
     const statusFilter = document.getElementById("status-filter");
     const searchInput = document.getElementById("search-input");
@@ -80,6 +82,12 @@ document.addEventListener("DOMContentLoaded", () => {
             updateDashboard(telemetryData);
             
             // Event Listeners
+            if (timeFilter) {
+                timeFilter.addEventListener("change", (e) => {
+                    activeTimeLimit = e.target.value;
+                    filterAndRender();
+                });
+            }
             branchFilter.addEventListener("change", (e) => {
                 activeBranch = e.target.value;
                 filterAndRender();
@@ -697,6 +705,22 @@ document.addEventListener("DOMContentLoaded", () => {
             filtered = filtered.filter(item => {
                 const isSuccess = item.buildStatus === "success" || item.buildStatus === "SUCCESS";
                 return activeStatus === "success" ? isSuccess : !isSuccess;
+            });
+        }
+
+        // Time Filter
+        if (activeTimeLimit !== "all") {
+            const now = Date.now();
+            let limitMs = 0;
+            if (activeTimeLimit === "30d") limitMs = 30 * 24 * 60 * 60 * 1000;
+            else if (activeTimeLimit === "14d") limitMs = 14 * 24 * 60 * 60 * 1000;
+            else if (activeTimeLimit === "7d") limitMs = 7 * 24 * 60 * 60 * 1000;
+            else if (activeTimeLimit === "3d") limitMs = 3 * 24 * 60 * 60 * 1000;
+            else if (activeTimeLimit === "24h") limitMs = 24 * 60 * 60 * 1000;
+
+            filtered = filtered.filter(item => {
+                const itemTime = new Date(`${item.date}T${item.time || '00:00'}:00`).getTime();
+                return (now - itemTime) <= limitMs;
             });
         }
 
