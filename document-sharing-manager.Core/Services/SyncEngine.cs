@@ -229,8 +229,40 @@ namespace document_sharing_manager.Core.Services
                 if (matched != null)
                 {
                     server.CloudId = matched.Id;
-                    DatabaseHelper.UpdateServerRemoteId(server.Id, matched.Id);
-                    System.Diagnostics.Debug.WriteLine($"[SyncEngine] Tự động đồng bộ remote_id thành công cho Server '{server.Name}': {matched.Id}");
+                    try
+                    {
+                        DatabaseHelper.UpdateServerRemoteId(server.Id, matched.Id);
+                        System.Diagnostics.Debug.WriteLine($"[SyncEngine] Tự động đồng bộ remote_id thành công cho Server '{server.Name}': {matched.Id}");
+                    }
+                    catch (Exception ex) when (ex.Message.Contains("constraint") || ex.InnerException?.Message?.Contains("constraint") == true)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[SyncEngine] Trùng lặp kênh '{server.Name}' phát hiện trên Cloud. Đang tự động gộp kênh...");
+                        
+                        // 1. Tìm server cũ hơn có cùng remote_id và base_url
+                        var existingServers = DatabaseHelper.GetManagedServers();
+                        var existingServer = existingServers.FirstOrDefault(x => 
+                            x.Id != server.Id && 
+                            x.CloudId == matched.Id && 
+                            x.BaseUrl.TrimEnd('/').Equals(server.BaseUrl.TrimEnd('/'), StringComparison.OrdinalIgnoreCase));
+                            
+                        if (existingServer != null)
+                        {
+                            // 2. Chuyển toàn bộ tài liệu từ server trùng lặp sang server gốc
+                            string mergeDocsQuery = "UPDATE tai_lieu SET server_id = @existingId WHERE server_id = @duplicateId";
+                            DatabaseHelper.ExecuteNonQuery(mergeDocsQuery, [
+                                new("@existingId", existingServer.Id),
+                                new("@duplicateId", server.Id)
+                            ]);
+                            
+                            // 3. Xóa server trùng lặp khỏi SQLite
+                            DatabaseHelper.DeleteServer(server.Id);
+                            
+                            // 4. Xóa server khỏi SyncEngine
+                            RemoveServer(server.Id);
+                            
+                            System.Diagnostics.Debug.WriteLine($"[SyncEngine] Đã gộp thành công kênh '{server.Name}' vào kênh '{existingServer.Name}'!");
+                        }
+                    }
                     return true;
                 }
                 else
