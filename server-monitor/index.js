@@ -90,7 +90,7 @@ function getDisk() {
 function getDockerContainers() {
   try {
     const raw = execSync(
-      'docker stats --no-stream --format "{{.Name}}|{{.CPUPerc}}|{{.MemUsage}}|{{.NetIO}}|{{.PIDs}}|{{.Status}}"',
+      'docker stats --no-stream --format "{{.Name}}|{{.CPUPerc}}|{{.MemUsage}}|{{.NetIO}}|{{.PIDs}}"',
       { encoding: "utf8", timeout: 15000 }
     );
     return raw
