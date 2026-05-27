@@ -199,14 +199,37 @@ jobs:
     needs: build-and-test
     runs-on: self-hosted
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      contents: write
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Deploy Local Server Container
+      - name: Deploy Local Server Container and Measure Duration
+        shell: pwsh
+        env:
+          REPO_URL: "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          RUN_ID: ${{ github.run_id }}
         run: |
+          Write-Host "Starting deployment..."
+          $startTime = [DateTimeOffset]::Now.ToUnixTimeSeconds()
+          
+          # Deploy containers
           docker compose down
           docker compose up -d --build api db monitor
+          
+          $endTime = [DateTimeOffset]::Now.ToUnixTimeSeconds()
+          $durationSeconds = $endTime - $startTime
+          $durationMinutes = [Math]::Round($durationSeconds / 60, 2)
+          if ($durationMinutes -lt 0.01) { $durationMinutes = 0.01 }
+          Write-Host "Deployment completed in $durationMinutes minutes ($durationSeconds seconds)."
+          
+          # Publish deploy duration
+          powershell ./scripts/publish-deploy-duration.ps1 `
+            -RepoUrl "$env:REPO_URL" `
+            -RunId "$env:RUN_ID" `
+            -DeployDuration $durationMinutes
+
 
 
   notify:

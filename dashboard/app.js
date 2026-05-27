@@ -201,16 +201,24 @@ document.addEventListener("DOMContentLoaded", () => {
         
         // --- Calculate DORA Lead Time Rating ---
         if (latestSuccess) {
-            const duration = parseFloat(latestSuccess.buildDuration || 0);
+            const buildDur = parseFloat(latestSuccess.buildDuration || 0);
+            const deployDur = parseFloat(latestSuccess.deployDuration || 0);
+            const totalDur = buildDur + deployDur;
+            
             let rating = "Elite";
             let ratingClass = "text-glowing-green";
-            if (duration > 20) { rating = "High"; ratingClass = "text-glowing-cyan"; }
-            if (duration > 60) { rating = "Medium"; ratingClass = "text-glowing-orange"; }
-            if (duration > 240) { rating = "Low"; ratingClass = "text-glowing-danger"; }
+            if (totalDur > 20) { rating = "High"; ratingClass = "text-glowing-cyan"; }
+            if (totalDur > 60) { rating = "Medium"; ratingClass = "text-glowing-orange"; }
+            if (totalDur > 240) { rating = "Low"; ratingClass = "text-glowing-danger"; }
             
             metricDoraRating.textContent = rating;
             metricDoraRating.className = `metric-value ${ratingClass}`;
-            metricDoraSub.innerHTML = `${duration.toFixed(2)} min build lead time<br><span style="font-size:10px; opacity:0.8; font-family:var(--font-code);">[PR/Branch: ${formatBranchName(latestSuccess.branch)} | SHA: ${latestSuccess.shortSha || latestSuccess.commitSha.substring(0, 7)}]</span>`;
+            
+            let subHtml = `${totalDur.toFixed(2)} min total lead time<br>`;
+            subHtml += `<span style="font-size: 10px; opacity: 0.8; font-family: var(--font-code);">`;
+            subHtml += `[Build: ${buildDur.toFixed(2)}m | Deploy: ${deployDur > 0 ? deployDur.toFixed(2) + 'm' : 'N/A'}]`;
+            subHtml += `</span>`;
+            metricDoraSub.innerHTML = subHtml;
         } else {
             metricDoraRating.textContent = "N/A";
             metricDoraRating.className = "metric-value text-glowing-danger";
@@ -221,7 +229,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const successfulBuilds = data.filter(item => (item.buildStatus === "success" || item.buildStatus === "SUCCESS") && item.buildDuration);
         const avgDuration = successfulBuilds.reduce((sum, item) => sum + parseFloat(item.buildDuration), 0) / (successfulBuilds.length || 1);
         metricBuildDuration.textContent = avgDuration.toFixed(2);
-        metricDurationSub.innerHTML = `Latest: ${parseFloat(latestBuild.buildDuration || 0).toFixed(2)} min<br><span style="font-size:10px; opacity:0.8; font-family:var(--font-code);">[Average of ${successfulBuilds.length} runs]</span>`;
+        
+        const latestBuildDur = parseFloat(latestBuild.buildDuration || 0).toFixed(2);
+        const latestDeployDur = parseFloat(latestBuild.deployDuration || 0);
+        const latestDeployText = latestDeployDur > 0 ? `${latestDeployDur.toFixed(2)} min` : "N/A";
+        metricDurationSub.innerHTML = `Latest: ${latestBuildDur}m (Build) | ${latestDeployText} (Deploy)<br><span style="font-size:10px; opacity:0.8; font-family:var(--font-code);">[Average: ${avgDuration.toFixed(2)} min build time]</span>`;
 
         // --- Installer Size ---
         const installerSize = parseFloat(latestBuild.installerSize || 0);
@@ -347,7 +359,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const chronData = [...data].reverse();
         const labels = chronData.map(item => item.shortSha || (item.commitSha ? item.commitSha.substring(0, 7) : 'N/A'));
         const durations = chronData.map(item => parseFloat(item.buildDuration || 0));
-        const pointColors = chronData.map(item => (item.buildStatus === "success" || item.buildStatus === "SUCCESS") ? "#00f2fe" : "#ff1744");
+        const deployDurations = chronData.map(item => parseFloat(item.deployDuration || 0));
+        const pointColors = chronData.map(item => (item.buildStatus === "success" || item.buildStatus === "SUCCESS") ? "#b927fc" : "#ff1744");
         const pointRadii = chronData.map(item => (item.buildStatus === "success" || item.buildStatus === "SUCCESS") ? 5 : 7);
         const installerSizes = chronData.map(item => parseFloat(item.installerSize || 0));
         const repoSizes = chronData.map(item => parseFloat(item.repoSize || 0));
@@ -356,35 +369,59 @@ document.addEventListener("DOMContentLoaded", () => {
         if (durationChartInstance) durationChartInstance.destroy();
         const ctx1 = document.getElementById("durationChart").getContext("2d");
         
-        // Gradient fill
+        // Gradient fill for Build
         const purpleGrad = ctx1.createLinearGradient(0, 0, 0, 250);
         purpleGrad.addColorStop(0, "rgba(185, 39, 252, 0.25)");
         purpleGrad.addColorStop(1, "rgba(185, 39, 252, 0.00)");
+
+        // Gradient fill for Deploy
+        const cyanGrad = ctx1.createLinearGradient(0, 0, 0, 250);
+        cyanGrad.addColorStop(0, "rgba(0, 242, 254, 0.25)");
+        cyanGrad.addColorStop(1, "rgba(0, 242, 254, 0.00)");
 
         durationChartInstance = new Chart(ctx1, {
             type: "line",
             data: {
                 labels: labels,
-                datasets: [{
-                    label: "Build Duration (min)",
-                    data: durations,
-                    borderColor: "#b927fc",
-                    borderWidth: 2,
-                    pointBackgroundColor: pointColors,
-                    pointBorderColor: "#fff",
-                    pointRadius: pointRadii,
-                    pointHoverRadius: 8,
-                    tension: 0.4,
-                    fill: true,
-                    backgroundColor: purpleGrad,
-                    spanGaps: true
-                }]
+                datasets: [
+                    {
+                        label: "Build Duration (min)",
+                        data: durations,
+                        borderColor: "#b927fc",
+                        borderWidth: 2,
+                        pointBackgroundColor: pointColors,
+                        pointBorderColor: "#fff",
+                        pointRadius: pointRadii,
+                        pointHoverRadius: 8,
+                        tension: 0.4,
+                        fill: true,
+                        backgroundColor: purpleGrad,
+                        spanGaps: true
+                    },
+                    {
+                        label: "Deploy Duration (min)",
+                        data: deployDurations,
+                        borderColor: "#00f2fe",
+                        borderWidth: 2,
+                        pointBackgroundColor: "#00f2fe",
+                        pointBorderColor: "#fff",
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        tension: 0.4,
+                        fill: true,
+                        backgroundColor: cyanGrad,
+                        spanGaps: true
+                    }
+                ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { display: false }
+                    legend: {
+                        display: true,
+                        labels: { color: "#8c9ba5", font: { family: "Plus Jakarta Sans", size: 11 } }
+                    }
                 },
                 scales: {
                     x: {
@@ -513,9 +550,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Duration
             const durationVal = parseFloat(item.buildDuration || 0);
+            const deployDurVal = parseFloat(item.deployDuration || 0);
             const durationTd = `
-                <td style="font-family: var(--font-code); font-weight: 500;">
-                    ${durationVal > 0 ? durationVal.toFixed(2) + " min" : "N/A"}
+                <td class="details-cell" style="font-family: var(--font-code);">
+                    <div class="details-line">Build: <strong>${durationVal > 0 ? durationVal.toFixed(2) + "m" : "N/A"}</strong></div>
+                    <div class="details-line">Deploy: <strong>${deployDurVal > 0 ? deployDurVal.toFixed(2) + "m" : "N/A"}</strong></div>
                 </td>
             `;
 

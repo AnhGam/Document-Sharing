@@ -54,14 +54,14 @@ git clone --branch logs --depth 1 $RepoUrl $logsDir 2>$null
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Branch 'logs' not found in remote. Creating a new orphan branch locally..."
     mkdir $logsDir -ErrorAction SilentlyContinue
-    cd $logsDir
+    Set-Location $logsDir
     git init
     git checkout --orphan logs
     " # Build History Dashboard`n`nArchived build reports and DORA telemetry." | Out-File README.md
     git add README.md
     git commit -m "Initialize logs branch"
     git remote add origin $RepoUrl
-    cd ..
+    Set-Location ..
 }
 
 # 4. Organize Reports
@@ -94,7 +94,7 @@ foreach ($asset in $dashboardAssets) {
 }
 
 # 6. Update JSON Database (history.json)
-cd $logsDir
+Set-Location $logsDir
 $historyFile = "history.json"
 $history = @()
 
@@ -133,6 +133,7 @@ $newRecord = [PSCustomObject]@{
     installerSize = $cInstaller
     repoSize      = $cRepo
     buildDuration = $cDuration
+    deployDuration = 0.0
     branch        = $Branch
     actor         = $Actor
     commitMessage = $CommitMessage
@@ -174,5 +175,5 @@ git add .
 git commit -m "Archive reports and telemetry for commit $shortSha [Run: $RunId]"
 git push origin logs
 
-cd ..
+Set-Location ..
 Write-Host "--- GitOps Reporting Success! ---"
