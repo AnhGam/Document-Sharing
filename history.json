@@ -1,5 +1,20 @@
 [
   {
+    "commitSha": "184ef3fe278f8343bf84089aa94c1bf0cd5a0cc3",
+    "shortSha": "184ef3f",
+    "runId": "26514875359",
+    "date": "2026-05-27",
+    "time": "13:45",
+    "buildStatus": "success",
+    "installerSize": 6.14,
+    "repoSize": 259.09,
+    "buildDuration": 3.2,
+    "deployDuration": 0.0,
+    "branch": "main",
+    "actor": "AnhGam",
+    "commitMessage": "Merge pull request #22 from AnhGam/nma\n\noptimized ci/cd"
+  },
+  {
     "commitSha": "42305bee153bab8aa5898abad3e69554e8ec636a",
     "shortSha": "42305be",
     "runId": "26510062266",
