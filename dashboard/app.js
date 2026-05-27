@@ -234,10 +234,10 @@ document.addEventListener("DOMContentLoaded", () => {
             if (totalDur > 60) { rating = "Medium"; ratingClass = "text-glowing-orange"; }
             if (totalDur > 240) { rating = "Low"; ratingClass = "text-glowing-danger"; }
             
-            metricDoraRating.textContent = rating;
+            metricDoraRating.innerHTML = `${totalDur.toFixed(2)}<span class="unit">min</span>`;
             metricDoraRating.className = `metric-value ${ratingClass}`;
             
-            let subHtml = `${totalDur.toFixed(2)} min total lead time<br>`;
+            let subHtml = `Đánh giá: <strong>${rating}</strong><br>`;
             subHtml += `<span style="font-size: 10px; opacity: 0.8; font-family: var(--font-code);">`;
             subHtml += `[Build: ${buildDur.toFixed(2)}m | Deploy: ${deployDur > 0 ? deployDur.toFixed(2) + 'm' : 'N/A'}]`;
             subHtml += `</span>`;
@@ -309,9 +309,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 freqClass = "text-glowing-orange";
             }
             
-            metricDeployFrequency.textContent = freqRating;
+            metricDeployFrequency.innerHTML = `${deployCount}<span class="unit"> lượt</span>`;
             metricDeployFrequency.className = `metric-value ${freqClass}`;
-            metricDeployFrequencySub.innerHTML = `Tổng số: <strong>${deployCount}</strong> lượt thành công<br><span style="font-size:9px; opacity:0.8; font-family:var(--font-code);">[Dựa trên lịch sử lưu trữ]</span>`;
+            metricDeployFrequencySub.innerHTML = `Đánh giá: <strong>${freqRating}</strong><br><span style="font-size:9px; opacity:0.8; font-family:var(--font-code);">[Tổng số lượt deploy thành công]</span>`;
         }
 
         // --- Change Failure Rate ---
