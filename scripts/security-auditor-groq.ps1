@@ -32,59 +32,79 @@ manually to verify package security.
     exit 0
 }
 
-Write-Host "--- Calling Groq AI (Llama 3) for security audit analysis ---"
+Write-Host "--- Calling Groq AI (Llama 3.3) for contextual security audit analysis ---"
 
-$logContent = Get-Content $AuditLog | Out-String
-
-# If no vulnerabilities, generate a clean summary WITHOUT calling AI
-if ([string]::IsNullOrWhiteSpace($logContent) -or $logContent -match "has no vulnerabilities") {
-    Write-Host "SUCCESS: No vulnerabilities found."
-    
-    $cleanReport = @"
-## Security Audit Report
-
-**BUILD_STATUS: PASS**
-
-No vulnerable packages were found in the project dependencies.
-
-### Scan Summary
-| Check | Result |
-|:------|:-------|
-| Vulnerable Packages | 0 found |
-| Scan Date | $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') |
-| Tool | ``dotnet list package --vulnerable`` |
-| AI Analysis | Not required (clean scan) |
-
-### Recommendations
-- Continue monitoring dependencies with regular scans
-- Keep NuGet packages updated to their latest stable versions
-- Consider enabling GitHub Dependabot alerts for automated monitoring
-
----
-*Automated Security Audit | Clean Scan*
-"@
-    $cleanReport | Out-File "security_audit_summary.md" -Encoding utf8
-    exit 0
+$logContent = Get-Content $AuditLog -ErrorAction SilentlyContinue | Out-String
+if ([string]::IsNullOrWhiteSpace($logContent)) {
+    $logContent = "No vulnerable packages were detected in the project dependencies."
 }
 
-# Vulnerabilities found — call Groq AI for contextual analysis
-$prompt = @"
-You are a Cyber Security expert. I have a .NET WinForms project and these are the results from 'dotnet list package --vulnerable'.
+# Collect rich context for a deeper security code review and threat modeling
+$gitChanges = "No git diff statistics available."
+$gitDiff = "No git patch diff available."
+$dependencyList = "No NuGet package list available."
 
-Analyze the vulnerabilities and provide a structured security report with these sections:
-1. **Risk Summary** - Overall risk level (Critical/High/Medium/Low)
-2. **Vulnerable Packages** - List each vulnerable package with its CVE if available
-3. **Impact Analysis** - What could be exploited and how
-4. **Remediation Steps** - Specific upgrade commands or workarounds
-5. **Build Decision** - Should this block the release?
+try {
+    $gitChanges = (git show --stat --oneline HEAD) -join "`n"
+    $gitDiff = (git show --oneline -p HEAD) -join "`n"
+    Write-Host "Security Auditor: Captured git show details successfully."
+} catch {
+    Write-Host "WARNING: Failed to capture git changes in security auditor: $_"
+}
+
+try {
+    $dependencyList = (dotnet list package) -join "`n"
+    Write-Host "Security Auditor: Captured full NuGet dependency inventory successfully."
+} catch {}
+
+# Truncate diff to avoid token limit issues (max 15,000 characters)
+if ($gitDiff.Length -gt 15000) {
+    $gitDiff = $gitDiff.Substring(0, 15000) + "`n... (diff truncated to fit security context)"
+}
+
+# Determine if there are vulnerable packages
+$hasVulnerabilities = $logContent -notmatch "has no vulnerabilities" -and $logContent -notmatch "0 found" -and $logContent -match "vulnerable"
+
+$prompt = @"
+You are a senior Cyber Security & Application Security (AppSec) expert. You are auditing a .NET WinForms project called "Document Sharing Manager".
+
+BUILD CONTEXT:
+- Date: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
+
+VULNERABILITY AUDIT RESULT (dotnet list package --vulnerable):
+$logContent
+
+RECENT NUGET DEPENDENCY INVENTORY:
+$dependencyList
+
+COMMIT DETAILS & CODE CHANGES (GIT STAT):
+$gitChanges
+
+FULL CODE DIFF (GIT PATCH):
+$gitDiff
+
+INSTRUCTIONS:
+Conduct an AppSec review of this commit. Your review must be highly specific to the actual code changes shown in the GIT PATCH and the packages in the DEPENDENCY INVENTORY.
+
+1. **If the Vulnerability Audit has vulnerabilities** ($hasVulnerabilities = True):
+   - Analyze the CVEs, exploits, risks, remediation steps, and decide whether this blocks the build.
+2. **If the Vulnerability Audit is CLEAN** ($hasVulnerabilities = False):
+   - Acknowledge that the NuGet scan is clean.
+   - Perform a **Threat Modeling & Secure Code Review** of the modified code lines in the GIT PATCH. Identify potential OWASP top-10 risks, SQL injection, insecure cryptography, secret exposures (passwords/keys), access control bypass, or input validation flaws in the modified code.
+   - Perform a **Software Supply Chain Risk Assessment** of the dependencies listed in the INVENTORY.
+
+Provide a structured report with these sections:
+1. **Risk Summary** - Overall security risk level (Critical/High/Medium/Low)
+2. **Vulnerability Assessment** - Bullet points of scanned packages and CVEs (if any) or validation that dependencies are clean.
+3. **Secure Code Review (Threat Modeling)** - Specific security review of the actual modified lines of code in the GIT PATCH.
+4. **Supply Chain Security** - Review of the NuGet dependency inventory and supply chain risk.
+5. **Remediation & Hardening Steps** - Specific actionable upgrades or security coding workarounds.
+6. **Build Decision** - Explain if this build should pass or fail.
 
 IMPORTANT FORMAT RULES:
 - Use plain ASCII text only. Do NOT use emoji, unicode symbols, or special characters.
-- Use markdown formatting (headers, tables, bold, code blocks).
-- If there are any critical or high-risk vulnerabilities (CVSS > 7.0) that MUST block the release, start your response with exactly 'BUILD_STATUS: FAIL'. Otherwise, start with 'BUILD_STATUS: PASS'.
-
-AUDIT LOG:
-$logContent
+- Use markdown formatting (headers ##, tables, bold, code blocks).
+- If there are any critical or high-risk vulnerabilities (CVSS > 7.0) or critical code-level security flaws (e.g. exposed API keys/passwords) that MUST block the release, start your response with exactly 'BUILD_STATUS: FAIL'. Otherwise, start with 'BUILD_STATUS: PASS'.
 "@
 
 $body = @{
@@ -93,7 +113,7 @@ $body = @{
         @{ role = "user"; content = $prompt }
     )
     temperature = 0.3
-    max_tokens = 1024
+    max_tokens = 1200
 } | ConvertTo-Json
 
 try {
