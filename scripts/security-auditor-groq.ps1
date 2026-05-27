@@ -13,6 +13,9 @@ function Remove-NonAscii {
 }
 
 if (-not $ApiKey) {
+    $ApiKey = $env:GROQ_API_KEY
+}
+if (-not $ApiKey) {
     Write-Host "WARNING: GROQ_API_KEY is missing. Generating local-only security summary."
     $localReport = @"
 ## Security Audit Report

@@ -1,8 +1,14 @@
+name: CI/CD Pipeline
+
 on:
   push:
     branches: [main, master, development]
   pull_request:
     branches: [main, master, development]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   SOLUTION_FILE: document-sharing-manager.sln
@@ -13,6 +19,7 @@ jobs:
   security-and-lint:
     name: Security and Linting
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
     steps:
@@ -29,6 +36,7 @@ jobs:
     name: Build and Advanced Testing
     needs: security-and-lint
     runs-on: windows-latest
+    timeout-minutes: 30
     permissions:
       contents: write
     outputs:
@@ -36,6 +44,13 @@ jobs:
       repo_size: ${{ steps.capacity.outputs.repo_size }}
       build_duration: ${{ steps.capacity.outputs.build_duration }}
     steps:
+      - name: Record Start Time
+        id: start_time
+        shell: pwsh
+        run: |
+          $ts = [DateTimeOffset]::Now.ToUnixTimeSeconds()
+          echo "ts=$ts" >> $env:GITHUB_OUTPUT
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -53,6 +68,14 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.sln') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
       - name: Restore and Optimize Assets
         run: |
           nuget restore ${{ env.SOLUTION_FILE }}
@@ -60,19 +83,19 @@ jobs:
           powershell ./scripts/optimize-assets.ps1
 
       - name: Dependency Audit and Groq AI
+        shell: pwsh
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
           dotnet list document-sharing-manager.Tests/document-sharing-manager.Tests.csproj package --vulnerable > audit_log.txt || true
-          powershell ./scripts/security-auditor-groq.ps1 -AuditLog audit_log.txt -ApiKey "${{ env.GROQ_API_KEY }}"
+          ./scripts/security-auditor-groq.ps1 -AuditLog audit_log.txt
 
       - name: Build Solution (Zero Warning Policy)
         run: msbuild ${{ env.SOLUTION_FILE }} /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:Platform="Any CPU" /t:Rebuild /p:TreatWarningsAsErrors=true
 
       - name: Run Advanced Tests (NUnit)
         run: |
-          dotnet test document-sharing-manager.Tests/document-sharing-manager.Tests.csproj --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --logger "trx;LogFileName=test_results.trx"
-        continue-on-error: true
+          dotnet test document-sharing-manager.Tests/document-sharing-manager.Tests.csproj --configuration ${{ env.BUILD_CONFIGURATION }} --logger "trx;LogFileName=test_results.trx"
 
       - name: Download .NET 4.8 Redistributable for Installer
         run: |
@@ -96,25 +119,14 @@ jobs:
 
       - name: Run Capacity Check & DORA Analytics
         id: capacity
-        run: |
-          $pushedAt = "${{ github.event.repository.pushed_at }}"
-          $startTime = [DateTimeOffset]::Now.ToUnixTimeSeconds() - 60
-          if ($pushedAt) {
-              if ($pushedAt -match '^\d+$') {
-                  $startTime = [long]$pushedAt
-              } else {
-                  try {
-                      $startTime = [DateTimeOffset]::Parse($pushedAt).ToUnixTimeSeconds()
-                  } catch {
-                      Write-Host "Could not parse pushed_at: $pushedAt"
-                  }
-              }
-          }
-          $now = [DateTimeOffset]::Now.ToUnixTimeSeconds()
-          $duration = $now - $startTime
-          if ($duration -lt 0) { $duration = 0 }
-          powershell ./scripts/capacity-governance.ps1 -MaxInstallerSizeMB 50 -MaxRepoSizeMB 500 -BuildDurationSeconds $duration
         shell: pwsh
+        run: |
+          $startTime = [long]${{ steps.start_time.outputs.ts }}
+          $now = [DateTimeOffset]::Now.ToUnixTimeSeconds()
+          $durationSeconds = [int]($now - $startTime)
+          if ($durationSeconds -lt 0) { $durationSeconds = 0 }
+          
+          ./scripts/capacity-governance.ps1 -MaxInstallerSizeMB 50 -MaxRepoSizeMB 500 -BuildDurationSeconds $durationSeconds
 
       - name: Publish Capacity Report
         if: always()
@@ -150,15 +162,16 @@ jobs:
           AI_BRANCH: ${{ github.head_ref || github.ref_name }}
           AI_COMMIT_MESSAGE: ${{ github.event.head_commit.message || 'No commit message' }}
         run: |
-          powershell ./scripts/ai-log-analyzer-groq.ps1 `
+          ./scripts/ai-log-analyzer-groq.ps1 `
             -ApiKey "$env:GROQ_API_KEY" `
             -BuildStatus "$env:AI_BUILD_STATUS" `
             -CommitSha "$env:AI_COMMIT_SHA" `
             -Branch "$env:AI_BRANCH" `
             -CommitMessage "$env:AI_COMMIT_MESSAGE"
 
+
       - name: Archive Build Reports (GitOps)
-        if: always() && (github.event_name == 'push' || github.event_name == 'pull_request')
+        if: always() && github.event_name == 'push'
         shell: pwsh
         env:
           REPO_URL: "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
@@ -198,6 +211,7 @@ jobs:
     name: Continuous Deployment (Self-Hosted Runner)
     needs: build-and-test
     runs-on: self-hosted
+    timeout-minutes: 15
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     permissions:
       contents: write
@@ -236,6 +250,7 @@ jobs:
     name: Discord Notification
     needs: [build-and-test, deploy]
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     if: always()
     steps:
       - name: Discord Webhook 2.0
@@ -273,7 +288,12 @@ jobs:
             MSG="$MSG[View Grafana Dashboard]($DASHBOARD_URL)\n"
             MSG="$MSG[View GitHub Run](${SERVER_URL}/${REPOSITORY}/actions/runs/${RUN_ID})"
 
-            curl -H "Content-Type: application/json" \
-              -d "{\"embeds\": [{\"title\": \"CI/CD Pipeline Performance: $BUILD_RESULT\", \"description\": \"$MSG\", \"color\": $COLOR}]}" \
-              $DISCORD_WEBHOOK
+            # Build JSON payload safely using jq to avoid formatting and injection errors
+            PAYLOAD=$(jq -n \
+              --arg title "CI/CD Pipeline Performance: $BUILD_RESULT" \
+              --arg desc "$MSG" \
+              --argjson color "$COLOR" \
+              '{embeds:[{title:$title,description:$desc,color:$color}]}')
+
+            curl -H "Content-Type: application/json" -d "$PAYLOAD" "$DISCORD_WEBHOOK"
           fi
