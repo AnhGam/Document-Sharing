@@ -27,6 +27,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const metricInstallerSub = document.getElementById("metric-installer-sub");
     const metricRepoSize = document.getElementById("metric-repo-size");
     const metricRepoSub = document.getElementById("metric-repo-sub");
+    const metricDeployFrequency = document.getElementById("metric-deploy-frequency");
+    const metricDeployFrequencySub = document.getElementById("metric-deploy-frequency-sub");
+    const metricChangeFailure = document.getElementById("metric-change-failure");
+    const metricChangeFailureSub = document.getElementById("metric-change-failure-sub");
     
     const installerProgress = document.getElementById("installer-progress");
     const repoProgress = document.getElementById("repo-progress");
@@ -141,6 +145,17 @@ document.addEventListener("DOMContentLoaded", () => {
             metricRepoSize.textContent = "-";
             repoProgress.style.width = "0%";
             metricRepoSub.textContent = "Limit: 500.0 MB";
+
+            if (metricDeployFrequency) {
+                metricDeployFrequency.textContent = "-";
+                metricDeployFrequency.className = "metric-value text-glowing-purple";
+                metricDeployFrequencySub.textContent = "Tổng số: 0 lượt deploy";
+            }
+            if (metricChangeFailure) {
+                metricChangeFailure.textContent = "-";
+                metricChangeFailure.className = "metric-value text-glowing-orange";
+                metricChangeFailureSub.textContent = "Ghi nhận: 0 lỗi / 0 builds";
+            }
 
             // Reset active context banner
             if (contextCommitInfo) {
@@ -263,6 +278,59 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
             metricRepoSize.className = "metric-value text-glowing-orange";
             metricRepoSub.innerHTML = `Limit: ${MAX_REPO_MB} MB (${repoPct.toFixed(0)}% used)<br><span style="font-size:10px; opacity:0.8; font-family:var(--font-code);">[Build #${latestBuild.runId || 'N/A'} | ${latestBuild.shortSha || 'N/A'}]</span>`;
+        }
+
+        // --- Deployment Frequency ---
+        if (metricDeployFrequency) {
+            const successfulDeploys = data.filter(item => {
+                const status = (item.buildStatus || "").toLowerCase();
+                return status === "success" && parseFloat(item.deployDuration || 0) > 0;
+            });
+            const deployCount = successfulDeploys.length;
+            
+            let freqRating = "Low";
+            let freqClass = "text-glowing-danger";
+            if (deployCount >= 8) {
+                freqRating = "Elite";
+                freqClass = "text-glowing-green";
+            } else if (deployCount >= 3) {
+                freqRating = "High";
+                freqClass = "text-glowing-cyan";
+            } else if (deployCount >= 1) {
+                freqRating = "Medium";
+                freqClass = "text-glowing-orange";
+            }
+            
+            metricDeployFrequency.textContent = freqRating;
+            metricDeployFrequency.className = `metric-value ${freqClass}`;
+            metricDeployFrequencySub.innerHTML = `Tổng số: <strong>${deployCount}</strong> lượt thành công<br><span style="font-size:9px; opacity:0.8; font-family:var(--font-code);">[Dựa trên lịch sử lưu trữ]</span>`;
+        }
+
+        // --- Change Failure Rate ---
+        if (metricChangeFailure) {
+            const failedRuns = data.filter(item => {
+                const status = (item.buildStatus || "").toLowerCase();
+                return status === "failure" || status === "error";
+            }).length;
+            const totalRuns = data.length || 1;
+            const failureRate = (failedRuns / totalRuns) * 100;
+            
+            let failureRating = "Elite";
+            let failureClass = "text-glowing-green";
+            if (failureRate > 30) {
+                failureRating = "Low";
+                failureClass = "text-glowing-danger";
+            } else if (failureRate > 15) {
+                failureRating = "Medium";
+                failureClass = "text-glowing-orange";
+            } else if (failureRate > 5) {
+                failureRating = "High";
+                failureClass = "text-glowing-cyan";
+            }
+            
+            metricChangeFailure.innerHTML = `${failureRate.toFixed(1)}<span class="unit">%</span>`;
+            metricChangeFailure.className = `metric-value ${failureClass}`;
+            metricChangeFailureSub.innerHTML = `Đánh giá: <strong>${failureRating}</strong> (${failedRuns} lỗi / ${totalRuns} runs)<br><span style="font-size:9px; opacity:0.8; font-family:var(--font-code);">[Tần suất phát sinh lỗi build/test]</span>`;
         }
 
         // --- Render Charts & Table ---
