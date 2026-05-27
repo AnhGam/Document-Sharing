@@ -14,7 +14,7 @@ namespace document_sharing_manager_api.Controllers
     [ApiController]
     [Route("api/documents")]
     [Authorize]
-    public class DocumentsController(IDocumentRepository repository, IStorageService storageService, AppDbContext context) : ControllerBase
+    public class DocumentsController(IDocumentRepository repository, IStorageService storageService, AppDbContext context, IAuditService auditService) : ControllerBase
     {
         private static string SanitizeFileName(string fileName)
         {
@@ -26,6 +26,9 @@ namespace document_sharing_manager_api.Controllers
         private readonly IDocumentRepository _repository = repository;
         private readonly IStorageService _storageService = storageService;
         private readonly AppDbContext _context = context;
+        private readonly IAuditService _auditService = auditService;
+
+        private string CurrentUserName => User.Identity?.Name ?? "Anonymous";
 
         private async Task<bool> IsMemberOfServerAsync(int serverId, CancellationToken ct)
         {
@@ -138,6 +141,7 @@ namespace document_sharing_manager_api.Controllers
             if (document == null)
                 return NotFound();
 
+            await _auditService.LogAsync(CurrentUserId, CurrentUserName, "DownloadFile", "Document", document.Id.ToString(), $"File: {document.Ten}", HttpContext.Connection.RemoteIpAddress?.ToString() ?? "", ct);
             return await SendFileResponse(document, ct);
         }
 
@@ -153,6 +157,7 @@ namespace document_sharing_manager_api.Controllers
             bool hasAccess = document.UserId == CurrentUserId || (document.ServerId.HasValue && serverIds.Contains(document.ServerId.Value));
             if (!hasAccess) return Forbid();
 
+            await _auditService.LogAsync(CurrentUserId, CurrentUserName, "DownloadFile", "Document", document.Id.ToString(), $"File: {document.Ten}", HttpContext.Connection.RemoteIpAddress?.ToString() ?? "", ct);
             return await SendFileResponse(document, ct);
         }
 
@@ -264,6 +269,7 @@ namespace document_sharing_manager_api.Controllers
             try 
             {
                 await _repository.UpdateAsync(document, ct);
+                await _auditService.LogAsync(CurrentUserId, CurrentUserName, "UploadFile", "Document", document.Id.ToString(), $"File: {document.Ten}, Version: {document.Version}", HttpContext.Connection.RemoteIpAddress?.ToString() ?? "", ct);
             }
             catch (Exception ex) when (ex is System.Data.DBConcurrencyException || ex is DbUpdateConcurrencyException)
             {
@@ -353,6 +359,7 @@ namespace document_sharing_manager_api.Controllers
             try 
             {
                 await _repository.UpdateAsync(document, ct);
+                await _auditService.LogAsync(CurrentUserId, CurrentUserName, "SyncDocument", "Document", document.Id.ToString(), $"File: {document.Ten}, Version: {document.Version}", HttpContext.Connection.RemoteIpAddress?.ToString() ?? "", ct);
             }
             catch (Exception ex) when (ex is System.Data.DBConcurrencyException || ex.GetType().Name == "DbUpdateConcurrencyException")
             {
