@@ -1,5 +1,19 @@
 [
   {
+    "commitSha": "8593a3f5518f02eb72efeb880a164ec14ba51f88",
+    "shortSha": "8593a3f",
+    "runId": "26490306511",
+    "date": "2026-05-27",
+    "time": "04:15",
+    "buildStatus": "success",
+    "installerSize": 7.89,
+    "repoSize": 266.21,
+    "buildDuration": 2.33,
+    "branch": "main",
+    "actor": "AnhGam",
+    "commitMessage": "Merge branch 'nma'"
+  },
+  {
     "commitSha": "13e6c6458270e90174c4eccba99f608413eb081c",
     "shortSha": "13e6c64",
     "runId": "26490191828",
