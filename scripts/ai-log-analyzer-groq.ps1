@@ -37,19 +37,34 @@ Write-Host "--- AI Build Log Analysis (Groq Llama 3) ---"
 
 # Capture actual git code changes details
 $gitChanges = "No git diff statistics available."
+$gitDiff = "No git patch diff available."
+$gitHistory = "No recent git commit logs available."
+
 if ($CommitSha) {
     try {
         $gitChanges = (git show --stat --oneline $CommitSha) -join "`n"
-        Write-Host "Successfully captured git show statistics for commit: $CommitSha"
+        $gitDiff = (git show --oneline -p $CommitSha) -join "`n"
+        Write-Host "Successfully captured git show statistics and diff for commit: $CommitSha"
     } catch {
-        Write-Host "WARNING: Failed to capture git show stat: $_"
+        Write-Host "WARNING: Failed to capture git show data: $_"
     }
 }
 if ([string]::IsNullOrWhiteSpace($gitChanges) -or $gitChanges -eq "No git diff statistics available.") {
     try {
         $gitChanges = (git show --stat --oneline HEAD) -join "`n"
-        Write-Host "Successfully captured git show statistics for HEAD as fallback."
+        $gitDiff = (git show --oneline -p HEAD) -join "`n"
+        Write-Host "Successfully captured git show statistics and diff for HEAD as fallback."
     } catch {}
+}
+
+# Capture recent commit history (last 5 commits)
+try {
+    $gitHistory = (git log -n 5 --oneline) -join "`n"
+} catch {}
+
+# Truncate gitDiff to avoid too large payload (max 15,000 chars)
+if ($gitDiff.Length -gt 15000) {
+    $gitDiff = $gitDiff.Substring(0, 15000) + "`n... (diff truncated to fit context limits)"
 }
 
 # Collect build context
@@ -58,7 +73,29 @@ $buildLogs = ""
 # 1. Capture build output if available
 $logSources = @()
 
-# Test results
+# Build logs
+if (Test-Path "build_output.txt") {
+    $buildOutput = Get-Content "build_output.txt" -Raw -ErrorAction SilentlyContinue
+    if ($buildOutput) {
+        if ($buildOutput.Length -gt 8000) {
+            $buildOutput = $buildOutput.Substring(0, 4000) + "`n`n... [TRUNCATED MIDDLE MSBUILD LOGS] ...`n`n" + $buildOutput.Substring($buildOutput.Length - 4000)
+        }
+        $logSources += "--- MSBuild Compile Console Log ---`n$buildOutput"
+    }
+}
+
+# Test console logs
+if (Test-Path "test_output.txt") {
+    $testOutput = Get-Content "test_output.txt" -Raw -ErrorAction SilentlyContinue
+    if ($testOutput) {
+        if ($testOutput.Length -gt 8000) {
+            $testOutput = $testOutput.Substring(0, 4000) + "`n`n... [TRUNCATED MIDDLE TEST LOGS] ...`n`n" + $testOutput.Substring($testOutput.Length - 4000)
+        }
+        $logSources += "--- NUnit Test Console Log ---`n$testOutput"
+    }
+}
+
+# Test results (TRX metrics)
 if (Test-Path "document-sharing-manager.Tests/TestResults/*.trx") {
     $trxFile = Get-ChildItem "document-sharing-manager.Tests/TestResults/*.trx" -ErrorAction SilentlyContinue | Select-Object -First 1
     if ($trxFile) {
@@ -99,9 +136,9 @@ if (Test-Path "security_audit_summary.md") {
 
 $buildLogs = $logSources -join "`n`n"
 
-# Truncate to avoid token limits
-if ($buildLogs.Length -gt 4000) {
-    $buildLogs = $buildLogs.Substring(0, 4000) + "`n... (truncated)"
+# Truncate to avoid token limits (allowing up to 35,000 characters for rich logs)
+if ($buildLogs.Length -gt 35000) {
+    $buildLogs = $buildLogs.Substring(0, 35000) + "`n... (build logs truncated to fit context limits)"
 }
 
 # If no logs collected at all, still produce a useful analysis
@@ -114,8 +151,14 @@ $shortSha = if ($CommitSha.Length -ge 7) { $CommitSha.Substring(0, 7) } else { $
 $prompt = @"
 You are a DevOps/CI/Software Engineering expert. Analyze this CI/CD build for a .NET WinForms project called "Document Sharing Manager".
 
+RECENT GIT COMMIT HISTORY:
+$gitHistory
+
 COMMIT DETAILS & CODE CHANGES (GIT STAT):
 $gitChanges
+
+FULL CODE DIFF (GIT PATCH):
+$gitDiff
 
 BUILD CONTEXT:
 - Commit: $shortSha
@@ -124,18 +167,19 @@ BUILD CONTEXT:
 - Message: $CommitMessage
 - Date: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
 
-BUILD LOGS AND REPORTS:
+BUILD LOGS, COMPILER OUTPUT, TEST RUNS AND REPORTS:
 $buildLogs
 
-Based on the actual code files that were added, modified, or deleted in this commit (shown in the GIT STAT above) and the build logs:
-- Explain what functional or structural changes this commit introduced to the codebase.
-- Provide a highly specific analysis of this commit rather than a generic template.
-- Identify any potential risks, impact, or recommendations specific to the modified code files (e.g. database, security, UI, etc.).
+Based on the actual code changes (GIT PATCH and GIT STAT above) and the compiler/test execution console logs:
+1. Explain what functional or structural changes this commit introduced to the codebase. Review the actual code lines modified in the GIT PATCH.
+2. Provide a highly specific analysis of this commit rather than a generic template. 
+3. If there are any compiler warnings, errors, or failed test stack traces in the logs, perform a deep diagnostic of them.
+4. Identify potential risks, impact, or recommendations specific to the modified code files (e.g. database connections, security, UI design, resource leakages, etc.).
 
 Provide a structured analysis with these sections:
 1. **Build Summary** - One-line verdict explaining what this build achieved or why it failed, referencing the actual feature implemented or bug fixed.
-2. **Key Findings** - Technical analysis of the specific code changes and reports (use bullet points, link to the modified areas if applicable).
-3. **Test Results** - Summary of test execution if available.
+2. **Key Findings & Code Review** - Detailed technical review of the specific code changes in the GIT PATCH and compiler warnings/errors (use bullet points, link to the modified areas if applicable).
+3. **Test Results & Diagnostics** - Summary of test execution and deep debugging of any failed tests.
 4. **Security Posture** - Assessment based on audit data.
 5. **Performance & Capacity** - Build duration, footprint impact (installer/repo size changes).
 6. **Recommendations** - 3 actionable next steps specific to the code changed in this commit.
@@ -143,7 +187,7 @@ Provide a structured analysis with these sections:
 FORMAT RULES:
 - Use plain ASCII text only. No emoji, no unicode symbols, no special characters.
 - Use proper markdown formatting (headers ##, tables, bold **text**, code blocks).
-- Keep total response under 500 words.
+- Keep total response under 600 words.
 "@
 
 $body = @{

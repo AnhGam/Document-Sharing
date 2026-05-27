@@ -91,11 +91,14 @@ jobs:
           ./scripts/security-auditor-groq.ps1 -AuditLog audit_log.txt
 
       - name: Build Solution (Zero Warning Policy)
-        run: msbuild ${{ env.SOLUTION_FILE }} /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:Platform="Any CPU" /t:Rebuild /p:TreatWarningsAsErrors=true
+        shell: pwsh
+        run: |
+          msbuild ${{ env.SOLUTION_FILE }} /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:Platform="Any CPU" /t:Rebuild /p:TreatWarningsAsErrors=true | Tee-Object -FilePath build_output.txt
 
       - name: Run Advanced Tests (NUnit)
+        shell: pwsh
         run: |
-          dotnet test document-sharing-manager.Tests/document-sharing-manager.Tests.csproj --configuration ${{ env.BUILD_CONFIGURATION }} --logger "trx;LogFileName=test_results.trx"
+          dotnet test document-sharing-manager.Tests/document-sharing-manager.Tests.csproj --configuration ${{ env.BUILD_CONFIGURATION }} --logger "trx;LogFileName=test_results.trx" | Tee-Object -FilePath test_output.txt
 
       - name: Download .NET 4.8 Redistributable for Installer
         run: |
