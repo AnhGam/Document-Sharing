@@ -1,5 +1,20 @@
 [
   {
+    "commitSha": "13f87610881647c789d43572a32a1aa1ae6d3ff4",
+    "shortSha": "13f8761",
+    "runId": "26499331632",
+    "date": "2026-05-27",
+    "time": "08:16",
+    "buildStatus": "failure",
+    "installerSize": 7.89,
+    "repoSize": 266.26,
+    "buildDuration": 2.63,
+    "deployDuration": 0.0,
+    "branch": "main",
+    "actor": "AnhGam",
+    "commitMessage": "Merge pull request #21 from AnhGam/nma\n\nupdate for CI/CD gitpages"
+  },
+  {
     "commitSha": "b42e64f95a024addf2500e582b3f3a5c4a655647",
     "shortSha": "b42e64f",
     "runId": "26499103705",
