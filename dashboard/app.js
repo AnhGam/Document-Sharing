@@ -1,6 +1,6 @@
 /**
  * DSM CI/CD Observability Dashboard Logic
- * Interactive telemetry, live metrics charts, and GitOps report viewer.
+ * Interactive telemetry, live metrics charts, server health monitoring, and GitOps report viewer.
  */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -12,6 +12,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // Chart References
     let durationChartInstance = null;
     let capacityChartInstance = null;
+
+    // Server Monitor Config
+    const SERVER_MONITOR_URL = "https://edgeparty.me/api/server-stats";
+    const SERVER_POLL_INTERVAL = 10000; // 10 seconds
+    let serverOnline = false;
 
     // DOM Elements
     const metricDoraRating = document.getElementById("metric-dora-rating");
@@ -51,7 +56,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const MAX_INSTALLER_MB = 50.0;
     const MAX_REPO_MB = 500.0;
 
+    // ═══════════════════════════════════════════════════════
     // 1. Fetch JSON database
+    // ═══════════════════════════════════════════════════════
     async function initDashboard() {
         try {
             const response = await fetch("history.json");
@@ -172,12 +179,14 @@ document.addEventListener("DOMContentLoaded", () => {
         // --- Update Active Context Banner ---
         if (contextCommitInfo) {
             const shortSha = latestBuild.shortSha || (latestBuild.commitSha ? latestBuild.commitSha.substring(0, 7) : 'N/A');
-            const commitMsg = latestBuild.commitMessage || "No commit message provided";
+            const rawMsg = latestBuild.commitMessage || "No commit message provided";
+            // Truncate very long messages for the banner
+            const commitMsg = rawMsg.length > 80 ? rawMsg.substring(0, 77) + "..." : rawMsg;
             const author = latestBuild.actor || "Workflow Bot";
             const time = latestBuild.time || "";
             const date = latestBuild.date || "";
             const dateText = (date || time) ? ` (${date} ${time})` : "";
-            contextCommitInfo.innerHTML = `<strong>#${latestBuild.runId || 'N/A'}</strong> - <span style="font-family: var(--font-code); color: var(--color-cyan);">${shortSha}</span> - <em>"${commitMsg}"</em> by <strong>${author}</strong>${dateText}`;
+            contextCommitInfo.innerHTML = `<strong>#${latestBuild.runId || 'N/A'}</strong> - <span style="font-family: var(--font-code); color: var(--color-cyan);">${shortSha}</span> - <em>"${escapeHtml(commitMsg)}"</em> by <strong>${escapeHtml(author)}</strong>${dateText}`;
         }
         if (contextBranchBadge) {
             const bName = formatBranchName(latestBuild.branch);
@@ -192,16 +201,24 @@ document.addEventListener("DOMContentLoaded", () => {
         
         // --- Calculate DORA Lead Time Rating ---
         if (latestSuccess) {
-            const duration = parseFloat(latestSuccess.buildDuration || 0);
+            const buildDur = parseFloat(latestSuccess.buildDuration || 0);
+            const deployDur = parseFloat(latestSuccess.deployDuration || 0);
+            const totalDur = buildDur + deployDur;
+            
             let rating = "Elite";
             let ratingClass = "text-glowing-green";
-            if (duration > 20) { rating = "High"; ratingClass = "text-glowing-cyan"; }
-            if (duration > 60) { rating = "Medium"; ratingClass = "text-glowing-orange"; }
-            if (duration > 240) { rating = "Low"; ratingClass = "text-glowing-danger"; }
+            if (totalDur > 20) { rating = "High"; ratingClass = "text-glowing-cyan"; }
+            if (totalDur > 60) { rating = "Medium"; ratingClass = "text-glowing-orange"; }
+            if (totalDur > 240) { rating = "Low"; ratingClass = "text-glowing-danger"; }
             
             metricDoraRating.textContent = rating;
             metricDoraRating.className = `metric-value ${ratingClass}`;
-            metricDoraSub.innerHTML = `${duration.toFixed(2)} min build lead time<br><span style="font-size:10px; opacity:0.8; font-family:var(--font-code);">[PR/Branch: ${formatBranchName(latestSuccess.branch)} | SHA: ${latestSuccess.shortSha || latestSuccess.commitSha.substring(0, 7)}]</span>`;
+            
+            let subHtml = `${totalDur.toFixed(2)} min total lead time<br>`;
+            subHtml += `<span style="font-size: 10px; opacity: 0.8; font-family: var(--font-code);">`;
+            subHtml += `[Build: ${buildDur.toFixed(2)}m | Deploy: ${deployDur > 0 ? deployDur.toFixed(2) + 'm' : 'N/A'}]`;
+            subHtml += `</span>`;
+            metricDoraSub.innerHTML = subHtml;
         } else {
             metricDoraRating.textContent = "N/A";
             metricDoraRating.className = "metric-value text-glowing-danger";
@@ -212,7 +229,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const successfulBuilds = data.filter(item => (item.buildStatus === "success" || item.buildStatus === "SUCCESS") && item.buildDuration);
         const avgDuration = successfulBuilds.reduce((sum, item) => sum + parseFloat(item.buildDuration), 0) / (successfulBuilds.length || 1);
         metricBuildDuration.textContent = avgDuration.toFixed(2);
-        metricDurationSub.innerHTML = `Latest: ${parseFloat(latestBuild.buildDuration || 0).toFixed(2)} min<br><span style="font-size:10px; opacity:0.8; font-family:var(--font-code);">[Average of ${successfulBuilds.length} runs]</span>`;
+        
+        const latestBuildDur = parseFloat(latestBuild.buildDuration || 0).toFixed(2);
+        const latestDeployDur = parseFloat(latestBuild.deployDuration || 0);
+        const latestDeployText = latestDeployDur > 0 ? `${latestDeployDur.toFixed(2)} min` : "N/A";
+        metricDurationSub.innerHTML = `Latest: ${latestBuildDur}m (Build) | ${latestDeployText} (Deploy)<br><span style="font-size:10px; opacity:0.8; font-family:var(--font-code);">[Average: ${avgDuration.toFixed(2)} min build time]</span>`;
 
         // --- Installer Size ---
         const installerSize = parseFloat(latestBuild.installerSize || 0);
@@ -338,7 +359,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const chronData = [...data].reverse();
         const labels = chronData.map(item => item.shortSha || (item.commitSha ? item.commitSha.substring(0, 7) : 'N/A'));
         const durations = chronData.map(item => parseFloat(item.buildDuration || 0));
-        const pointColors = chronData.map(item => (item.buildStatus === "success" || item.buildStatus === "SUCCESS") ? "#00f2fe" : "#ff1744");
+        const deployDurations = chronData.map(item => parseFloat(item.deployDuration || 0));
+        const pointColors = chronData.map(item => (item.buildStatus === "success" || item.buildStatus === "SUCCESS") ? "#b927fc" : "#ff1744");
         const pointRadii = chronData.map(item => (item.buildStatus === "success" || item.buildStatus === "SUCCESS") ? 5 : 7);
         const installerSizes = chronData.map(item => parseFloat(item.installerSize || 0));
         const repoSizes = chronData.map(item => parseFloat(item.repoSize || 0));
@@ -347,35 +369,59 @@ document.addEventListener("DOMContentLoaded", () => {
         if (durationChartInstance) durationChartInstance.destroy();
         const ctx1 = document.getElementById("durationChart").getContext("2d");
         
-        // Gradient fill
+        // Gradient fill for Build
         const purpleGrad = ctx1.createLinearGradient(0, 0, 0, 250);
         purpleGrad.addColorStop(0, "rgba(185, 39, 252, 0.25)");
         purpleGrad.addColorStop(1, "rgba(185, 39, 252, 0.00)");
+
+        // Gradient fill for Deploy
+        const cyanGrad = ctx1.createLinearGradient(0, 0, 0, 250);
+        cyanGrad.addColorStop(0, "rgba(0, 242, 254, 0.25)");
+        cyanGrad.addColorStop(1, "rgba(0, 242, 254, 0.00)");
 
         durationChartInstance = new Chart(ctx1, {
             type: "line",
             data: {
                 labels: labels,
-                datasets: [{
-                    label: "Build Duration (min)",
-                    data: durations,
-                    borderColor: "#b927fc",
-                    borderWidth: 2,
-                    pointBackgroundColor: pointColors,
-                    pointBorderColor: "#fff",
-                    pointRadius: pointRadii,
-                    pointHoverRadius: 8,
-                    tension: 0.4,
-                    fill: true,
-                    backgroundColor: purpleGrad,
-                    spanGaps: true
-                }]
+                datasets: [
+                    {
+                        label: "Build Duration (min)",
+                        data: durations,
+                        borderColor: "#b927fc",
+                        borderWidth: 2,
+                        pointBackgroundColor: pointColors,
+                        pointBorderColor: "#fff",
+                        pointRadius: pointRadii,
+                        pointHoverRadius: 8,
+                        tension: 0.4,
+                        fill: true,
+                        backgroundColor: purpleGrad,
+                        spanGaps: true
+                    },
+                    {
+                        label: "Deploy Duration (min)",
+                        data: deployDurations,
+                        borderColor: "#00f2fe",
+                        borderWidth: 2,
+                        pointBackgroundColor: "#00f2fe",
+                        pointBorderColor: "#fff",
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        tension: 0.4,
+                        fill: true,
+                        backgroundColor: cyanGrad,
+                        spanGaps: true
+                    }
+                ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { display: false }
+                    legend: {
+                        display: true,
+                        labels: { color: "#8c9ba5", font: { family: "Plus Jakarta Sans", size: 11 } }
+                    }
                 },
                 scales: {
                     x: {
@@ -468,9 +514,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const buildTd = `
                 <td>
                     <div style="font-weight: 700; margin-bottom: 2px;">
-                        <a href="${buildUrl}" target="_blank" style="color: #fff; text-decoration: none;">Build #${item.runId || 'N/A'}</a>
+                        <a href="${buildUrl}" target="_blank" rel="noopener noreferrer" style="color: #fff; text-decoration: none;">Build #${item.runId || 'N/A'}</a>
                     </div>
-                    <a href="${commitUrl}" target="_blank" class="commit-link">${shortSha}</a>
+                    <a href="${commitUrl}" target="_blank" rel="noopener noreferrer" class="commit-link">${shortSha}</a>
                 </td>
             `;
 
@@ -494,9 +540,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const messageTd = `
                 <td>
                     <div class="commit-msg-container">
-                        <div class="commit-msg" title="${commitMsg}">${commitMsg}</div>
+                        <div class="commit-msg" title="${escapeHtml(commitMsg)}">${escapeHtml(commitMsg)}</div>
                         <div class="commit-author">
-                            ${author}
+                            ${escapeHtml(author)}
                         </div>
                     </div>
                 </td>
@@ -504,9 +550,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Duration
             const durationVal = parseFloat(item.buildDuration || 0);
+            const deployDurVal = parseFloat(item.deployDuration || 0);
             const durationTd = `
-                <td style="font-family: var(--font-code); font-weight: 500;">
-                    ${durationVal > 0 ? durationVal.toFixed(2) + " min" : "N/A"}
+                <td class="details-cell" style="font-family: var(--font-code);">
+                    <div class="details-line">Build: <strong>${durationVal > 0 ? durationVal.toFixed(2) + "m" : "N/A"}</strong></div>
+                    <div class="details-line">Deploy: <strong>${deployDurVal > 0 ? deployDurVal.toFixed(2) + "m" : "N/A"}</strong></div>
                 </td>
             `;
 
@@ -622,8 +670,155 @@ document.addEventListener("DOMContentLoaded", () => {
         lucide.createIcons();
     }
 
+    // ═══════════════════════════════════════════════════════
+    // SERVER HEALTH MONITORING
+    // ═══════════════════════════════════════════════════════
+
+    function drawGauge(canvasId, percent, color) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
+        const w = canvas.width;
+        const h = canvas.height;
+        const cx = w / 2;
+        const cy = h / 2;
+        const radius = Math.min(cx, cy) - 10;
+        const startAngle = 0.75 * Math.PI;
+        const endAngle = 2.25 * Math.PI;
+        const valueAngle = startAngle + (percent / 100) * (endAngle - startAngle);
+
+        ctx.clearRect(0, 0, w, h);
+
+        // Background arc
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, startAngle, endAngle);
+        ctx.lineWidth = 8;
+        ctx.strokeStyle = "rgba(255,255,255,0.06)";
+        ctx.lineCap = "round";
+        ctx.stroke();
+
+        // Value arc
+        if (percent > 0) {
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, startAngle, valueAngle);
+            ctx.lineWidth = 8;
+            ctx.strokeStyle = color;
+            ctx.lineCap = "round";
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 10;
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+        }
+    }
+
+    function getGaugeColor(percent) {
+        if (percent < 50) return "#00e676";
+        if (percent < 75) return "#ff9100";
+        return "#ff1744";
+    }
+
+    async function pollServerHealth() {
+        const badge = document.getElementById("server-status-badge");
+
+        try {
+            const res = await fetch(SERVER_MONITOR_URL, { signal: AbortSignal.timeout(8000) });
+            if (!res.ok) throw new Error("Server responded with " + res.status);
+            const stats = await res.json();
+            serverOnline = true;
+
+            // Status badge
+            if (badge) {
+                badge.innerHTML = '<span class="server-beacon online"></span> Online';
+                badge.className = "badge server-status-badge online";
+            }
+
+            // CPU
+            const cpuPct = stats.cpu?.usagePercent || 0;
+            drawGauge("gauge-cpu", cpuPct, getGaugeColor(cpuPct));
+            const cpuValEl = document.getElementById("gauge-cpu-value");
+            if (cpuValEl) cpuValEl.textContent = cpuPct.toFixed(1) + "%";
+            const cpuDetail = document.getElementById("cpu-detail");
+            if (cpuDetail) cpuDetail.textContent = `${stats.cpu?.cores || "--"} cores | ${stats.cpu?.model || ""}`.substring(0, 40);
+
+            // Memory
+            const memPct = stats.memory?.usagePercent || 0;
+            drawGauge("gauge-memory", memPct, getGaugeColor(memPct));
+            const memValEl = document.getElementById("gauge-memory-value");
+            if (memValEl) memValEl.textContent = memPct.toFixed(1) + "%";
+            const memDetail = document.getElementById("memory-detail");
+            if (memDetail) memDetail.textContent = `${stats.memory?.usedMB || "--"} / ${stats.memory?.totalMB || "--"} MB`;
+
+            // Disk
+            const diskPct = stats.disk?.usagePercent || 0;
+            drawGauge("gauge-disk", diskPct, getGaugeColor(diskPct));
+            const diskValEl = document.getElementById("gauge-disk-value");
+            if (diskValEl) diskValEl.textContent = diskPct.toFixed(1) + "%";
+            const diskDetail = document.getElementById("disk-detail");
+            if (diskDetail) diskDetail.textContent = `${stats.disk?.usedGB || "--"} / ${stats.disk?.totalGB || "--"} GB`;
+
+            // Network
+            const netHostname = document.getElementById("net-hostname");
+            if (netHostname) netHostname.textContent = stats.network?.hostname || "--";
+            const netIp = document.getElementById("net-ip");
+            if (netIp) {
+                const iface = stats.network?.interfaces?.[0];
+                netIp.textContent = iface?.address || "--";
+            }
+            const netOs = document.getElementById("net-os");
+            if (netOs) netOs.textContent = `${stats.platform?.os || "--"} ${stats.platform?.arch || ""}`;
+
+            // Uptime
+            const uptimeText = document.getElementById("server-uptime-text");
+            if (uptimeText) uptimeText.textContent = `Uptime: ${stats.uptime?.formatted || "--"}`;
+
+            // Docker containers
+            const dockerBody = document.getElementById("docker-table-body");
+            const containerCount = document.getElementById("container-count");
+            const containers = stats.docker || [];
+
+            if (containerCount) containerCount.textContent = `${containers.length} container${containers.length !== 1 ? 's' : ''}`;
+
+            if (dockerBody) {
+                if (containers.length === 0) {
+                    dockerBody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px;">No Docker containers detected</td></tr>';
+                } else {
+                    dockerBody.innerHTML = containers.map(c => `
+                        <tr>
+                            <td>
+                                <div style="display:flex;align-items:center;gap:8px;">
+                                    <span class="container-dot running"></span>
+                                    <strong>${escapeHtml(c.name)}</strong>
+                                </div>
+                            </td>
+                            <td style="font-family:var(--font-code);color:var(--color-cyan);">${escapeHtml(c.cpuPercent)}</td>
+                            <td style="font-family:var(--font-code);">${escapeHtml(c.memUsage)}</td>
+                            <td style="font-family:var(--font-code);font-size:12px;">${escapeHtml(c.netIO)}</td>
+                            <td style="font-family:var(--font-code);">${escapeHtml(c.pids)}</td>
+                        </tr>
+                    `).join("");
+                }
+            }
+
+        } catch (err) {
+            serverOnline = false;
+            if (badge) {
+                badge.innerHTML = '<span class="server-beacon offline"></span> Offline';
+                badge.className = "badge server-status-badge offline";
+            }
+            console.warn("Server health poll failed:", err.message);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // INIT
+    // ═══════════════════════════════════════════════════════
+
     // Init App
     initDashboard();
+
+    // Start server health polling
+    pollServerHealth();
+    setInterval(pollServerHealth, SERVER_POLL_INTERVAL);
 
     // 9. Client-side Real-time Telemetry: Background polling every 30 seconds (Cache-buster enabled)
     setInterval(async () => {
@@ -697,5 +892,31 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
             lucide.createIcons();
         }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // EXTERNAL LINK HANDLER
+    // ═══════════════════════════════════════════════════════
+    window.handleExternalLink = function(el) {
+        const url = el.href;
+        // Try to open in new tab
+        const newWindow = window.open(url, '_blank', 'noopener,noreferrer');
+        if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+            // Popup blocked or failed — show a notification
+            const toast = document.createElement("div");
+            toast.className = "toast-notification";
+            toast.innerHTML = `
+                <i data-lucide="external-link" style="width:16px;height:16px;"></i>
+                <span>Opening: <a href="${url}" target="_blank" rel="noopener noreferrer" style="color:var(--color-cyan);text-decoration:underline;">${url}</a></span>
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => { toast.classList.add("show"); }, 10);
+            setTimeout(() => {
+                toast.classList.remove("show");
+                setTimeout(() => toast.remove(), 300);
+            }, 5000);
+            lucide.createIcons();
+        }
+        return false; // prevent default navigation
     }
 });
