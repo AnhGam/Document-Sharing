@@ -48,6 +48,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Record Start Time
+        id: start_time
+        shell: pwsh
+        run: |
+          $ts = [DateTimeOffset]::Now.ToUnixTimeSeconds()
+          echo "ts=$ts" >> $env:GITHUB_OUTPUT
+
+
       - name: Prepare Dynamic Semantic Versioning
         id: version
         run: |
@@ -112,25 +120,18 @@ jobs:
 
       - name: Run Capacity Check & DORA Analytics
         id: capacity
-        run: |
-          $pushedAt = "${{ github.event.repository.pushed_at }}"
-          $startTime = [DateTimeOffset]::Now.ToUnixTimeSeconds() - 60
-          if ($pushedAt) {
-              if ($pushedAt -match '^\d+$') {
-                  $startTime = [long]$pushedAt
-              } else {
-                  try {
-                      $startTime = [DateTimeOffset]::Parse($pushedAt).ToUnixTimeSeconds()
-                  } catch {
-                      Write-Host "Could not parse pushed_at: $pushedAt"
-                  }
-              }
-          }
-          $now = [DateTimeOffset]::Now.ToUnixTimeSeconds()
-          $duration = $now - $startTime
-          if ($duration -lt 0) { $duration = 0 }
-          powershell ./scripts/capacity-governance.ps1 -MaxInstallerSizeMB 50 -MaxRepoSizeMB 500 -BuildDurationSeconds $duration
         shell: pwsh
+        run: |
+          $startTime = [long]${{ steps.start_time.outputs.ts }}
+          $now = [DateTimeOffset]::Now.ToUnixTimeSeconds()
+          $durationSeconds = $now - $startTime
+          if ($durationSeconds -lt 0) { $durationSeconds = 0 }
+          
+          # Convert to minutes and round to 2 decimal places for DORA duration
+          $durationMinutes = [Math]::Round($durationSeconds / 60, 2)
+          if ($durationMinutes -lt 0.01) { $durationMinutes = 0.01 }
+          
+          ./scripts/capacity-governance.ps1 -MaxInstallerSizeMB 50 -MaxRepoSizeMB 500 -BuildDurationSeconds $durationMinutes
 
       - name: Publish Capacity Report
         if: always()
@@ -292,7 +293,12 @@ jobs:
             MSG="$MSG[View Grafana Dashboard]($DASHBOARD_URL)\n"
             MSG="$MSG[View GitHub Run](${SERVER_URL}/${REPOSITORY}/actions/runs/${RUN_ID})"
 
-            curl -H "Content-Type: application/json" \
-              -d "{\"embeds\": [{\"title\": \"CI/CD Pipeline Performance: $BUILD_RESULT\", \"description\": \"$MSG\", \"color\": $COLOR}]}" \
-              $DISCORD_WEBHOOK
+            # Build JSON payload safely using jq to avoid formatting and injection errors
+            PAYLOAD=$(jq -n \
+              --arg title "CI/CD Pipeline Performance: $BUILD_RESULT" \
+              --arg desc "$MSG" \
+              --argjson color "$COLOR" \
+              '{embeds:[{title:$title,description:$desc,color:$color}]}')
+
+            curl -H "Content-Type: application/json" -d "$PAYLOAD" "$DISCORD_WEBHOOK"
           fi
