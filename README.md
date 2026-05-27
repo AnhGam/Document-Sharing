@@ -607,3 +607,9 @@ Archived build reports and AI analyses.
 | Date | Time | Commit | Status | Reports |
 | :--- | :--- | :--- | :--- | :--- |
 | 2026-05-27 | 16:26 | dfa60e6 | success |  [View Reports](./reports/2026/05/27/dfa60e683affb0bcb671c15560b65499179490d0-26524091049/) |
+
+## Build History Table
+
+| Date | Time | Commit | Status | Reports |
+| :--- | :--- | :--- | :--- | :--- |
+| 2026-05-27 | 16:41 | 2b17599 | success |  [View Reports](./reports/2026/05/27/2b1759924f056a1dfaedd4cef3df08f928243789-26524861086/) |
