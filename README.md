@@ -23,9 +23,9 @@
 
 ---
 
-| [**📖 Giới thiệu**](#-giới-thiệu-introduction)                     | [**✨ Tính năng nổi bật**](#-tính-năng-nổi-bật-key-features) | [**🛠 Công nghệ sử dụng**](#-công-nghệ-sử-dụng-tech-stack)        | [**📁 Cấu trúc dự án**](#-cấu-trúc-dự-án-project-structure) |
+| [**📖 Giới thiệu**](#giới-thiệu-introduction)                     | [**✨ Tính năng nổi bật**](#tính-năng-nổi-bật-key-features) | [**🛠 Công nghệ sử dụng**](#công-nghệ-sử-dụng-tech-stack)        | [**📁 Cấu trúc dự án**](#cấu-trúc-dự-án-project-structure) |
 | ------------------------------------------------------------------ | ------------------------------------------------------------ | ----------------------------------------------------------------- | ----------------------------------------------------------- |
-| [**🚀 Hướng dẫn cài đặt**](#-hướng-dẫn-cài-đặt-installation-guide) | [**☁️ Về Cloudflare Tunnel**](#️-về-cloudflare-tunnel)        | [**📸 Ảnh chụp màn hình**](#-ảnh-chụp-màn-hình-screenshots--demo) | [**👥 Thành viên nhóm**](#-thành-viên-nhóm-team-members)    |
+| [**🚀 Hướng dẫn cài đặt**](#hướng-dẫn-cài-đặt-installation-guide) | [**☁️ Về Cloudflare Tunnel**](#về-cloudflare-tunnel)        | [**📸 Ảnh chụp màn hình**](#ảnh-chụp-màn-hình-screenshots--demo) | [**👥 Thành viên nhóm**](#thành-viên-nhóm-team-members)    |
 
 </div>
 
