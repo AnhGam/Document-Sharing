@@ -1,6 +1,6 @@
 <div align="center">
 
-![Study Document Manager](document-sharing-manager\assets\logo\hero-banner.png)
+![Study Document Manager](document-sharing-manager/assets/logo/hero-banner.png)
 
 > **Quản lý tài liệu cá nhân - Đơn giản, Hiệu quả, Riêng tư**
 
