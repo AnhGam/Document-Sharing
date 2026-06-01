@@ -26,34 +26,19 @@ namespace document_sharing_manager.Core.Services
         public int ServerId { get; set; }
     }
 
-    public class SyncProgressEventArgs : EventArgs
+    public class SyncProgressEventArgs(int documentId, int progressPercentage) : EventArgs
     {
-        public int DocumentId { get; }
-        public int ProgressPercentage { get; }
-
-        public SyncProgressEventArgs(int documentId, int progressPercentage)
-        {
-            DocumentId = documentId;
-            ProgressPercentage = progressPercentage;
-        }
+        public int DocumentId { get; } = documentId;
+        public int ProgressPercentage { get; } = progressPercentage;
     }
 
-    public class SyncTaskEventArgs : EventArgs
+    public class SyncTaskEventArgs(int documentId, string fileName, SyncType type, bool success = true, string? errorMessage = null) : EventArgs
     {
-        public int DocumentId { get; }
-        public string FileName { get; }
-        public SyncType Type { get; }
-        public bool Success { get; }
-        public string? ErrorMessage { get; }
-
-        public SyncTaskEventArgs(int documentId, string fileName, SyncType type, bool success = true, string? errorMessage = null)
-        {
-            DocumentId = documentId;
-            FileName = fileName;
-            Type = type;
-            Success = success;
-            ErrorMessage = errorMessage;
-        }
+        public int DocumentId { get; } = documentId;
+        public string FileName { get; } = fileName;
+        public SyncType Type { get; } = type;
+        public bool Success { get; } = success;
+        public string? ErrorMessage { get; } = errorMessage;
     }
 
     public class SyncEngine : ISyncService, IDisposable
@@ -217,7 +202,7 @@ namespace document_sharing_manager.Core.Services
             return Result.Success();
         }
 
-        private async Task<bool> HealServerCloudIdAsync(ManagedServer server, CancellationToken ct)
+        private async Task<bool> HealServerCloudIdAsync(ManagedServer server)
         {
             try
             {
@@ -305,7 +290,7 @@ namespace document_sharing_manager.Core.Services
                 // Auto-Heal: Tự động đồng bộ remote_id từ Cloud nếu chưa có (NULL hoặc <= 0) hoặc chưa được xác thực trong session này
                 if (server.CloudId == null || server.CloudId <= 0 || !_verifiedServers.ContainsKey(server.Id))
                 {
-                    if (await HealServerCloudIdAsync(server, ct))
+                    if (await HealServerCloudIdAsync(server))
                     {
                         _verifiedServers.TryAdd(server.Id, 0);
                     }
@@ -649,7 +634,7 @@ namespace document_sharing_manager.Core.Services
                     server.CloudId = null;
                     DatabaseHelper.UpdateServerRemoteId(server.Id, 0); // Reset remoteId trong local SQLite thành 0
                     
-                    bool healed = await HealServerCloudIdAsync(server, linkedToken);
+                    bool healed = await HealServerCloudIdAsync(server);
                     if (healed)
                     {
                         System.Diagnostics.Debug.WriteLine($"HealServerCloudId success! Retrying upload with new CloudId: {server.CloudId}");
