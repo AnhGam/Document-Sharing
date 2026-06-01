@@ -637,3 +637,9 @@ Archived build reports and AI analyses.
 | Date | Time | Commit | Status | Reports |
 | :--- | :--- | :--- | :--- | :--- |
 | 2026-05-30 | 14:55 | af65773 | success |  [View Reports](./reports/2026/05/30/af65773e990e74ef10f008774d2779c3ef12c8cb-26686827448/) |
+
+## Build History Table
+
+| Date | Time | Commit | Status | Reports |
+| :--- | :--- | :--- | :--- | :--- |
+| 2026-06-01 | 15:59 | badcba5 | success |  [View Reports](./reports/2026/06/01/badcba5f1c56df7f2feb439976c6cc881fd8e735-26766108984/) |

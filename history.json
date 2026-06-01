@@ -1,5 +1,20 @@
 [
   {
+    "commitSha": "badcba5f1c56df7f2feb439976c6cc881fd8e735",
+    "shortSha": "badcba5",
+    "runId": "26766108984",
+    "date": "2026-06-01",
+    "time": "15:59",
+    "buildStatus": "success",
+    "installerSize": 6.14,
+    "repoSize": 261.18,
+    "buildDuration": 3.37,
+    "deployDuration": 0.0,
+    "branch": "main",
+    "actor": "AnhGam",
+    "commitMessage": "Merge branch 'main' of https://github.com/AnhGam/Study-Document-Management"
+  },
+  {
     "commitSha": "af65773e990e74ef10f008774d2779c3ef12c8cb",
     "shortSha": "af65773",
     "runId": "26686827448",
