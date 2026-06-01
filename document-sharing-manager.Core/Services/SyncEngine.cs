@@ -331,7 +331,7 @@ namespace document_sharing_manager.Core.Services
                         {
                             Enqueue(doc, SyncType.Delete, server.Id);
                         }
-                        else
+                        else if (doc.SyncStatus == 1 || doc.SyncStatus == 3)
                         {
                             Enqueue(doc, SyncType.Upload, server.Id);
                         }
