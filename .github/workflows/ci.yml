@@ -284,17 +284,17 @@ jobs:
             D_INSTALLER="${INSTALLER_SIZE:-N/A}"
             D_REPO="${REPO_SIZE:-N/A}"
             D_DURATION="${BUILD_DURATION:-N/A}"
-            
-            MSG="**Project:** Document Sharing Manager\n**Author:** $ACTOR\n**Commit:** $COMMIT_SHA\n\n"
-            MSG="$MSG**[DORA & Capacity Metrics]**\n"
-            MSG="$MSG- **Lead Time (CI):** $D_DURATION min\n"
-            MSG="$MSG- **Installer Size:** $D_INSTALLER MB\n"
-            MSG="$MSG- **Repo Size:** $D_REPO MB\n"
-            MSG="$MSG- **Status:** $BUILD_RESULT\n\n"
-            
             DASHBOARD_URL="https://${REPO_OWNER}.github.io/${REPO_NAME}/"
-            MSG="$MSG[View Grafana Dashboard]($DASHBOARD_URL)\n"
-            MSG="$MSG[View GitHub Run](${SERVER_URL}/${REPOSITORY}/actions/runs/${RUN_ID})"
+
+            MSG=$(printf "**Project:** Document Sharing Manager\n**Author:** %s\n**Commit:** %s\n\n**[DORA & Capacity Metrics]**\n- **Lead Time (CI):** %s min\n- **Installer Size:** %s MB\n- **Repo Size:** %s MB\n- **Status:** %s\n\n[View Grafana Dashboard](%s)\n[View GitHub Run](%s)" \
+              "$ACTOR" \
+              "$COMMIT_SHA" \
+              "$D_DURATION" \
+              "$D_INSTALLER" \
+              "$D_REPO" \
+              "$BUILD_RESULT" \
+              "$DASHBOARD_URL" \
+              "${SERVER_URL}/${REPOSITORY}/actions/runs/${RUN_ID}")
 
             # Build JSON payload safely using jq to avoid formatting and injection errors
             PAYLOAD=$(jq -n \
