@@ -1,5 +1,20 @@
 [
   {
+    "commitSha": "f5d64831c7d38a686823bd776290e1d07759b9ae",
+    "shortSha": "f5d6483",
+    "runId": "26793901686",
+    "date": "2026-06-02",
+    "time": "02:09",
+    "buildStatus": "success",
+    "installerSize": 6.14,
+    "repoSize": 261.18,
+    "buildDuration": 2.65,
+    "deployDuration": 0.0,
+    "branch": "nma",
+    "actor": "AnhGam",
+    "commitMessage": "extend requirement for log save"
+  },
+  {
     "commitSha": "d37a91af70a13bda649f73f7275bcd61aa6ddea5",
     "shortSha": "d37a91a",
     "runId": "26793385648",
