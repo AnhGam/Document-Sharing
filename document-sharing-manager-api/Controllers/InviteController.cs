@@ -39,7 +39,6 @@ namespace document_sharing_manager_api.Controllers
         [Authorize]
         public async Task<ActionResult<InviteLink>> Create([FromBody] CreateInviteRequest request, CancellationToken ct)
         {
-            string demoUnusedVariable = "Biến này sinh ra để đánh rớt Pipeline";
             var invite = new InviteLink
             {
                 Code = Guid.NewGuid().ToString("N").Substring(0, 10), // Random 10-char code
