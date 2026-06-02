@@ -2,7 +2,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main, master, development]
+    branches: [main]
   pull_request:
     branches: [main, master, development]
 
@@ -158,9 +158,9 @@ jobs:
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           AI_BUILD_STATUS: ${{ job.status }}
-          AI_COMMIT_SHA: ${{ github.sha }}
+          AI_COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           AI_BRANCH: ${{ github.head_ref || github.ref_name }}
-          AI_COMMIT_MESSAGE: ${{ github.event.head_commit.message || 'No commit message' }}
+          AI_COMMIT_MESSAGE: ${{ github.event.head_commit.message || github.event.pull_request.title || 'No commit message' }}
         run: |
           ./scripts/ai-log-analyzer-groq.ps1 `
             -ApiKey "$env:GROQ_API_KEY" `
@@ -171,11 +171,11 @@ jobs:
 
 
       - name: Archive Build Reports (GitOps)
-        if: always() && github.event_name == 'push'
+        if: always() && (github.event_name == 'push' || github.event_name == 'pull_request')
         shell: pwsh
         env:
           REPO_URL: "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
-          COMMIT_SHA: ${{ github.sha }}
+          COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           RUN_ID: ${{ github.run_id }}
           BUILD_STATUS: ${{ job.status }}
           INSTALLER_SIZE: ${{ steps.capacity.outputs.installer_size || '0.0' }}
@@ -183,7 +183,7 @@ jobs:
           BUILD_DURATION: ${{ steps.capacity.outputs.build_duration || '0.0' }}
           BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
           ACTOR: ${{ github.actor }}
-          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message || github.event.pull_request.title }}
         run: |
           ./scripts/publish-reports.ps1 `
             -RepoUrl "$env:REPO_URL" `
